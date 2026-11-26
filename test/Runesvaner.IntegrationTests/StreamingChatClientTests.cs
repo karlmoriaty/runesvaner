@@ -29,6 +29,13 @@ public sealed class StreamingChatClientTests
         var record = Assert.Single(store.Records);
         Assert.Equal("Ok", record.Status);
         Assert.Contains(record.Segments, segment => segment.Kind == SegmentKind.Ttft);
+        Assert.NotNull(record.Stream);
+        Assert.Equal(2, record.Stream!.ChunkCount);
+        Assert.NotNull(record.Stream.TtftUs);
+        Assert.True(record.Stream.ItlEstimated);
+        Assert.True(record.Usage?.OutputTokens == 4);
+        Assert.NotNull(record.Stream.TokensPerSecond);
+        Assert.Equal("stop", record.Stream.FinishReason);
     }
 
     [Fact]
@@ -53,6 +60,8 @@ public sealed class StreamingChatClientTests
 
         var record = Assert.Single(store.Records);
         Assert.Equal("Cancelled", record.Status);
+        Assert.True(record.Stream?.Cancelled);
+        Assert.False(record.Stream?.Interrupted);
     }
 
     [Fact]
@@ -73,6 +82,8 @@ public sealed class StreamingChatClientTests
 
         var record = Assert.Single(store.Records);
         Assert.Equal("Error", record.Status);
+        Assert.True(record.Stream?.Interrupted);
+        Assert.False(record.Stream?.Cancelled);
     }
 
     private sealed class InMemoryStore : IRunesvanerStore
@@ -101,7 +112,17 @@ public sealed class StreamingChatClientTests
             await Task.Yield();
             yield return new ChatResponseUpdate(ChatRole.Assistant, "first");
             await Task.Delay(5, cancellationToken);
-            yield return new ChatResponseUpdate(ChatRole.Assistant, "second");
+            var second = new ChatResponseUpdate(ChatRole.Assistant, "second")
+            {
+                FinishReason = ChatFinishReason.Stop
+            };
+            second.Contents.Add(new UsageContent(new UsageDetails
+            {
+                InputTokenCount = 3,
+                OutputTokenCount = 4,
+                TotalTokenCount = 7
+            }));
+            yield return second;
         }
 
         public Task<ChatResponse> GetResponseAsync(

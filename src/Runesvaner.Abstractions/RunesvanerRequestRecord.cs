@@ -16,11 +16,13 @@ public sealed record RunesvanerRequestRecord(
     RunesvanerUsage? Usage,
     RunesvanerSegment[] Segments,
     Dictionary<string, string>? Tags,
-    CostBreakdown? Cost = null);
+    CostBreakdown? Cost = null,
+    RunesvanerStreamStats? Stream = null);
 
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(RunesvanerRequestRecord))]
 [JsonSerializable(typeof(CostBreakdown))]
+[JsonSerializable(typeof(RunesvanerStreamStats))]
 public partial class RunesvanerJsonContext : JsonSerializerContext
 {
 }

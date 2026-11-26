@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming/cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, 16 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: verified built-in price snapshot, ITL/TPS streaming metrics, cost UI, Studio, OTLP export.
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, 16 tests, Windows/Linux CI, Windows Native AOT smoke.
+> Next: verified built-in price snapshot, cost UI, Studio, OTLP export.
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -44,7 +44,7 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | Capability | Status |
 | --- | --- |
 | Microsoft.Extensions.AI chat decorator (non-streaming) | Implemented |
-| Streaming TTFT capture | Basic path implemented |
+| Streaming metrics | Chunk count, TTFT, ITL P50/P95, TPS when usage is available, finish reason |
 | Recorder + JSONL storage | Implemented |
 | SQLite storage | Basic writes implemented |
 | CLI `report` / `doctor` | Implemented |
@@ -171,7 +171,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | --- | --- | --- |
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
 | M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 13 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
-| M2 | MVP | In progress: cost engine core + price loader + `costs` view done; streaming metrics, Studio, OTLP, performance gates |
+| M2 | MVP | In progress: cost engine + price loader + `costs` view + streaming stats done; cost UI, Studio, OTLP, performance gates |
 | M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
 | M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
 

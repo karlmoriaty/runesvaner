@@ -213,7 +213,8 @@ Rules:
 | `runesvaner.stream.chunk_count` | int | Number of chunks |
 | `runesvaner.stream.itl_p50_us` | int64 | Inter-token latency P50 |
 | `runesvaner.stream.itl_p95_us` | int64 | Inter-token latency P95 |
-| `runesvaner.stream.tokens_per_second` | double | Output rate |
+| `runesvaner.stream.tokens_per_second` | double | Output rate; null when output usage is unavailable |
+| `runesvaner.stream.itl_estimated` | bool | ITL is derived from chunk gaps, not token timestamps |
 | `runesvaner.stream.cancelled` | bool | Whether cancelled |
 | `runesvaner.stream.interrupted` | bool | Whether abnormally interrupted |
 | `runesvaner.stream.finish_reason` | string | Provider finish reason |

@@ -97,7 +97,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 _usage,
                 _segments.ToArray(),
                 _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags),
-                cost);
+                cost,
+                result.Stream);
 
             try
             {

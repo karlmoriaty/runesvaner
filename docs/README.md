@@ -157,7 +157,7 @@ M1 evidence:
 - Public repository `karlmoriaty/runesvaner`.
 - `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
 - `Runesvaner.sln`, 10+ projects, console/RAG/AOT samples.
-- 16 tests: unit, JSONL/SQLite integration, chat, streaming, cancellation, error, failure injection, cost, price table loader.
+- 16 tests: unit, JSONL/SQLite integration, chat, streaming stats, cancellation, error, failure injection, cost, price table loader.
 - Benchmark baseline: 324.9 ns mean, 3.70 us P95.
 - CI: Windows/Linux build and tests; Windows Native AOT smoke with non-streaming, streaming, and error paths.
 
@@ -165,5 +165,6 @@ M2 in progress:
 
 1. Cost engine core: `PriceTable`, `PriceEntry`, `CostBreakdown`, tier/cached/reasoning/batch discount, unknown-model handling, recorder integration.
 2. Price table loader: JSON schema, aliases, validation, `pricing validate`, and `costs` aggregation.
-3. Next: verified built-in snapshot, cost UI, ITL/TPS streaming metrics, Studio, OTLP.
+3. Streaming stats: chunk count, TTFT, ITL P50/P95, TPS when usage is available, finish reason, cancellation/interruption.
+4. Next: verified built-in snapshot, cost UI, Studio, OTLP.
 3. GitHub Pages and NuGet root package placeholder remain external tasks.

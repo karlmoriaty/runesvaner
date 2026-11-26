@@ -83,4 +83,5 @@ public readonly record struct RunesvanerRequestResult(
     long DurationUs,
     long? TtftUs,
     int Attempt = 1,
-    string? ResponseModel = null);
+    string? ResponseModel = null,
+    RunesvanerStreamStats? Stream = null);

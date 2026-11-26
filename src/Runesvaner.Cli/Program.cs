@@ -52,6 +52,11 @@ static int Report(string path)
 
         Console.WriteLine(
             $"{record.StartedAtUtc:yyyy-MM-dd HH:mm:ss}  {record.Operation,-9}  {record.RequestModel ?? record.ResponseModel ?? "-",-14}  {duration,8} ms  {ttft,10}  {FormatCost(record.Cost),-16}  {record.Status}");
+
+        if (record.Stream is { } stream)
+        {
+            Console.WriteLine(FormatStream(stream));
+        }
     }
 
     var totalUs = records.Sum(record => record.DurationUs);
@@ -172,6 +177,30 @@ static string? ParseOption(string[] args, string name)
     }
 
     return null;
+}
+
+static string FormatStream(RunesvanerStreamStats stream)
+{
+    var itl = stream.ItlP95Us is null
+        ? "-"
+        : $"{(stream.ItlP95Us.Value / 1000.0).ToString("F1", CultureInfo.InvariantCulture)} ms";
+    var tps = stream.TokensPerSecond is null
+        ? "-"
+        : stream.TokensPerSecond.Value.ToString("F1", CultureInfo.InvariantCulture);
+
+    var flags = new List<string>();
+    if (stream.Cancelled)
+    {
+        flags.Add("cancelled");
+    }
+
+    if (stream.Interrupted)
+    {
+        flags.Add("interrupted");
+    }
+
+    var suffix = flags.Count == 0 ? "" : $" {string.Join(' ', flags)}";
+    return $"    stream chunks={stream.ChunkCount} itl_p95={itl} tps={tps} itl_estimated={stream.ItlEstimated} finish={stream.FinishReason ?? "-"}{suffix}";
 }
 
 static int Doctor(string path)
