@@ -1,8 +1,12 @@
 # Runesvaner
 
-> **Status: M1 Walking Skeleton — 可构建骨架与最小端到端路径已落地。**
-> 当前实现：Microsoft.Extensions.AI Chat 装饰器 → 记录器 → JSONL/SQLite 存储 → CLI `report`。
-> 成本引擎、流式指标、Studio、OTLP 导出仍在路线图中；Native AOT 本地发布需要 C++ 链接器。
+[![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
+
+> **Status: M1 Walking Skeleton — 最小端到端路径与 AOT smoke 已通过。**
+> 已完成：Microsoft.Extensions.AI Chat 装饰器、JSONL/SQLite 基础存储、CLI `report`/`doctor`、5 个测试、Windows/Linux CI + Windows Native AOT smoke。
+> 未完成：RAG sample、基准基线、成本引擎、完整流式指标、Studio、OTLP 导出。
+>
+> 仓库：https://github.com/karlmoriaty/runesvaner
 
 **看见一次 AI 请求的每一毫秒和每一分钱。**
 
@@ -154,7 +158,7 @@ flowchart LR
 | 里程碑 | 主题 | 退出标准 |
 | --- | --- | --- |
 | M0 | 设计冻结 | 已完成：D-01–D-25 决议、治理文件、解决方案骨架 |
-| M1 | Walking Skeleton | 进行中：MEAI 装饰器 + 记录器 + JSONL/SQLite + CLI `report` 已完成；AOT smoke 待 CI/工具链 |
+| M1 | Walking Skeleton | 进行中：端到端路径、5 个测试、Windows/Linux CI、Windows AOT smoke 已通过；RAG sample 与基准基线待补 |
 | M2 | MVP | 成本引擎、流式指标、Studio、OTLP 导出、基准达标 |
 | M3 | Beta | Semantic Kernel、VectorData、尾采样、预算告警、文档站 |
 | M4 | 1.0 | 公共 API 稳定、性能与安全审计完成、CLA 流程可用 |
