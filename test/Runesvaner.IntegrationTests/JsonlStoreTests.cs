@@ -34,6 +34,7 @@ public sealed class JsonlStoreTests
             await store.WriteAsync(record, TestContext.Current.CancellationToken);
 
             var actual = Assert.Single(JsonlRunesvanerStore.ReadAll(directory));
+            Assert.Equal("runesvaner.request.v1", actual.Schema);
             Assert.Equal("id-1", actual.RequestId);
             Assert.Equal("Chat", actual.Operation);
             Assert.Equal("Ok", actual.Status);

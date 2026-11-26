@@ -34,6 +34,12 @@ jobs:
       - name: Test
         run: dotnet test --no-build -c Release
 
+      - name: Run RAG sample
+        run: dotnet run --project samples/Runesvaner.Sample.Rag -c Release --no-build
+
+      - name: Report RAG capture
+        run: dotnet run --project src/Runesvaner.Cli -c Release --no-build -- report
+
   aot-smoke:
     name: aot-smoke (windows)
     runs-on: windows-latest

@@ -39,7 +39,7 @@ static int Report(string path)
     Console.WriteLine($"Runesvaner report: {records.Length} request(s)");
     Console.WriteLine($"Data: {Path.GetFullPath(path)}");
     Console.WriteLine();
-    Console.WriteLine("Started (UTC)        Operation  Model           Duration     TTFT  Status");
+    Console.WriteLine("Started (UTC)        Operation  Model           Duration     TTFT  Cost             Status");
 
     foreach (var record in records.OrderBy(record => record.StartedAtUtc))
     {
@@ -49,7 +49,7 @@ static int Report(string path)
             : $"{(record.TtftUs.Value / 1000.0).ToString("F1", CultureInfo.InvariantCulture)} ms";
 
         Console.WriteLine(
-            $"{record.StartedAtUtc:yyyy-MM-dd HH:mm:ss}  {record.Operation,-9}  {record.RequestModel ?? record.ResponseModel ?? "-",-14}  {duration,8} ms  {ttft,10}  {record.Status}");
+            $"{record.StartedAtUtc:yyyy-MM-dd HH:mm:ss}  {record.Operation,-9}  {record.RequestModel ?? record.ResponseModel ?? "-",-14}  {duration,8} ms  {ttft,10}  {FormatCost(record.Cost),-16}  {record.Status}");
     }
 
     var totalUs = records.Sum(record => record.DurationUs);
@@ -57,6 +57,22 @@ static int Report(string path)
     Console.WriteLine();
     Console.WriteLine($"Total: {totalUs / 1000.0:F1} ms; Average: {averageUs / 1000.0:F1} ms");
     return 0;
+}
+
+static string FormatCost(CostBreakdown? cost)
+{
+    if (cost is null)
+    {
+        return "-";
+    }
+
+    return cost.Status switch
+    {
+        CostStatus.Known when cost.Total is not null => $"{cost.Total.Value.ToString("F6", CultureInfo.InvariantCulture)} {cost.Currency}",
+        CostStatus.Partial => "partial",
+        CostStatus.Unknown => "unknown",
+        _ => "unknown"
+    };
 }
 
 static int Doctor(string path)

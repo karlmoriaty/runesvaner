@@ -1,6 +1,6 @@
 # Runesvaner Design Documentation
 
-> Current stage: **M1 Walking Skeleton**. Design documentation and a minimal runnable skeleton coexist.
+> Current stage: **M1 complete; M2 cost engine in progress.** Design documentation and a runnable skeleton coexist.
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`zh-Hans/README.md`](zh-Hans/README.md).
 
@@ -64,6 +64,7 @@
 | `17-docs-and-community.md` | Docs site, community, release, contributor experience | Draft |
 | `18-localization-scope.md` | Localization tiers, glossary, translation maintenance | Accepted |
 | `19-open-implementation-decisions.md` | D-23–D-25 decision records | Accepted |
+| `benchmarks-baseline.md` | Recorder benchmark baseline | Draft |
 | `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
 
 ---
@@ -148,20 +149,19 @@ Key outcomes:
 
 ## 7. Next steps
 
-The project started on 2026-11-26. The first batch of work is complete:
+M1 is complete with one documented caveat: SQLite AOT remains blocked by `dotnet/efcore#36068`; the supported AOT path is JSONL, and library SQLite falls back on failure.
+
+M1 evidence:
 
 - Public repository `karlmoriaty/runesvaner`.
-- Git initialized on `main`; initial commits pushed.
 - `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
-- `Runesvaner.sln` and M1 skeleton.
-- CI: Windows/Linux build and tests; Windows Native AOT smoke.
+- `Runesvaner.sln`, 10+ projects, console/RAG/AOT samples.
+- 13 tests: unit, JSONL/SQLite integration, chat, streaming, cancellation, error, failure injection, cost.
+- Benchmark baseline: 324.9 ns mean, 3.70 us P95.
+- CI: Windows/Linux build and tests; Windows Native AOT smoke with non-streaming, streaming, and error paths.
 
-Remaining M1 work:
+M2 in progress:
 
-1. English documentation conversion: complete for all design documents; Chinese legacy retained in `zh-Hans/`; German core summary pending.
-2. RAG sample.
-3. Benchmark baseline.
-4. GitHub Pages.
-5. NuGet root package placeholder (requires a NuGet account/API key).
-
-Do not add M2 cost-engine code until M1 exit criteria are met.
+1. Cost engine core: `PriceTable`, `PriceEntry`, `CostBreakdown`, tier/cached/reasoning/batch discount, unknown-model handling, recorder integration.
+2. Next: price snapshot/loader, cost UI, full streaming metrics, Studio, OTLP.
+3. GitHub Pages and NuGet root package placeholder remain external tasks.

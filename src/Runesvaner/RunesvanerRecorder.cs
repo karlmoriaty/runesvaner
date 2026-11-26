@@ -21,7 +21,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
     public bool IsEnabled => _options.Enabled;
 
     public IRunesvanerRequest StartRequest(RunesvanerRequestInfo info)
-        => new RunesvanerRequestScope(RequestId(), info, _store, _timeProvider);
+        => new RunesvanerRequestScope(RequestId(), info, _store, _options, _timeProvider);
 
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => _store.FlushAsync(cancellationToken);
@@ -32,6 +32,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
     {
         private readonly RunesvanerRequestInfo _info;
         private readonly IRunesvanerStore _store;
+        private readonly RunesvanerOptions _options;
         private readonly DateTimeOffset _startedAtUtc;
         private readonly long _startTimestamp;
         private readonly List<RunesvanerSegment> _segments = new(16);
@@ -42,11 +43,13 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             string requestId,
             RunesvanerRequestInfo info,
             IRunesvanerStore store,
+            RunesvanerOptions options,
             TimeProvider timeProvider)
         {
             RequestId = requestId;
             _info = info;
             _store = store;
+            _options = options;
             _startedAtUtc = timeProvider.GetUtcNow();
             _startTimestamp = Stopwatch.GetTimestamp();
         }
@@ -78,6 +81,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
 
             _completed = true;
 
+            var cost = CalculateCost(result.ResponseModel);
+
             var record = new RunesvanerRequestRecord(
                 "runesvaner.request.v1",
                 RequestId,
@@ -91,7 +96,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 result.Status.ToString(),
                 _usage,
                 _segments.ToArray(),
-                _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags));
+                _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags),
+                cost);
 
             try
             {
@@ -101,6 +107,27 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             {
                 // Collection must never break the business request.
             }
+        }
+
+        private CostBreakdown? CalculateCost(string? responseModel)
+        {
+            if (_usage is not { } usage || _options.PricingTable is not { } table)
+            {
+                return null;
+            }
+
+            var provider = _info.Provider ?? _options.Provider;
+            var model = _info.RequestModel ?? responseModel;
+            PriceEntry? entry = null;
+
+            if (!string.IsNullOrEmpty(provider) &&
+                !string.IsNullOrEmpty(model) &&
+                table.TryGet(provider, model, out var found))
+            {
+                entry = found;
+            }
+
+            return RunesvanerCostEngine.Calculate(usage, entry, table.Version, table.Currency);
         }
 
         public void Dispose()

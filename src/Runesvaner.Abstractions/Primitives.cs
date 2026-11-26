@@ -3,6 +3,7 @@ namespace Runesvaner;
 public enum RunesvanerOperation
 {
     Chat,
+    Rag,
     Embeddings,
     Tool,
     VectorSearch,
@@ -20,6 +21,7 @@ public enum SegmentKind
     ProviderQueue,
     Ttft,
     Generation,
+    Embedding,
     Tool,
     VectorSearch,
     Serialize,

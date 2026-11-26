@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 .codeartsdoer/
 .security/
 .runesvaner/
+
+# BenchmarkDotNet
+BenchmarkDotNet.Artifacts/
