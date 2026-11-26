@@ -8,6 +8,8 @@ return command switch
 {
     "report" => Report(ParsePath(args)),
     "doctor" => Doctor(ParsePath(args)),
+    "costs" => Costs(ParsePath(args)),
+    "pricing" => Pricing(args),
     "run" => RunNotImplemented(),
     "--help" or "-h" or "help" => Help(),
     _ => Unknown(command)
@@ -75,6 +77,103 @@ static string FormatCost(CostBreakdown? cost)
     };
 }
 
+static int Costs(string path)
+{
+    var records = JsonlRunesvanerStore.ReadAll(path).ToArray();
+    if (records.Length == 0)
+    {
+        Console.Error.WriteLine($"No records found in {Path.GetFullPath(path)}.");
+        return 3;
+    }
+
+    Console.WriteLine($"Cost ledger: {records.Length} request(s)");
+    Console.WriteLine($"Data: {Path.GetFullPath(path)}");
+    Console.WriteLine();
+    Console.WriteLine("Provider          Model            Requests  Priced  Partial  Unknown  Total");
+
+    var groups = records
+        .GroupBy(record => new
+        {
+            Provider = record.Provider ?? "-",
+            Model = record.RequestModel ?? record.ResponseModel ?? "-"
+        })
+        .Select(group => new
+        {
+            group.Key.Provider,
+            group.Key.Model,
+            Requests = group.Count(),
+            Priced = group.Count(record => record.Cost?.Status == CostStatus.Known),
+            Partial = group.Count(record => record.Cost?.Status == CostStatus.Partial),
+            Unknown = group.Count(record => record.Cost?.Status == CostStatus.Unknown),
+            Total = group.Sum(record => record.Cost?.Status == CostStatus.Known ? record.Cost.Total ?? 0m : 0m)
+        })
+        .OrderByDescending(item => item.Total)
+        .ThenBy(item => item.Provider, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(item => item.Model, StringComparer.OrdinalIgnoreCase);
+
+    var grandTotal = 0m;
+    var pricedCount = 0;
+
+    foreach (var item in groups)
+    {
+        Console.WriteLine(
+            $"{item.Provider,-16}  {item.Model,-15}  {item.Requests,8}  {item.Priced,6}  {item.Partial,7}  {item.Unknown,7}  {item.Total.ToString("F6", CultureInfo.InvariantCulture),12}");
+        grandTotal += item.Total;
+        pricedCount += item.Priced;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total priced requests: {pricedCount}; Total: {grandTotal.ToString("F6", CultureInfo.InvariantCulture)} USD");
+
+    if (pricedCount == 0)
+    {
+        Console.Error.WriteLine("No priced records. Load a price table when recording to populate cost.");
+    }
+
+    return 0;
+}
+
+static int Pricing(string[] args)
+{
+    if (args.Length < 2 || !string.Equals(args[1], "validate", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine("Usage: runesvaner pricing validate --path <file>");
+        return 2;
+    }
+
+    var path = ParseOption(args, "--path") ?? "pricing/example-prices.json";
+
+    try
+    {
+        var table = RunesvanerPriceTableLoader.Load(path);
+        Console.WriteLine($"Price table: {Path.GetFullPath(path)}");
+        Console.WriteLine($"Version: {table.Version}");
+        Console.WriteLine($"Currency: {table.Currency}");
+        Console.WriteLine($"Entries: {table.Entries.Count}");
+        Console.WriteLine($"Source: {table.Source ?? "-"}");
+        Console.WriteLine($"Retrieved: {table.RetrievedAt?.ToString("O", CultureInfo.InvariantCulture) ?? "-"}");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Invalid price table: {ex.Message}");
+        return 2;
+    }
+}
+
+static string? ParseOption(string[] args, string name)
+{
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (string.Equals(args[i], name, StringComparison.Ordinal))
+        {
+            return args[i + 1];
+        }
+    }
+
+    return null;
+}
+
 static int Doctor(string path)
 {
     var fullPath = Path.GetFullPath(path);
@@ -103,7 +202,9 @@ static int Help()
     Console.WriteLine("Commands:");
     Console.WriteLine("  report   Print a summary of captured requests (default).");
     Console.WriteLine("  doctor   Check the local data directory and record count.");
-    Console.WriteLine("  run      Reserved for launching an application (M1.1).");
+    Console.WriteLine("  costs    Aggregate captured cost by provider and model.");
+    Console.WriteLine("  pricing  Validate a price table. Usage: pricing validate --path <file>.");
+    Console.WriteLine("  run      Reserved for launching an application.");
     Console.WriteLine();
     Console.WriteLine("Options:");
     Console.WriteLine("  --path <directory>   Data directory. Default: .runesvaner");

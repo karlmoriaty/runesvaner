@@ -40,6 +40,12 @@ jobs:
       - name: Report RAG capture
         run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll report
 
+      - name: Validate example price table
+        run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll pricing validate --path pricing/example-prices.json
+
+      - name: Report cost ledger
+        run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll costs
+
   aot-smoke:
     name: aot-smoke (windows)
     runs-on: windows-latest

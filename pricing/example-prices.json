@@ -1,0 +1,20 @@
+{
+  "version": "example-2026-11-26",
+  "currency": "USD",
+  "source": "https://example.invalid/runesvaner/example-prices",
+  "retrievedAt": "2026-11-26T00:00:00Z",
+  "entries": [
+    {
+      "provider": "sample-rag",
+      "model": "echo-1",
+      "aliases": ["echo"],
+      "inputPerMillion": 0.10,
+      "cachedInputPerMillion": 0.01,
+      "outputPerMillion": 0.20,
+      "reasoningPerMillion": null,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0,
+      "tiers": []
+    }
+  ]
+}

@@ -28,7 +28,9 @@ public sealed record PriceEntry(
 public sealed record PriceTable(
     string Version,
     string Currency,
-    IReadOnlyDictionary<string, PriceEntry> Entries)
+    IReadOnlyDictionary<string, PriceEntry> Entries,
+    string? Source = null,
+    DateTimeOffset? RetrievedAt = null)
 {
     public bool TryGet(string provider, string model, out PriceEntry entry)
         => Entries.TryGetValue($"{provider}/{model}", out entry!);

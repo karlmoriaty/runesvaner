@@ -5,9 +5,16 @@ using Runesvaner.Storage.Jsonl;
 var options = new RunesvanerOptions
 {
     ApplicationName = "sample-rag",
+    Provider = "sample-rag",
     StorageMode = StorageMode.Jsonl,
     StoragePath = ".runesvaner"
 };
+
+var pricingPath = Path.Combine("pricing", "example-prices.json");
+if (File.Exists(pricingPath))
+{
+    options.PricingTable = RunesvanerPriceTableLoader.Load(pricingPath);
+}
 
 var store = new JsonlRunesvanerStore(options.StoragePath);
 var recorder = new RunesvanerRecorder(store, options);

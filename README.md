@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming/cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`, RAG sample, benchmark baseline, cost engine core, 13 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: price snapshot/loader, full streaming metrics, Studio, OTLP export.
+> Completed: Microsoft.Extensions.AI chat decorator, streaming/cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, 16 tests, Windows/Linux CI, Windows Native AOT smoke.
+> Next: verified built-in price snapshot, ITL/TPS streaming metrics, cost UI, Studio, OTLP export.
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -51,6 +51,7 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | RAG sample | Implemented |
 | Benchmark baseline | Recorded (mean 324.9 ns, P95 3.70 us) |
 | Cost engine core | Implemented (price table, cached/reasoning/batch/unknown) |
+| Price table loader + `costs` | Implemented (JSON schema, aliases, validation, aggregation) |
 | DI extensions, Studio, OTLP | Not implemented |
 
 ## What it is not
@@ -73,6 +74,8 @@ Run the minimal sample (local mock chat client, no real provider):
     dotnet run --project samples/Runesvaner.Sample.Console -c Release
     dotnet run --project samples/Runesvaner.Sample.Rag -c Release
     dotnet run --project src/Runesvaner.Cli -c Release -- report
+    dotnet run --project src/Runesvaner.Cli -c Release -- pricing validate --path pricing/example-prices.json
+    dotnet run --project src/Runesvaner.Cli -c Release -- costs
 
 `report` reads `.runesvaner/sessions/*.jsonl` and prints request count, model, duration, TTFT, and status.
 
@@ -153,6 +156,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | [Roadmap](docs/11-roadmap.md) | M0–M4 and v2 |
 | [Testing and benchmarks](docs/12-testing-and-benchmarks.md) | Test pyramid, performance gates |
 | [Benchmark baseline](docs/benchmarks-baseline.md) | Recorder mean/P95, environment, caveats |
+| [Pricing data](pricing/README.md) | Price table schema, validation, illustrative sample |
 | [Risk register](docs/13-risk-register.md) | 24 risks and mitigations |
 | [Hidden requirements](docs/14-hidden-requirements.md) | 60 overlooked product/engineering requirements |
 | [Decision log](docs/15-decision-log.md) | D-01 to D-25 decisions |
@@ -167,7 +171,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | --- | --- | --- |
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
 | M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 13 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
-| M2 | MVP | In progress: cost engine core done; price loader, streaming metrics, Studio, OTLP, performance gates |
+| M2 | MVP | In progress: cost engine core + price loader + `costs` view done; streaming metrics, Studio, OTLP, performance gates |
 | M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
 | M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
 

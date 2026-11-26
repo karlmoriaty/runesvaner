@@ -65,6 +65,7 @@
 | `18-localization-scope.md` | Localization tiers, glossary, translation maintenance | Accepted |
 | `19-open-implementation-decisions.md` | D-23–D-25 decision records | Accepted |
 | `benchmarks-baseline.md` | Recorder benchmark baseline | Draft |
+| `../pricing/README.md` | Price table schema and illustrative sample | Draft |
 | `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
 
 ---
@@ -156,12 +157,13 @@ M1 evidence:
 - Public repository `karlmoriaty/runesvaner`.
 - `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
 - `Runesvaner.sln`, 10+ projects, console/RAG/AOT samples.
-- 13 tests: unit, JSONL/SQLite integration, chat, streaming, cancellation, error, failure injection, cost.
+- 16 tests: unit, JSONL/SQLite integration, chat, streaming, cancellation, error, failure injection, cost, price table loader.
 - Benchmark baseline: 324.9 ns mean, 3.70 us P95.
 - CI: Windows/Linux build and tests; Windows Native AOT smoke with non-streaming, streaming, and error paths.
 
 M2 in progress:
 
 1. Cost engine core: `PriceTable`, `PriceEntry`, `CostBreakdown`, tier/cached/reasoning/batch discount, unknown-model handling, recorder integration.
-2. Next: price snapshot/loader, cost UI, full streaming metrics, Studio, OTLP.
+2. Price table loader: JSON schema, aliases, validation, `pricing validate`, and `costs` aggregation.
+3. Next: verified built-in snapshot, cost UI, ITL/TPS streaming metrics, Studio, OTLP.
 3. GitHub Pages and NuGet root package placeholder remain external tasks.

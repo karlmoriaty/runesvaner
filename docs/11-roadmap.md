@@ -18,7 +18,7 @@
 | --- | --- | --- | --- |
 | M0 | Design freeze | Documents, decisions, governance, repository skeleton | D-01–D-25 decided; empty solution buildable; CI passing |
 | M1 | Walking Skeleton | MEAI Chat + SQLite (library) / JSONL (CLI) + CLI + AOT smoke | Complete: RAG sample, benchmark baseline, 13 tests, AOT smoke |
-| M2 | MVP | Cost, streaming, Studio, OTLP, privacy | In progress: cost engine core done; 10 projects in internal test pending |
+| M2 | MVP | Cost, streaming, Studio, OTLP, privacy | In progress: cost engine + price loader + costs view done; 10 projects in internal test pending |
 | M3 | Beta | SK, VectorData, tail sampling, budget, documentation site | NuGet preview; external contributors ≥ 3 |
 | M4 | 1.0 | API freeze, security audit, Windows/Linux AOT | 1.0 released; P0 at zero |
 | v2 | Expansion | Agent/MCP, multimodal, AOT experiments | Separate RFC |
@@ -117,7 +117,7 @@ Prove that the architecture is feasible with the minimal end-to-end path: one ME
 
 ## 4. M2: MVP
 
-**Status:** in progress (2026-11-26); cost engine core implemented.
+**Status:** in progress (2026-11-26); cost engine core, JSON price loader, and `costs` aggregation implemented.
 
 ### 4.1 Goal
 
