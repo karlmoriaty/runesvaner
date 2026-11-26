@@ -100,10 +100,10 @@
 | --- | --- | --- | --- |
 | Git 提交邮箱 | **已完成**：用户确认 `3070687583@qq.com` 已绑定 GitHub 账号 `karlmoriaty` | 用户 | 已完成 |
 | NuGet 账号注册/验证 | 需用户本人操作 | 用户 | M0 前 |
-| NuGet 根包占位（0.0.1） | 待执行 | 用户/开工后 | M0 |
+| NuGet 根包占位（0.0.1） | 待执行（需 NuGet API key） | 用户 | M0 |
 | 商标检索 | **暂缓** | 用户 | 后期需要时 |
 | CLA 律师审阅 | 待执行 | 用户 | 首次外部 PR 前 |
-| GitHub 仓库 `runesvaner` | 待创建 | 开工后 | 开工时 |
+| GitHub 仓库 `runesvaner` | 已创建（公开） | 已完成 | 2026-11-26 |
 | 文档站 GitHub Pages | 待配置 | 开工后 | M1 |
 | 德语母语审阅人 | 待定 | 发起人/社区 | M1 前 |
 | 中文技术审阅人 | 待定 | 发起人/社区 | M1 前 |
@@ -127,16 +127,14 @@
 
 ## 7. 后续
 
-D-23–D-25 已记录。接下来仍不创建 GitHub 仓库、不初始化 Git、不写项目文件或代码；等待发起人明确说"开工"。
+D-23–D-25 已记录。项目已于 **2026-11-26 开工**，第一批动作已完成：
 
-开工后第一批动作：
-
-1. 创建 GitHub 仓库 `karlmoriaty/runesvaner`（公开）。
-2. `git init -b main`，配置 remote。
-3. 添加 `LICENSE`、`.gitignore`、`Directory.Build.props`、`global.json`。
-4. 建立 `Runesvaner.sln` 与 M1 项目骨架。
-5. 首次提交并推送。
-6. 配置 GitHub Pages 与 NuGet 根包占位。
+1. 已创建公开仓库 `karlmoriaty/runesvaner`。
+2. 已执行 `git init -b main`，配置 `origin`，并推送首次提交。
+3. 已添加 `LICENSE`、`NOTICE`、`.gitignore`、`Directory.Build.props`、`global.json`。
+4. 已建立 `Runesvaner.sln` 与 M1 项目骨架（Abstractions、Core、MEAI、JSONL、SQLite、CLI、tests、samples）。
+5. CI 已通过：Windows/Linux 构建测试 + Windows Native AOT smoke。
+6. 仍待完成：GitHub Pages、NuGet 根包占位（需 NuGet 账号/API key）、RAG sample、基准基线、成本引擎、Studio、OTLP。
 
 ---
 

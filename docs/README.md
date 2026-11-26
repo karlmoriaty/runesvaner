@@ -1,6 +1,7 @@
 # Runesvaner 设计文档索引
 
-> 当前阶段：**M0 设计冻结**。本目录只有设计文档，没有可运行代码。
+> 当前阶段：**M1 Walking Skeleton**。设计文档与最小可运行骨架并存。
+> 仓库：https://github.com/karlmoriaty/runesvaner
 > 项目名 `Runesvaner`、Apache-2.0、ICLA+CCLA 已于 2026-11-25 决议；D-01–D-25 全部决议，见 `15-decision-log.md`。
 
 ---

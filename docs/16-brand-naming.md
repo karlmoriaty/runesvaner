@@ -187,7 +187,7 @@ GitHub 仓库名：`runesvaner`；产品名、包前缀与文档站仍为 `Runes
 1. 发起人确认名称含义/发音（可选）。
 2. 商标检索暂缓；正式预览前再评估。
 3. WHOIS 确认域名（当前候选均无 DNS 解析）。
-4. 注册 GitHub 仓库 `runesvaner`（已确认；当前 404）。
+4. 已完成：GitHub 仓库 `karlmoriaty/runesvaner`（2026-11-26）。
 5. M0 注册 NuGet 根包占位（13 个计划 ID 当前 404）。
 6. M1 产出 Logo 三版草案。
 
