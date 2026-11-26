@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Runesvaner\Runesvaner.csproj" />
+    <ProjectReference Include="..\Runesvaner.Abstractions\Runesvaner.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry" Version="1.21.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>Runesvaner.Exporters.OpenTelemetry</PackageId>
+    <Description>Optional OpenTelemetry exporter for Runesvaner records.</Description>
+    <Authors>karlmoriaty</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/karlmoriaty/runesvaner</RepositoryUrl>
+    <PackageTags>dotnet;ai;diagnostics;opentelemetry;otlp</PackageTags>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
