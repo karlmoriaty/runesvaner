@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsPackable>true</IsPackable>
+    <PackageId>Runesvaner.Storage.Sqlite</PackageId>
+    <Description>SQLite storage for Runesvaner.</Description>
+    <Authors>karlmoriaty</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/karlmoriaty/runesvaner</RepositoryUrl>
+    <PackageTags>dotnet;ai;diagnostics;observability;aot</PackageTags>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Runesvaner\Runesvaner.csproj" />
+    <ProjectReference Include="..\Runesvaner.Abstractions\Runesvaner.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build-test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Test
+        run: dotnet test --no-build -c Release
+
+  aot-smoke:
+    name: aot-smoke (windows)
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish Native AOT sample
+        run: dotnet publish samples/Runesvaner.Sample.Aot/Runesvaner.Sample.Aot.csproj -c Release -r win-x64 --self-contained true
+
+      - name: Run Native AOT sample
+        run: .\samples\Runesvaner.Sample.Aot\bin\Release\net10.0\win-x64\publish\Runesvaner.Sample.Aot.exe
+
+      - name: Report AOT capture
+        run: dotnet run --project src/Runesvaner.Cli -c Release -- report
