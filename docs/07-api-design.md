@@ -1,43 +1,43 @@
-# 公共 API 设计
+# Public API Design
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft / API 未冻结 |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 工程、早期贡献者 |
-| 关联文档 | `05-technical-design.md`、`06-observability-model.md` |
+| Document status | Draft / API not frozen |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Engineering, early contributors |
+| Related documents | `05-technical-design.md`, `06-observability-model.md` |
 
 ---
 
-## 1. 设计原则
+## 1. Design principles
 
-1. **最小表面**：公共 API 只暴露用户需要组合的东西；内部类型 `internal`。
-2. **可组合**：中间件、存储、导出、价格表都可替换。
-3. **AOT 安全**：公共 API 不要求反射；不使用 `Type` 参数做动态注册。
-4. **失败隔离**：采集 API 不抛异常；配置错误在启动时快速失败。
-5. **版本稳定**：`Runesvaner.Abstractions` 最稳定；实验性 API 标注 `[Experimental]`。
-6. **不依赖特定 AI SDK**：核心不引用 MEAI；MEAI 集成在独立包。
+1. **Minimal surface**: the public API exposes only what users need to compose; internal types stay `internal`.
+2. **Composable**: middleware, storage, export, and price tables are all replaceable.
+3. **AOT-safe**: the public API does not require reflection; no `Type` parameters for dynamic registration.
+4. **Failure isolation**: collection APIs do not throw; configuration errors fail fast at startup.
+5. **Version stability**: `Runesvaner.Abstractions` is the most stable; experimental APIs are marked `[Experimental]`.
+6. **No dependency on a specific AI SDK**: the core does not reference MEAI; MEAI integration lives in a separate package.
 
 ---
 
-## 2. 命名空间
+## 2. Namespaces
 
-| 命名空间 | 内容 |
+| Namespace | Contents |
 | --- | --- |
-| `Runesvaner` | 核心入口、选项、作用域 |
-| `Runesvaner.Abstractions` | 公共模型、枚举、接口 |
-| `Runesvaner.AI` | AI 专用模型（Usage、Cost、Stream） |
-| `Runesvaner.Storage` | 存储接口与实现 |
-| `Runesvaner.Exporters` | 导出接口 |
-| `Runesvaner.MicrosoftExtensionsAI` | MEAI 扩展方法 |
-| `Runesvaner.SemanticKernel` | SK 扩展方法（M3） |
+| `Runesvaner` | Core entry points, options, scopes |
+| `Runesvaner.Abstractions` | Public models, enums, interfaces |
+| `Runesvaner.AI` | AI-specific models (Usage, Cost, Stream) |
+| `Runesvaner.Storage` | Storage interfaces and implementations |
+| `Runesvaner.Exporters` | Export interfaces |
+| `Runesvaner.MicrosoftExtensionsAI` | MEAI extension methods |
+| `Runesvaner.SemanticKernel` | SK extension methods (M3) |
 
 ---
 
-## 3. 核心入口
+## 3. Core entry points
 
-### 3.1 DI 扩展
+### 3.1 DI extensions
 
     namespace Runesvaner;
 
@@ -53,16 +53,16 @@
             Action<RunesvanerOptions>? configure = null);
     }
 
-行为：
+Behavior:
 
-- 注册 `IRunesvanerRecorder`（单例）。
-- 注册 `IRunesvanerStore`（默认 SQLite）。
-- 注册 `IPriceTableProvider`（默认内置 + 用户覆盖）。
-- 注册 `IRunesvanerClock`（默认系统时钟）。
-- 注册 `RunesvanerOptions`（`IOptions`）。
-- 不扫描程序集；所有注册显式。
+- Registers `IRunesvanerRecorder` (singleton).
+- Registers `IRunesvanerStore` (default SQLite).
+- Registers `IPriceTableProvider` (built-in default + user override).
+- Registers `IRunesvanerClock` (default system clock).
+- Registers `RunesvanerOptions` (`IOptions`).
+- Does not scan assemblies; all registrations are explicit.
 
-### 3.2 选项
+### 3.2 Options
 
     namespace Runesvaner;
 
@@ -79,8 +79,8 @@
         public string Environment { get; set; } = "";
     }
 
-    // 库/应用内默认 Sqlite；CLI 以 Native AOT 发布时覆盖为 Jsonl。
-    // CLI 可用 `--storage sqlite` 显式选择，失败时回退。
+    // Default is Sqlite in libraries/apps; overridden to Jsonl when the CLI is published with Native AOT.
+    // The CLI can explicitly select `--storage sqlite`; falls back on failure.
     public sealed class StorageOptions
     {
         public StorageMode Mode { get; set; } = StorageMode.Sqlite;
@@ -143,7 +143,7 @@
         ];
     }
 
-### 3.3 枚举
+### 3.3 Enums
 
     public enum StorageMode { Jsonl, Sqlite, Memory }
 
@@ -186,9 +186,9 @@
 
 ---
 
-## 4. 作用域与标签
+## 4. Scopes and tags
 
-### 4.1 静态入口
+### 4.1 Static entry points
 
     namespace Runesvaner;
 
@@ -213,14 +213,14 @@
         void SetTag(string key, string value);
     }
 
-语义：
+Semantics:
 
-- `BeginScope` 使用 `AsyncLocal`，支持异步流。
-- 嵌套 scope 合并标签，内层优先。
-- `Tenant`/`User` 默认哈希后再存储（取决于 `PrivacyOptions`）。
-- 静态 API 仅为便利；测试或多租户场景可用 `IRunesvanerScopeFactory` 注入。
+- `BeginScope` uses `AsyncLocal` and supports asynchronous flows.
+- Nested scopes merge tags; the inner scope takes precedence.
+- `Tenant`/`User` are hashed before storage by default (depending on `PrivacyOptions`).
+- The static API is for convenience only; tests or multi-tenant scenarios can inject `IRunesvanerScopeFactory`.
 
-### 4.2 作用域工厂
+### 4.2 Scope factory
 
     public interface IRunesvanerScopeFactory
     {
@@ -229,7 +229,7 @@
 
 ---
 
-## 5. 记录器
+## 5. Recorder
 
     namespace Runesvaner.Abstractions;
 
@@ -258,13 +258,13 @@
         void Complete(RunesvanerRequestResult result);
     }
 
-设计意图：
+Design intent:
 
-- `IRunesvanerRecorder` 是低层 API，供自定义 Instrumentation 使用。
-- 正常用户只需要 `UseRunesvaner()` 与 `BeginScope()`。
-- 所有方法保证不抛异常；失败通过自监控计数。
+- `IRunesvanerRecorder` is a low-level API for custom instrumentation.
+- Normal users only need `UseRunesvaner()` and `BeginScope()`.
+- All methods guarantee not to throw; failures are counted via self-monitoring.
 
-### 5.1 公共模型
+### 5.1 Public models
 
     public readonly record struct RunesvanerRequestInfo(
         RunesvanerOperation Operation,
@@ -323,7 +323,7 @@
 
 ---
 
-## 6. 存储扩展
+## 6. Storage extensions
 
     namespace Runesvaner.Storage;
 
@@ -345,11 +345,11 @@
         ValueTask<RunesvanerRequestDetail?> GetRequestAsync(string requestId, CancellationToken ct = default);
     }
 
-SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）。Studio 依赖 `IRunesvanerQueryStore`。
+SQLite implements both (default); JSONL implements write and import (fallback/interchange). Studio depends on `IRunesvanerQueryStore`.
 
 ---
 
-## 7. 价格表扩展
+## 7. Price table extensions
 
     namespace Runesvaner.Abstractions;
 
@@ -378,15 +378,15 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
         IReadOnlyList<PriceTier>? Tiers,
         decimal BatchDiscount);
 
-规则：
+Rules:
 
-- `GetAsync` 找不到时返回 `null` 或抛 `PriceNotFoundException`？设计选择：返回 `PriceLookupResult.NotFound`，避免异常控制流。
-- 价格表不可变；更新通过替换 provider。
-- 用户覆盖优先级高于内置。
+- When `GetAsync` finds nothing, does it return `null` or throw `PriceNotFoundException`? Design decision: return `PriceLookupResult.NotFound` to avoid exception-based control flow.
+- Price tables are immutable; updates are made by replacing the provider.
+- User overrides take precedence over built-in entries.
 
 ---
 
-## 8. 导出扩展
+## 8. Export extensions
 
     namespace Runesvaner.Exporters;
 
@@ -402,14 +402,14 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
             CancellationToken ct = default);
     }
 
-- `IRunesvanerSink`：逐事件，适合实时转发。
-- `IRunesvanerExporter`：批量，适合 OTLP。
-- 默认没有 sink；OTLP 包注册 exporter。
-- 导出失败不得影响业务。
+- `IRunesvanerSink`: per-event, suitable for real-time forwarding.
+- `IRunesvanerExporter`: batched, suitable for OTLP.
+- No sink by default; the OTLP package registers an exporter.
+- Export failures must not affect business.
 
 ---
 
-## 9. MEAI 集成 API
+## 9. MEAI integration API
 
     namespace Runesvaner.MicrosoftExtensionsAI;
 
@@ -428,7 +428,7 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
             where TEmbedding : Embedding;
     }
 
-使用：
+Usage:
 
     services.AddChatClient(builder => builder
         .UseRunesvaner()
@@ -437,16 +437,16 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
     services.AddEmbeddingGenerator(builder => builder
         .UseRunesvaner());
 
-注意：
+Notes:
 
-- `UseRunesvaner` 不改变 `IChatClient` 的 `GetService` 语义；装饰器需转发 `GetService`。
-- 流式与非流式方法都必须实现。
-- 装饰器 `Dispose` 转发给 inner。
-- 不捕获 `ChatOptions` 中的敏感字段（如 API Key）。
+- `UseRunesvaner` does not change the `GetService` semantics of `IChatClient`; the decorator must forward `GetService`.
+- Both streaming and non-streaming methods must be implemented.
+- The decorator forwards `Dispose` to the inner instance.
+- Does not capture sensitive fields in `ChatOptions` (such as the API key).
 
 ---
 
-## 10. Semantic Kernel 集成（M3）
+## 10. Semantic Kernel integration (M3)
 
     namespace Runesvaner.SemanticKernel;
 
@@ -457,15 +457,15 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
             Action<RunesvanerOptions>? configure = null);
     }
 
-实现方式：
+Implementation approach:
 
-- 优先通过 SK 的 Filter（Function Invocation Filter）记录工具调用。
-- Chat 仍通过 MEAI 中间件记录，避免重复。
-- 若 SK 版本不支持 filter，则用装饰器。
+- Prefer SK's Filter (Function Invocation Filter) to record tool calls.
+- Chat is still recorded via MEAI middleware to avoid duplication.
+- If the SK version does not support filters, use a decorator.
 
 ---
 
-## 11. VectorData 集成（M3）
+## 11. VectorData integration (M3)
 
     namespace Runesvaner.VectorData;
 
@@ -476,72 +476,72 @@ SQLite 实现两者（默认）；JSONL 实现写入与导入（回退/交换）
             Action<RunesvanerOptions>? configure = null);
     }
 
-记录：
+Records:
 
-- collection 名称（低基数）
+- collection name (low cardinality)
 - top_k
-- 检索耗时
-- 返回条数
-- 是否 rerank
+- retrieval duration
+- number of returned items
+- whether rerank was performed
 
-不记录：
+Does not record:
 
-- 向量内容
-- 文档正文
-- 原始 query（默认）
+- vector contents
+- document body
+- original query (by default)
 
 ---
 
-## 12. CLI API（内部）
+## 12. CLI API (internal)
 
-CLI 不承诺公共 API 稳定，但命令与退出码属于用户契约：
+The CLI does not promise a stable public API, but commands and exit codes are part of the user contract:
 
-| 命令 | 稳定性 |
+| Command | Stability |
 | --- | --- |
-| `run` / `report` / `top` / `export` / `open` | 稳定 |
-| `doctor` / `pricing` | 稳定 |
-| `index` | 实验性 |
+| `run` / `report` / `top` / `export` / `open` | Stable |
+| `doctor` / `pricing` | Stable |
+| `index` | Experimental |
 
 ---
 
-## 13. 异常契约
+## 13. Exception contract
 
-| 场景 | 行为 |
+| Scenario | Behavior |
 | --- | --- |
-| 采集期间异常 | 捕获、计数、不抛 |
-| 配置非法（如负采样率） | 启动时 `OptionsValidationException` |
-| 存储不可写 | 启动时警告；运行期熔断 |
-| 价格表格式错误 | 启动时 `InvalidDataException`（若显式加载）；否则回退内置 |
-| Studio 端口占用 | 自动换端口；不抛 |
-| 导出失败 | 计数；不抛 |
+| Exception during collection | Caught, counted, not thrown |
+| Invalid configuration (e.g., negative sampling rate) | `OptionsValidationException` at startup |
+| Storage not writable | Warning at startup; circuit breaker at runtime |
+| Malformed price table | `InvalidDataException` at startup (if explicitly loaded); otherwise fall back to built-in |
+| Studio port already in use | Automatically switch ports; do not throw |
+| Export failure | Counted; do not throw |
 
-原则：**用户代码路径上不因 Runesvaner 抛异常。**
+Principle: **Never throw on the user's code path because of Runesvaner.**
 
 ---
 
-## 14. 版本与兼容
+## 14. Versioning and compatibility
 
-| 包 | 稳定性 | 说明 |
+| Package | Stability | Notes |
 | --- | --- | --- |
-| `Runesvaner.Abstractions` | 高 | 模型与接口；破坏性变更需主版本 |
-| `Runesvaner` | 高 | 核心行为 |
-| `Runesvaner.MicrosoftExtensionsAI` | 中 | 受 MEAI 版本影响 |
-| `Runesvaner.Storage.*` | 中 | 受底层依赖影响 |
-| `Runesvaner.Exporters.*` | 中 | 受 OTel 影响 |
-| `Runesvaner.Cli` | 中 | 命令稳定，输出格式可变 |
+| `Runesvaner.Abstractions` | High | Models and interfaces; breaking changes require a major version |
+| `Runesvaner` | High | Core behavior |
+| `Runesvaner.MicrosoftExtensionsAI` | Medium | Affected by the MEAI version |
+| `Runesvaner.Storage.*` | Medium | Affected by underlying dependencies |
+| `Runesvaner.Exporters.*` | Medium | Affected by OTel |
+| `Runesvaner.Cli` | Medium | Commands stable; output format may change |
 
-规则：
+Rules:
 
-- 公共 API 变更需 API Review。
-- 新增接口成员优先用默认实现（C# DIM），但需验证 AOT/Trim。
-- 实验性 API 使用 `[Experimental("APERTURE001")]`。
-- 不在补丁版本删除或重命名公共成员。
+- Public API changes require API review.
+- New interface members should prefer default implementations (C# DIM), but AOT/Trim must be verified.
+- Experimental APIs use `[Experimental("APERTURE001")]`.
+- Do not delete or rename public members in patch versions.
 
 ---
 
-## 15. API 示例
+## 15. API examples
 
-### 15.1 最小接入
+### 15.1 Minimal integration
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -556,7 +556,7 @@ CLI 不承诺公共 API 稳定，但命令与退出码属于用户契约：
         .UseRunesvaner()
         .UseOpenTelemetry());
 
-### 15.2 手动标签
+### 15.2 Manual tags
 
     using (Runesvaner.BeginScope(new RunesvanerTags
     {
@@ -569,13 +569,13 @@ CLI 不承诺公共 API 稳定，但命令与退出码属于用户契约：
         return response.Text;
     }
 
-### 15.3 自定义导出
+### 15.3 Custom export
 
     public sealed class MySink : IRunesvanerSink
     {
         public ValueTask OnEventAsync(RunesvanerEvent evt, CancellationToken ct = default)
         {
-            // 转发到内部系统；必须自行保证不抛异常或由 Runesvaner 捕获
+            // Forward to an internal system; the sink must guarantee no exceptions, or Runesvaner will catch them
             return ValueTask.CompletedTask;
         }
     }
@@ -583,7 +583,7 @@ CLI 不承诺公共 API 稳定，但命令与退出码属于用户契约：
     services.AddRunesvaner();
     services.AddSingleton<IRunesvanerSink, MySink>();
 
-### 15.4 自定义价格表
+### 15.4 Custom price table
 
     services.AddRunesvaner(o =>
     {
@@ -593,13 +593,13 @@ CLI 不承诺公共 API 稳定，但命令与退出码属于用户契约：
 
 ---
 
-## 16. 决议状态
+## 16. Decision status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本 API 直接相关：
+D-01–D-25 are all resolved; see `15-decision-log.md`. Directly related to this API:
 
-- D-02：命名空间与包前缀使用 `Runesvaner`。
-- D-05：`net10.0`，MEAI 10.x/11.x 契约测试。
-- D-07：库默认 `StorageMode.Sqlite`；CLI AOT 默认 `Jsonl`；失败回退。
-- D-13：`ActivitySource` 作为可选导出模式，默认不创建额外 Activity。
-- D-17：LTS + 最新 STS。
-- D-20：不承诺第三方语义兼容；OTel GenAI 为主。
+- D-02: namespace and package prefix use `Runesvaner`.
+- D-05: `net10.0`, with contract tests for MEAI 10.x/11.x.
+- D-07: libraries default to `StorageMode.Sqlite`; CLI AOT defaults to `Jsonl`; fall back on failure.
+- D-13: `ActivitySource` as an optional export mode; no additional Activity is created by default.
+- D-17: LTS + latest STS.
+- D-20: no commitment to third-party semantic compatibility; OTel GenAI is primary.

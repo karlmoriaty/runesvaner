@@ -1,39 +1,39 @@
-# 技术设计：Runesvaner
+# Technical Design: Runesvaner
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 工程、架构、安全 |
-| 关联文档 | `03-prd.md`、`06-observability-model.md`、`07-api-design.md`、`08-native-aot-strategy.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Engineering, architecture, security |
+| Related documents | `03-prd.md`, `06-observability-model.md`, `07-api-design.md`, `08-native-aot-strategy.md` |
 
 ---
 
-## 1. 设计目标
+## 1. Design Goals
 
-1. **低开销**：单请求 P95 增量 ≤ 1 ms，CPU ≤ 1%，分配 ≤ 2 KB。
-2. **不干扰业务**：采集链路任何失败都不能让请求失败。
-3. **可解释**：每个分段标注测量方法与 `estimated`。
-4. **可组合**：核心零依赖；OTel、SQLite、Studio 都是可选层。
-5. **AOT 安全**：核心路径无反射、无动态代码、无运行时类型加载。
-6. **本地优先**：默认只写本机；默认不采集内容。
-7. **可演进**：数据 schema 与公共 API 都有版本策略。
+1. **Low overhead**: single-request P95 increment ≤ 1 ms, CPU ≤ 1%, allocation ≤ 2 KB.
+2. **Non-intrusive to the application**: any failure in the collection pipeline must not fail the request.
+3. **Explainable**: every segment is annotated with its measurement method and `estimated`.
+4. **Composable**: the core has zero dependencies; OTel, SQLite, and Studio are all optional layers.
+5. **AOT-safe**: no reflection, dynamic code, or runtime type loading on the core path.
+6. **Local-first**: writes only to the local machine by default; captures no content by default.
+7. **Evolvable**: both the data schema and the public API have versioning policies.
 
-## 2. 关键约束
+## 2. Key Constraints
 
-| 约束 | 影响 |
+| Constraint | Impact |
 | --- | --- |
-| 个人项目维护带宽 | 模块边界清晰，避免一次性铺开 |
-| MEAI 版本演进 | 集成层隔离，核心不依赖 MEAI 类型 |
-| AOT / Trim | 禁止反射序列化、动态 DI、运行时代码生成 |
-| 流式 API | 包装器必须保持原语义、取消与异常传播 |
-| 多 provider 差异 | 用量字段缺失时标记 unknown，不推断 |
-| 隐私 | 默认无内容；哈希与脱敏在写入前完成 |
+| Maintenance bandwidth of a personal project | Clear module boundaries; avoid spreading work across everything at once |
+| MEAI version evolution | Integration layer is isolated; the core does not depend on MEAI types |
+| AOT / Trim | No reflection-based serialization, dynamic DI, or runtime code generation |
+| Streaming API | Wrappers must preserve original semantics, cancellation, and exception propagation |
+| Multi-provider differences | Mark unknown when usage fields are missing; do not infer |
+| Privacy | No content by default; hashing and redaction are completed before writing |
 
 ---
 
-## 3. 架构总览
+## 3. Architecture Overview
 
     +-----------------------------+
     |  Application / AI Pipeline  |
@@ -70,22 +70,22 @@
     |  read-only query + UI        |
     +-----------------------------+
 
-### 3.1 依赖方向
+### 3.1 Dependency Direction
 
-| 层 | 允许依赖 | 禁止依赖 |
+| Layer | Allowed dependencies | Forbidden dependencies |
 | --- | --- | --- |
-| `Runesvaner.Abstractions` | BCL | 任何第三方包 |
-| `Runesvaner` | Abstractions、DI Abstractions、Options | MEAI、OTel、SQLite |
-| `Runesvaner.MicrosoftExtensionsAI` | Core、MEAI Abstractions | OTel、SQLite |
-| `Runesvaner.Storage.*` | Core | MEAI、OTel |
-| `Runesvaner.Exporters.*` | Core、OTel | MEAI、Storage |
-| `Runesvaner.Cli` | Core、Storage、Studio host | MEAI（除示例） |
+| `Runesvaner.Abstractions` | BCL | Any third-party package |
+| `Runesvaner` | Abstractions, DI Abstractions, Options | MEAI, OTel, SQLite |
+| `Runesvaner.MicrosoftExtensionsAI` | Core, MEAI Abstractions | OTel, SQLite |
+| `Runesvaner.Storage.*` | Core | MEAI, OTel |
+| `Runesvaner.Exporters.*` | Core, OTel | MEAI, Storage |
+| `Runesvaner.Cli` | Core, Storage, Studio host | MEAI (except samples) |
 
-核心不引用 MEAI，意味着未来接入 Semantic Kernel、其他 SDK 时不需要改动核心。
+The core does not reference MEAI, which means integrating Semantic Kernel or other SDKs in the future will not require changes to the core.
 
 ---
 
-## 4. 解决方案结构
+## 4. Solution Structure
 
     Runesvaner.sln
     src/
@@ -94,8 +94,8 @@
       Runesvaner.MicrosoftExtensionsAI/
       Runesvaner.SemanticKernel/            # M3
       Runesvaner.VectorData/                # M3
-      Runesvaner.Storage.Jsonl/            # 回退/交换
-      Runesvaner.Storage.Sqlite/            # 默认
+      Runesvaner.Storage.Jsonl/            # fallback/interchange
+      Runesvaner.Storage.Sqlite/            # default
       Runesvaner.Exporters.OpenTelemetry/   # M2
       Runesvaner.Cli/
       Runesvaner.Studio/                    # ASP.NET Core host + React build
@@ -104,7 +104,7 @@
       Runesvaner.IntegrationTests/
       Runesvaner.AotSmokeTests/
       Runesvaner.Benchmarks/
-      Runesvaner.ContractTests/             # MEAI 版本契约
+      Runesvaner.ContractTests/             # MEAI version contract
     samples/
       Runesvaner.Sample.Console/
       Runesvaner.Sample.Rag/
@@ -114,76 +114,76 @@
       build/
       ci/
 
-### 4.1 包与发布
+### 4.1 Packages and Publishing
 
-| 包 | 内容 | 依赖 |
+| Package | Contents | Dependencies |
 | --- | --- | --- |
-| `Runesvaner.Abstractions` | 公共模型、枚举、接口 | 无 |
-| `Runesvaner` | 核心采集与成本引擎 | Abstractions、Options |
-| `Runesvaner.MicrosoftExtensionsAI` | MEAI 中间件 | Core、MEAI.Abstractions |
-| `Runesvaner.Storage.Jsonl` | JSONL 回退与交换 | Core |
-| `Runesvaner.Storage.Sqlite` | 库/应用内默认存储与查询 | Core、Microsoft.Data.Sqlite |
-| `Runesvaner.Exporters.OpenTelemetry` | OTLP 导出 | Core、OTel SDK |
-| `Runesvaner.Cli` | `dotnet tool`，AOT | Core、Storage.Sqlite（失败回退 Jsonl） |
-| `Runesvaner.Studio` | 本地 UI host | ASP.NET Core、Storage |
+| `Runesvaner.Abstractions` | Public models, enums, interfaces | None |
+| `Runesvaner` | Core collection and cost engine | Abstractions, Options |
+| `Runesvaner.MicrosoftExtensionsAI` | MEAI middleware | Core, MEAI.Abstractions |
+| `Runesvaner.Storage.Jsonl` | JSONL fallback and interchange | Core |
+| `Runesvaner.Storage.Sqlite` | Default in-library/in-app storage and query | Core, Microsoft.Data.Sqlite |
+| `Runesvaner.Exporters.OpenTelemetry` | OTLP export | Core, OTel SDK |
+| `Runesvaner.Cli` | `dotnet tool`, AOT | Core, Storage.Sqlite (falls back to Jsonl on failure) |
+| `Runesvaner.Studio` | Local UI host | ASP.NET Core, Storage |
 
 ---
 
-## 5. 采集模型
+## 5. Collection Model
 
-### 5.1 一次请求的生命周期
+### 5.1 Lifecycle of a Request
 
-| 阶段 | 事件 | 记录内容 |
+| Phase | Event | Recorded content |
 | --- | --- | --- |
-| 进入中间件 | `request.start` | trace_id、operation、provider、model、start_ts |
-| 建立连接 | `segment` | connect、tls（来自 HttpClient 诊断事件，若可用） |
-| 上传完成 | `segment` | upload |
-| 首字节 | `event` | ttfb |
-| 首 Token | `event` | ttft（首个非空 delta） |
-| 每个 chunk | `stream.chunk` | timestamp、delta 长度（不存内容） |
-| 工具调用 | `segment` | tool name、duration、status |
-| 向量检索 | `segment` | collection、top_k、duration |
-| 完成 | `request.end` | usage、cost、status、segments、error |
-| 落盘 | `storage.write` | 异步批量 |
+| Enter middleware | `request.start` | trace_id, operation, provider, model, start_ts |
+| Establish connection | `segment` | connect, tls (from HttpClient diagnostic events, if available) |
+| Upload complete | `segment` | upload |
+| First byte | `event` | ttfb |
+| First token | `event` | ttft (first non-empty delta) |
+| Each chunk | `stream.chunk` | timestamp, delta length (content not stored) |
+| Tool call | `segment` | tool name, duration, status |
+| Vector search | `segment` | collection, top_k, duration |
+| Completion | `request.end` | usage, cost, status, segments, error |
+| Persistence | `storage.write` | asynchronous batch |
 
-### 5.2 分段模型
+### 5.2 Segmentation Model
 
-分段不是"猜"，而是分层：
+Segmentation is not "guessing"; it is layered:
 
-1. **实测段**：能直接拿到起止时间（本地排队、序列化、工具、向量检索）。
-2. **事件推导段**：由 `HttpClient` 诊断事件推导（连接、TLS、上传）。
-3. **估算段**：只能由首字节/首 Token 时间差推导（Provider 排队、网络等待）。
-4. **残差段**：总耗时减去已解释区间（`unaccounted`、`overlap`）。
+1. **Measured segments**: start and end times can be obtained directly (local queueing, serialization, tools, vector search).
+2. **Event-derived segments**: derived from `HttpClient` diagnostic events (connect, TLS, upload).
+3. **Estimated segments**: can only be derived from the time difference between first byte and first token (provider queueing, network wait).
+4. **Residual segments**: total elapsed time minus the explained intervals (`unaccounted`, `overlap`).
 
-每段必须带：
+Each segment must carry:
 
 - `kind`
 - `start_offset_us`
 - `duration_us`
-- `estimated`（bool）
-- `measurement`（`stopwatch` / `http_diagnostic` / `derived` / `residual`）
-- `lane`（并行分组）
+- `estimated` (bool)
+- `measurement` (`stopwatch` / `http_diagnostic` / `derived` / `residual`)
+- `lane` (parallel grouping)
 
-### 5.3 时间源
+### 5.3 Time Sources
 
-- 单调时钟：`Stopwatch.GetTimestamp()`，转换为 `TimeSpan` 用 `Stopwatch.GetElapsedTime`。
-- 墙钟：`TimeProvider.GetUtcNow()`，仅用于展示与跨进程关联。
-- 测试：`IRunesvanerClock` 抽象，允许注入假时钟。
-- 不在请求路径调用 `DateTime.UtcNow`。
+- Monotonic clock: `Stopwatch.GetTimestamp()`, converted to `TimeSpan` with `Stopwatch.GetElapsedTime`.
+- Wall clock: `TimeProvider.GetUtcNow()`, used only for display and cross-process correlation.
+- Testing: `IRunesvanerClock` abstraction allows injecting a fake clock.
+- Do not call `DateTime.UtcNow` on the request path.
 
-### 5.4 流式包装
+### 5.4 Streaming Wrapping
 
-流式是最高风险区。包装器必须：
+Streaming is the highest-risk area. Wrappers must:
 
-1. 不缓冲整个流；逐 chunk 透传。
-2. 不改变 `CancellationToken`。
-3. 不吞异常；记录后原样抛出。
-4. `DisposeAsync` 时 flush 并记录 `cancelled`（若未完成）。
-5. 对 `IAsyncEnumerable` 使用 `[EnumeratorCancellation]` 语义，避免取消失效。
-6. 记录首个非空 delta 的时间；空 delta 不计入 TTFT。
-7. 记录最后一个 chunk 的时间；不依赖 `usage` 一定在最后。
+1. Not buffer the entire stream; pass through chunk by chunk.
+2. Not change the `CancellationToken`.
+3. Not swallow exceptions; record them and rethrow unchanged.
+4. Flush on `DisposeAsync` and record `cancelled` (if not completed).
+5. Use `[EnumeratorCancellation]` semantics for `IAsyncEnumerable` so that cancellation does not become ineffective.
+6. Record the time of the first non-empty delta; empty deltas do not count toward TTFT.
+7. Record the time of the last chunk; do not rely on `usage` necessarily arriving last.
 
-伪代码（设计示意）：
+Pseudocode (design sketch):
 
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
@@ -217,55 +217,55 @@
         }
     }
 
-### 5.5 与 OTel 的关系
+### 5.5 Relationship with OTel
 
-- Runesvaner 自己使用 `ActivitySource` 与 `Meter`，名称 `Runesvaner.AI`。
-- 若用户同时启用 `UseOpenTelemetry()`，会产生两套 Span。必须避免重复：
-  - 默认：Runesvaner 只生成诊断事件，不创建额外 Activity；通过 `IRunesvanerSink` 输出。
-  - 可选：`ActivitySource` 模式，供 OTel 用户使用；此时需文档说明 Span 嵌套关系。
-- OTLP 导出包把 Runesvaner 事件转换为 OTel Span/Metric，避免双重导出。
+- Runesvaner uses `ActivitySource` and `Meter` itself, with the name `Runesvaner.AI`.
+- If the user also enables `UseOpenTelemetry()`, two sets of spans will be produced. Duplication must be avoided:
+  - Default: Runesvaner only emits diagnostic events and does not create additional Activities; output is via `IRunesvanerSink`.
+  - Optional: `ActivitySource` mode, for OTel users; documentation must then explain the span nesting relationship.
+- The OTLP export package converts Runesvaner events into OTel spans/metrics to avoid double export.
 
 ---
 
-## 6. 低开销策略
+## 6. Low-Overhead Strategy
 
-| 策略 | 说明 |
+| Strategy | Description |
 | --- | --- |
-| 采样前置 | 未采样请求只做一次概率判断，不创建记录 |
-| 结构体优先 | `Segment`、`Usage`、`Cost` 使用 `readonly struct` |
-| 预分配 | 每请求 `Segment[16]`，超出才扩容 |
-| 对象池 | 仅在基准证明必要时引入 `ArrayPool` |
-| 异步落盘 | `Channel<Event>` + 后台批处理 |
-| 源生成 JSON | `JsonSerializerContext`，避免反射 |
-| 字符串复用 | provider/model 使用常量或池化 |
-| 避免 LINQ | 热路径禁止 LINQ |
-| 避免日志 | 热路径不调用 `ILogger`，失败时计数 |
-| 关闭内容 | 默认不复制 Prompt/Completion |
-| 熔断 | 队列满/落盘失败时快速降级 |
+| Sampling first | Unsampled requests perform only one probability check and create no record |
+| Struct-first | `Segment`, `Usage`, `Cost` use `readonly struct` |
+| Pre-allocation | `Segment[16]` per request, grows only on overflow |
+| Object pooling | Introduce `ArrayPool` only when benchmarks prove it necessary |
+| Asynchronous persistence | `Channel<Event>` + background batching |
+| Source-generated JSON | `JsonSerializerContext` to avoid reflection |
+| String reuse | provider/model use constants or pooling |
+| Avoid LINQ | LINQ is prohibited on hot paths |
+| Avoid logging | Hot paths do not call `ILogger`; count failures |
+| Content off | Do not copy Prompt/Completion by default |
+| Circuit breaking | Degrade quickly when the queue is full or persistence fails |
 
-### 6.1 开销预算
+### 6.1 Overhead Budget
 
-| 操作 | 目标 |
+| Operation | Target |
 | --- | ---: |
-| 采样判断 | < 50 ns |
-| 创建请求记录 | < 500 ns |
-| 每分段写入 | < 100 ns |
-| 每 chunk 记录 | < 200 ns |
-| 成本计算 | < 5 µs |
-| 总增量 P95 | < 1 ms |
+| Sampling check | < 50 ns |
+| Create request record | < 500 ns |
+| Per-segment write | < 100 ns |
+| Per-chunk record | < 200 ns |
+| Cost calculation | < 5 µs |
+| Total increment P95 | < 1 ms |
 
 ---
 
-## 7. 成本引擎
+## 7. Cost Engine
 
-### 7.1 输入
+### 7.1 Input
 
-- `provider`、`request_model`、`response_model`
-- `usage`：input、output、cached_input、reasoning、image、audio
+- `provider`, `request_model`, `response_model`
+- `usage`: input, output, cached_input, reasoning, image, audio
 - `price_table_version`
-- `batch`、`tier`、`cache` 标志
+- `batch`, `tier`, `cache` flags
 
-### 7.2 价格表
+### 7.2 Price Table
 
     {
       "version": "2026-11-01",
@@ -286,70 +286,70 @@
       ]
     }
 
-规则：
+Rules:
 
-- `decimal` 存储与计算，不用 `double`。
-- 单位统一为"每百万 Token"。
-- 未知模型：`CostStatus.Unknown`，不猜测。
-- 价格表版本随请求记录；历史回放使用当时版本。
-- 别名解析：请求模型 → 响应模型 → 别名 → 未知。
-- 阶梯计价：若 `tiers` 非空，按区间累加。
-- 批量折扣：`discount` 字段，默认 0。
-- 多模态：按 provider 的 image/audio 单位计算，无法确定则 unknown。
+- Use `decimal` for storage and calculation, not `double`.
+- Units are unified as "per million tokens".
+- Unknown model: `CostStatus.Unknown`; do not guess.
+- The price table version is recorded with each request; historical replay uses the version in effect at that time.
+- Alias resolution: request model → response model → alias → unknown.
+- Tiered pricing: if `tiers` is non-empty, accumulate by interval.
+- Batch discount: `discount` field, default 0.
+- Multimodal: calculated in the provider's image/audio units; unknown if it cannot be determined.
 
-### 7.3 计算顺序
+### 7.3 Calculation Order
 
-1. 解析价格条目。
-2. 输入 Token 分层。
-3. 拆分 cached / non-cached。
-4. 输出 Token。
-5. 推理 Token（若与输出重叠，按 provider 定义，不重复计）。
-6. 多模态附加。
-7. 批量折扣。
-8. 四舍五入到 6 位小数（`MidpointRounding.ToEven`，待 D-08 确认）。
-9. 生成 `CostBreakdown` 与 `CostStatus`。
+1. Resolve the price entry.
+2. Tier the input tokens.
+3. Split cached / non-cached.
+4. Output tokens.
+5. Reasoning tokens (if they overlap with output, follow the provider definition; do not double-count).
+6. Multimodal add-ons.
+7. Batch discount.
+8. Round to 6 decimal places (`MidpointRounding.ToEven`, pending confirmation in D-08).
+9. Generate `CostBreakdown` and `CostStatus`.
 
-### 7.4 重试与计费
+### 7.4 Retries and Billing
 
-| 场景 | 处理 |
+| Scenario | Handling |
 | --- | --- |
-| 429 后成功 | 只计成功一次；失败尝试标 `not_billed` 或 `unknown` |
-| 5xx 后成功 | 同上；若响应表明计费，标 `billed` |
-| 超时后成功 | 可能双重计费；标 `possible_double_billing` |
-| 用户取消 | 若 provider 已生成部分输出，标 `partial` |
-| 流中断 | 尽力读取 usage；缺失则 unknown |
+| Success after 429 | Bill only the successful attempt; mark failed attempts `not_billed` or `unknown` |
+| Success after 5xx | Same as above; mark `billed` if the response indicates billing |
+| Success after timeout | Possible double billing; mark `possible_double_billing` |
+| User cancellation | Mark `partial` if the provider has already generated partial output |
+| Stream interruption | Best-effort read of usage; unknown if missing |
 
 ---
 
-## 8. 采样
+## 8. Sampling
 
-### 8.1 头采样
+### 8.1 Head Sampling
 
-- 默认本地 100%，生产建议 10%（文档建议，不强制）。
-- 规则：概率 + 始终保留错误/慢请求（需尾采样）。
-- 记录 `sampling.probability`，聚合时加权。
+- 100% locally by default; 10% recommended in production (documentation recommendation, not enforced).
+- Rule: probability + always retain errors/slow requests (requires tail sampling).
+- Record `sampling.probability` and weight during aggregation.
 
-### 8.2 尾采样
+### 8.2 Tail Sampling
 
-- 缓冲一个 trace 的轻量记录，直到结束。
-- 保留条件：错误、P95 超阈值、成本超预算、显式标记。
-- 风险：内存与延迟；默认关闭，M3 引入。
+- Buffer lightweight records for one trace until it ends.
+- Retention conditions: errors, P95 above threshold, cost above budget, explicit marking.
+- Risks: memory and latency; disabled by default, introduced in M3.
 
-### 8.3 统计偏差
+### 8.3 Statistical Bias
 
-- 成本汇总必须使用加权：`sum(cost / probability)`。
-- UI 显示"采样模式"与"置信度"。
-- 不对未采样请求做成本外推时，明确标注"仅采样请求"。
+- Cost aggregation must use weighting: `sum(cost / probability)`.
+- The UI displays "sampling mode" and "confidence".
+- When not extrapolating cost for unsampled requests, explicitly label "sampled requests only".
 
 ---
 
-## 9. 存储
+## 9. Storage
 
-库/应用内默认 SQLite；CLI AOT 默认 JSONL；SQLite 失败时回退，二者可交换。
+SQLite is the default for libraries/in-app; JSONL is the default for CLI AOT; fall back when SQLite fails; the two are interchangeable.
 
-### 9.1 JSONL（CLI AOT 默认、回退与交换）
+### 9.1 JSONL (CLI AOT default, fallback, and interchange)
 
-目录：
+Directory:
 
     .runesvaner/
       sessions/
@@ -360,24 +360,24 @@
       config.json
       studio.token
 
-行格式：
+Line format:
 
     {"schema":"runesvaner.event.v1","session_id":"...","event_id":"...","type":"request.end","timestamp":"...","monotonic_ns":123,"payload":{...}}
 
-写入：
+Writing:
 
-- 追加模式，UTF-8，无 BOM。
-- 每行一个完整 JSON；写入后 flush（可配置）。
-- 读取时忽略最后不完整行。
-- 文件滚动：单文件 ≤ 64 MB 或 10 万事件。
+- Append mode, UTF-8, no BOM.
+- One complete JSON per line; flush after write (configurable).
+- On read, ignore the last incomplete line.
+- File rolling: single file ≤ 64 MB or 100k events.
 
-### 9.2 SQLite（库/应用内默认）
+### 9.2 SQLite (default for libraries/in-app)
 
-文件：`.runesvaner/runesvaner.db`，WAL 模式。
+File: `.runesvaner/runesvaner.db`, WAL mode.
 
-表：
+Tables:
 
-| 表 | 主要列 |
+| Table | Main columns |
 | --- | --- |
 | `sessions` | id, started_at, app, environment, version |
 | `requests` | id, session_id, trace_id, operation, provider, model, started_at, duration_us, ttft_us, status |
@@ -388,144 +388,144 @@
 | `errors` | request_id, type, message, stack_hash |
 | `budgets` | scope, window, limit, spent |
 
-索引：`started_at`、`model`、`feature`、`tenant_hash`、`status`、`cost_total`。
+Indexes: `started_at`, `model`, `feature`, `tenant_hash`, `status`, `cost_total`.
 
-### 9.3 一致性
+### 9.3 Consistency
 
-- 库/应用内 SQLite 是默认 source of truth；CLI AOT 默认 JSONL；两者可交换。
-- 导入：`runesvaner index --path .runesvaner/sessions` 从 JSONL 构建 SQLite 索引。
-- CLI：`runesvaner run` 默认 JSONL；`--storage sqlite` 显式选择 SQLite。
-- 回退：任何宿主下 SQLite 初始化失败时写 JSONL，并记录 `storage.fallback=jsonl`。
-- 崩溃恢复：SQLite 使用 WAL；JSONL 读取时忽略最后不完整行。
+- SQLite for libraries/in-app is the default source of truth; JSONL is the CLI AOT default; the two are interchangeable.
+- Import: `runesvaner index --path .runesvaner/sessions` builds a SQLite index from JSONL.
+- CLI: `runesvaner run` uses JSONL by default; `--storage sqlite` explicitly selects SQLite.
+- Fallback: if SQLite initialization fails under any host, write JSONL and record `storage.fallback=jsonl`.
+- Crash recovery: SQLite uses WAL; JSONL ignores the last incomplete line on read.
 
 ---
 
-## 10. Studio 技术设计
+## 10. Studio Technical Design
 
-- Host：ASP.NET Core Minimal API（框架引用，不额外依赖）。
-- 前端：React 19 + TypeScript + Vite + Redux Toolkit + RTK Query（D-06 已决议）。
-- 静态资源：构建后嵌入 CLI 或放在 `wwwroot`。
-- 绑定：`127.0.0.1`，随机端口；`Host` 头校验；CORS 关闭。
-- 认证：启动时生成 32 字节 token，URL `?token=`；API 使用 `Authorization: Bearer`。
-- 只读：不写会话文件；Settings 写入独立配置文件。
-- API：
+- Host: ASP.NET Core Minimal API (framework reference, no additional dependencies).
+- Frontend: React 19 + TypeScript + Vite + Redux Toolkit + RTK Query (resolved by D-06).
+- Static assets: embedded into the CLI after build, or placed under `wwwroot`.
+- Binding: `127.0.0.1`, random port; `Host` header validation; CORS disabled.
+- Authentication: generate a 32-byte token at startup, URL `?token=`; API uses `Authorization: Bearer`.
+- Read-only: does not write session files; Settings are written to a separate configuration file.
+- API:
   - `GET /api/sessions`
   - `GET /api/requests?session=&model=&status=&minCost=`
   - `GET /api/requests/{id}`
   - `GET /api/costs/summary`
   - `GET /api/health`
-  - `POST /api/export`（可选）
-- 大结果集：分页 + 游标；默认 100 条。
-- 图表：uPlot（时间序列）+ 自绘瀑布（SVG/Canvas）。
-- 性能：10 万请求下单页加载 ≤ 1 s（分页与索引）。
+  - `POST /api/export` (optional)
+- Large result sets: pagination + cursor; default 100 rows.
+- Charts: uPlot (time series) + custom waterfall (SVG/Canvas).
+- Performance: single-page load ≤ 1 s with 100k requests (pagination and indexes).
 
 ---
 
-## 11. CLI 技术设计
+## 11. CLI Technical Design
 
-| 命令 | 作用 | 退出码 |
+| Command | Purpose | Exit code |
 | --- | --- | --- |
-| `runesvaner run -- <cmd>` | 启动应用并采集 | 子进程退出码 |
-| `runesvaner report` | 终端摘要 | 0/3 |
-| `runesvaner top` | 慢/贵排行 | 0/3 |
+| `runesvaner run -- <cmd>` | Start the application and collect | Child process exit code |
+| `runesvaner report` | Terminal summary | 0/3 |
+| `runesvaner top` | Slow/expensive ranking | 0/3 |
 | `runesvaner export` | JSONL/OTLP | 0 |
-| `runesvaner open` | 启动 Studio | 0 |
-| `runesvaner doctor` | 环境与配置检查 | 0/2 |
-| `runesvaner pricing update` | 更新价格表（需显式） | 0/2 |
+| `runesvaner open` | Launch Studio | 0 |
+| `runesvaner doctor` | Environment and configuration check | 0/2 |
+| `runesvaner pricing update` | Update the price table (requires explicit action) | 0/2 |
 
-- 参数解析：自写轻量解析器，避免 `System.CommandLine` 的 AOT 风险。
-- 输出：人类可读表格 + `--json`。
-- 颜色：仅在 TTY 启用；`NO_COLOR` 支持。
-- 全局配置：`.runesvaner/config.json` + 环境变量 `RUNESVANER_*`。
+- Argument parsing: a self-written lightweight parser to avoid AOT risks in `System.CommandLine`.
+- Output: human-readable tables + `--json`.
+- Color: enabled only on TTY; `NO_COLOR` supported.
+- Global configuration: `.runesvaner/config.json` + environment variable `RUNESVANER_*`.
 
 ---
 
-## 12. 错误处理与熔断
+## 12. Error Handling and Circuit Breaking
 
-| 故障 | 检测 | 动作 |
+| Failure | Detection | Action |
 | --- | --- | --- |
-| 采集器异常 | try/catch | 计数、继续 |
-| 队列满 | `Channel.Writer.TryWrite` 失败 | 丢弃最旧、计数 |
-| 落盘失败 | IO 异常 | 熔断 30s、降级内存 |
-| 序列化失败 | 异常 | 丢弃事件、计数 |
-| 价格表损坏 | 校验失败 | 使用内置快照、警告 |
-| Studio 端口占用 | bind 失败 | 尝试下一个端口 |
-| 时钟异常 | 不可能（单调） | 记录 `invalid_timing` |
+| Collector exception | try/catch | Count, continue |
+| Queue full | `Channel.Writer.TryWrite` fails | Drop the oldest, count |
+| Persistence failure | IO exception | Circuit break for 30 s, degrade to memory |
+| Serialization failure | Exception | Drop event, count |
+| Corrupted price table | Validation failure | Use built-in snapshot, warn |
+| Studio port in use | bind fails | Try the next port |
+| Clock anomaly | impossible (monotonic) | Record `invalid_timing` |
 
-原则：**采集器的错误不能成为业务的错误。**
+Principle: **A collector error must never become a business error.**
 
 ---
 
-## 13. 配置
+## 13. Configuration
 
-### 13.1 优先级
+### 13.1 Priority
 
-1. 代码配置（最高）
-2. 环境变量 `RUNESVANER_*`
+1. Code configuration (highest)
+2. Environment variables `RUNESVANER_*`
 3. `.runesvaner/config.json`
-4. 默认值
+4. Defaults
 
-### 13.2 AOT 配置绑定
+### 13.2 AOT Configuration Binding
 
-- 主推代码配置。
-- JSON 配置使用 `Microsoft.Extensions.Configuration.Binder` 的 Source Generator（`EnableConfigurationBindingGenerator`）。
-- 避免 `IConfiguration.Get<T>()` 反射路径。
-- 所有 options 使用简单类型、数组、字典；避免多态。
-
----
-
-## 14. AOT 策略摘要
-
-完整见 `08-native-aot-strategy.md`。
-
-- 所有库 `<IsAotCompatible>true</IsAotCompatible>`。
-- 禁止：`Type.GetType`、`Activator.CreateInstance`、`Assembly.Load`、`Reflection.Emit`、`MakeGenericType`。
-- JSON：`JsonSerializerContext`。
-- 配置：Source Generator。
-- DI：显式注册；不使用程序集扫描。
-- CLI：`PublishAot=true`，`TrimMode=full`。
-- SQLite：库/应用内默认存储；CLI AOT 默认 JSONL；AOT 必须验证 native `e_sqlite3`；失败自动回退。
-- OTel：可选包；若 AOT 警告，文档给出替代导出方式（JSONL → 外部 collector）。
+- Code configuration is preferred.
+- JSON configuration uses the Source Generator of `Microsoft.Extensions.Configuration.Binder` (`EnableConfigurationBindingGenerator`).
+- Avoid the reflection path of `IConfiguration.Get<T>()`.
+- All options use simple types, arrays, and dictionaries; avoid polymorphism.
 
 ---
 
-## 15. 可测试性
+## 14. AOT Strategy Summary
 
-| 关注点 | 设计 |
+See `08-native-aot-strategy.md` for the full version.
+
+- All libraries `<IsAotCompatible>true</IsAotCompatible>`.
+- Prohibited: `Type.GetType`, `Activator.CreateInstance`, `Assembly.Load`, `Reflection.Emit`, `MakeGenericType`.
+- JSON: `JsonSerializerContext`.
+- Configuration: Source Generator.
+- DI: explicit registration; no assembly scanning.
+- CLI: `PublishAot=true`, `TrimMode=full`.
+- SQLite: default storage for libraries/in-app; JSONL default for CLI AOT; AOT must validate native `e_sqlite3`; automatic fallback on failure.
+- OTel: optional package; if AOT warns, the documentation provides an alternative export path (JSONL → external collector).
+
+---
+
+## 15. Testability
+
+| Concern | Design |
 | --- | --- |
-| 时间 | `IRunesvanerClock`，假时钟 |
-| 随机采样 | `ISampler`，可注入 |
-| 存储故障 | `FaultInjectingStore` |
-| 流式语义 | 自定义 `IAsyncEnumerable` 测试源 |
-| 价格 | 固定价格表 + golden tests |
-| AOT | 发布后 smoke |
-| 性能 | BenchmarkDotNet + CI 门槛 |
+| Time | `IRunesvanerClock`, fake clock |
+| Random sampling | `ISampler`, injectable |
+| Storage failure | `FaultInjectingStore` |
+| Streaming semantics | Custom `IAsyncEnumerable` test source |
+| Pricing | Fixed price table + golden tests |
+| AOT | Post-publish smoke |
+| Performance | BenchmarkDotNet + CI gate |
 
 ---
 
-## 16. 技术风险
+## 16. Technical Risks
 
-| 风险 | 影响 | 缓解 |
+| Risk | Impact | Mitigation |
 | --- | --- | --- |
-| MEAI API 变更 | 集成层破坏 | 多版本契约测试；适配器隔离 |
-| 流式包装破坏取消 | 业务 bug | 专项测试；最小包装 |
-| 分段估算不可信 | 用户不信任 | 标记 estimated；文档解释 |
-| 价格表错误 | 成本错误 | 版本化 + 用户覆盖 + 核对视图 |
-| AOT 下 SQLite 失败 | 库默认存储不可用 | 自动回退 JSONL；CLI 默认 JSONL；AOT smoke |
-| OTel 双 Span | 数据重复 | 默认不创建 Activity；显式模式 |
-| 开销超标 | 用户移除 | 基准门槛；采样；熔断 |
-| 范围蔓延 | 无法交付 | 非目标清单；里程碑退出标准 |
+| MEAI API changes | Integration layer breakage | Multi-version contract tests; adapter isolation |
+| Streaming wrapper breaks cancellation | Business bug | Dedicated tests; minimal wrapper |
+| Segment estimates not trusted | Users distrust results | Mark estimated; document explanation |
+| Price table errors | Incorrect cost | Versioning + user overrides + verification view |
+| SQLite failure under AOT | Default library storage unavailable | Automatic fallback to JSONL; JSONL default for CLI; AOT smoke |
+| Duplicate OTel spans | Duplicate data | Do not create Activities by default; explicit mode |
+| Overhead exceeds budget | Users remove it | Benchmark gates; sampling; circuit breaking |
+| Scope creep | Cannot deliver | Non-goals list; milestone exit criteria |
 
 ---
 
-## 17. 决议状态
+## 17. Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本设计直接相关：
+D-01–D-25 are all resolved; see `15-decision-log.md`. Directly related to this design:
 
-- D-05：`net10.0`，M3 评估 `net11.0`。
-- D-06：React 19 + Redux Toolkit + RTK Query。
-- D-07：库/应用内 SQLite 默认；CLI AOT 默认 JSONL；失败回退。
-- D-08：内置价格表 + 用户覆盖；decimal + ToEven；USD。
-- D-13：核心零依赖，OTLP 可选。
-- D-14：本地 100%，生产建议 10%；尾采样 M3。
-- D-15：Windows/Linux；macOS 非目标。
+- D-05: `net10.0`, with `net11.0` evaluated in M3.
+- D-06: React 19 + Redux Toolkit + RTK Query.
+- D-07: SQLite default for libraries/in-app; JSONL default for CLI AOT; fallback on failure.
+- D-08: built-in price table + user overrides; decimal + ToEven; USD.
+- D-13: core zero dependencies, OTLP optional.
+- D-14: 100% locally, 10% recommended in production; tail sampling in M3.
+- D-15: Windows/Linux; macOS is a non-goal.

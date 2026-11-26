@@ -1,483 +1,483 @@
-# UI/UX 与视觉设计规范：Runesvaner Studio
+# UI/UX and Visual Design Specification: Runesvaner Studio
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 设计、前端、工程 |
-| 关联文档 | `03-prd.md`、`07-api-design.md`、`15-decision-log.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Design, frontend, engineering |
+| Related documents | `03-prd.md`, `07-api-design.md`, `15-decision-log.md` |
 
 ---
 
-## 1. 设计定位
+## 1. Design Positioning
 
-Runesvaner Studio 是一个**工程仪表**，不是营销页面，也不是消费级应用。
+Runesvaner Studio is an **engineering instrument**, not a marketing page and not a consumer application.
 
-关键词：
+Keywords:
 
-- **精密**：像示波器、光谱仪、调试器，而不是"AI 助手"。
-- **克制**：单色基底，单一强调色，无装饰性渐变。
-- **高密度**：一屏容纳更多有效信息，但不拥挤。
-- **可解释**：每个数字都能下钻到测量方法。
-- **可信**：估算值必须显式标记，不用视觉技巧掩盖不确定性。
+- **Precise**: like an oscilloscope, a spectrometer, or a debugger, not an "AI assistant".
+- **Restrained**: monochrome base, a single accent color, no decorative gradients.
+- **High density**: more useful information per screen, without feeling crowded.
+- **Explainable**: every number can be drilled down to its measurement method.
+- **Trustworthy**: estimated values must be explicitly marked; uncertainty is never hidden behind visual tricks.
 
-### 1.1 参考产品与借鉴点
+### 1.1 Reference Products and What to Borrow
 
-| 产品 | 借鉴 | 不借鉴 |
+| Product | Borrow | Do not borrow |
 | --- | --- | --- |
-| Linear | 信息密度、键盘优先、克制的动效 | 圆角与柔和阴影 |
-| Datadog | 图表密度、筛选器、时间轴 | 复杂导航与广告式升级提示 |
-| Sentry | Trace 瀑布、错误上下文 | 卡通插画 |
-| Grafana | 深色数据可视化、面板布局 | 默认主题的饱和度 |
-| Vercel | 排版、留白、单色体系 | 大圆角卡片 |
-| JetBrains 调试器 | 等宽数字、树形结构、属性面板 | 密集的工具栏 |
+| Linear | Information density, keyboard-first, restrained motion | Rounded corners and soft shadows |
+| Datadog | Chart density, filters, timeline | Complex navigation and ad-like upgrade prompts |
+| Sentry | Trace waterfall, error context | Cartoon illustrations |
+| Grafana | Dark data visualization, panel layout | Saturation of the default theme |
+| Vercel | Typography, whitespace, monochrome system | Large rounded cards |
+| JetBrains debugger | Monospaced numbers, tree structures, property panel | Dense toolbars |
 
-### 1.2 明确的反模式
+### 1.2 Explicit Anti-Patterns
 
-禁止：
+Prohibited:
 
-- 大圆角（> 2px）、胶囊按钮、圆形头像卡片。
-- 紫色 / 绿色霓虹渐变、发光边框、AI 光效。
-- 玻璃拟态、毛玻璃、重阴影、浮夸高光。
-- 卡通插画、3D 图标、拟人化助手。
-- 纯白背景 + 大面积渐变。
-- 无意义的骨架屏动画与弹跳。
-- 用红绿作为唯一的状态区分手段。
+- Large corner radii (> 2px), pill buttons, circular avatar cards.
+- Purple / green neon gradients, glowing borders, AI light effects.
+- Glassmorphism, frosted glass, heavy shadows, flashy highlights.
+- Cartoon illustrations, 3D icons, anthropomorphic assistants.
+- Pure white backgrounds + large gradient areas.
+- Meaningless skeleton-screen animations and bounce.
+- Using red/green as the only means of distinguishing states.
 
 ---
 
-## 2. 设计原则
+## 2. Design Principles
 
-1. **结论优先**：首屏先给"总耗时 + 最大分段 + 总成本"，再给细节。
-2. **单色基底 + 一个强调色**：琥珀铜作为唯一品牌强调色；语义色仅在必要时出现。
-3. **直角优先**：默认 0px 圆角；输入框与按钮最多 2px。
-4. **数字等宽**：所有时间、Token、金额使用等宽字体并右对齐。
-5. **估算可见**：`estimated` 使用斜纹或虚线标记，并在 Tooltip 说明。
-6. **颜色不是唯一编码**：分段同时使用颜色、纹理、标签。
-7. **键盘优先**：主要路径不依赖鼠标。
-8. **动效服务于状态变化**：120–180ms，ease-out，无弹跳。
-9. **空状态可行动**：给出下一步命令，而不是"暂无数据"。
-10. **本地感**：显示数据目录、会话数、存储占用，让用户知道数据在哪。
+1. **Conclusion first**: the first screen gives "total duration + largest segment + total cost" before details.
+2. **Monochrome base + one accent color**: amber copper is the only brand accent; semantic colors appear only when necessary.
+3. **Right angles first**: 0px corner radius by default; inputs and buttons at most 2px.
+4. **Monospaced numbers**: all durations, tokens, and amounts use a monospace font and are right-aligned.
+5. **Estimates are visible**: `estimated` is marked with hatching or a dashed line and explained in a tooltip.
+6. **Color is not the only encoding**: segments use color, texture, and label together.
+7. **Keyboard first**: primary paths do not depend on the mouse.
+8. **Motion serves state change**: 120–180ms, ease-out, no bounce.
+9. **Empty states are actionable**: give the next command instead of "no data".
+10. **Local feel**: show the data directory, session count, and storage usage so users know where the data lives.
 
 ---
 
-## 3. 色彩系统
+## 3. Color System
 
-### 3.1 深色主题（默认）
+### 3.1 Dark Theme (default)
 
-| Token | 值 | 用途 |
+| Token | Value | Usage |
 | --- | --- | --- |
-| `bg.canvas` | `#0A0C0F` | 应用背景 |
-| `bg.surface` | `#101419` | 面板 |
-| `bg.raised` | `#161B22` | 悬浮层、选中行 |
-| `bg.inset` | `#0D1116` | 输入框、代码块 |
-| `border.subtle` | `#222A33` | 分隔线 |
-| `border.strong` | `#33404D` | 聚焦、选中 |
-| `text.primary` | `#E8ECF1` | 主文本 |
-| `text.secondary` | `#9AA6B2` | 次文本 |
-| `text.muted` | `#6B7785` | 弱文本、单位 |
-| `accent` | `#C8963E` | 品牌、主按钮、选中 |
-| `accent.hover` | `#D9A94F` | 悬停 |
-| `accent.muted` | `#3A2E1C` | 强调背景 |
-| `success` | `#4E9B72` | 成功、缓存命中 |
-| `warning` | `#C9A227` | 警告、估算 |
-| `danger` | `#C05B55` | 错误、超预算 |
-| `info` | `#5B84A8` | 信息、链接 |
+| `bg.canvas` | `#0A0C0F` | Application background |
+| `bg.surface` | `#101419` | Panels |
+| `bg.raised` | `#161B22` | Overlays, selected rows |
+| `bg.inset` | `#0D1116` | Inputs, code blocks |
+| `border.subtle` | `#222A33` | Dividers |
+| `border.strong` | `#33404D` | Focus, selection |
+| `text.primary` | `#E8ECF1` | Primary text |
+| `text.secondary` | `#9AA6B2` | Secondary text |
+| `text.muted` | `#6B7785` | Muted text, units |
+| `accent` | `#C8963E` | Brand, primary button, selection |
+| `accent.hover` | `#D9A94F` | Hover |
+| `accent.muted` | `#3A2E1C` | Accent background |
+| `success` | `#4E9B72` | Success, cache hit |
+| `warning` | `#C9A227` | Warning, estimate |
+| `danger` | `#C05B55` | Error, over budget |
+| `info` | `#5B84A8` | Information, links |
 
-### 3.2 浅色主题（可选）
+### 3.2 Light Theme (optional)
 
-| Token | 值 | 用途 |
+| Token | Value | Usage |
 | --- | --- | --- |
-| `bg.canvas` | `#F4F2ED` | 暖灰纸感背景 |
-| `bg.surface` | `#FBFAF7` | 面板 |
-| `bg.raised` | `#FFFFFF` | 悬浮层 |
-| `border.subtle` | `#DDD8CE` | 分隔线 |
-| `text.primary` | `#1B1F24` | 主文本 |
-| `text.secondary` | `#56606B` | 次文本 |
-| `accent` | `#8A5A1F` | 深琥珀 |
-| `danger` | `#A9443F` | 错误 |
+| `bg.canvas` | `#F4F2ED` | Warm gray paper-like background |
+| `bg.surface` | `#FBFAF7` | Panels |
+| `bg.raised` | `#FFFFFF` | Overlays |
+| `border.subtle` | `#DDD8CE` | Dividers |
+| `text.primary` | `#1B1F24` | Primary text |
+| `text.secondary` | `#56606B` | Secondary text |
+| `accent` | `#8A5A1F` | Deep amber |
+| `danger` | `#A9443F` | Error |
 
-浅色主题不使用纯白大面积，避免"廉价 SaaS"感。
+The light theme does not use large pure white areas, to avoid a "cheap SaaS" feel.
 
-浅色主题设计约束（D-12）：
+Light theme design constraints (D-12):
 
-- 背景为暖灰纸感（`#F4F2ED`），面板 `#FBFAF7`，禁止大面积纯白。
-- 强调色使用深琥珀（`#8A5A1F`），不使用紫/绿霓虹。
-- 保持直角与 1px 边框；不使用玻璃拟态、渐变、发光。
-- 浅色不是深色的简单反转：文本对比度、图表网格、分段色需单独校准。
-- 通过 `prefers-color-scheme` 与手动切换；默认深色。
+- Background is warm gray paper-like (`#F4F2ED`), panels are `#FBFAF7`, large pure white areas are prohibited.
+- The accent color is deep amber (`#8A5A1F`), not purple/green neon.
+- Maintain right angles and 1px borders; no glassmorphism, gradients, or glow.
+- Light is not a simple inversion of dark: text contrast, chart grids, and segment colors must be calibrated separately.
+- Switch via `prefers-color-scheme` and manually; dark is the default.
 
-### 3.3 分段色谱
+### 3.3 Segment Color Scale
 
-用于瀑布图与堆叠条。色相集中在琥珀、蓝灰、青灰、棕灰，避免紫绿霓虹。
+Used for waterfalls and stacked bars. Hues are concentrated in amber, blue-gray, cyan-gray, and brown-gray, avoiding purple/green neon.
 
-| 分段 | 深色 | 浅色 | 纹理 |
+| Segment | Dark | Light | Texture |
 | --- | --- | --- | --- |
-| Queue | `#6B7785` | `#7A8490` | 点状 |
-| Auth | `#8C6A3A` | `#8A6A3F` | 无 |
-| Connect | `#5B84A8` | `#4C7394` | 斜线 |
-| TLS | `#6F8FA8` | `#5E7E96` | 交叉线 |
-| Upload | `#4E9B72` | `#3F805D` | 无 |
-| Provider Queue | `#C9A227` | `#A8871F` | 斜纹 |
-| TTFT | `#C8963E` | `#8A5A1F` | 无 |
-| Generation | `#D9A94F` | `#A97028` | 无 |
-| Tool | `#7C8A99` | `#66727F` | 网格 |
-| Vector | `#5F7F8C` | `#4E6C78` | 点划线 |
-| Serialization | `#8A8F98` | `#737880` | 无 |
-| Retry | `#C05B55` | `#A9443F` | 斜纹 |
-| Unaccounted | `#3A414A` | `#C9C3B8` | 斜纹 |
+| Queue | `#6B7785` | `#7A8490` | Dots |
+| Auth | `#8C6A3A` | `#8A6A3F` | None |
+| Connect | `#5B84A8` | `#4C7394` | Diagonal lines |
+| TLS | `#6F8FA8` | `#5E7E96` | Cross-hatch |
+| Upload | `#4E9B72` | `#3F805D` | None |
+| Provider Queue | `#C9A227` | `#A8871F` | Diagonal hatch |
+| TTFT | `#C8963E` | `#8A5A1F` | None |
+| Generation | `#D9A94F` | `#A97028` | None |
+| Tool | `#7C8A99` | `#66727F` | Grid |
+| Vector | `#5F7F8C` | `#4E6C78` | Dash-dot |
+| Serialization | `#8A8F98` | `#737880` | None |
+| Retry | `#C05B55` | `#A9443F` | Diagonal hatch |
+| Unaccounted | `#3A414A` | `#C9C3B8` | Diagonal hatch |
 
 ---
 
-## 4. 字体与排版
+## 4. Type and Typography
 
-### 4.1 字体
+### 4.1 Typefaces
 
-| 用途 | 字体 | 回退 |
+| Usage | Typeface | Fallback |
 | --- | --- | --- |
-| UI 文本 | Inter | `-apple-system, "Segoe UI", "Noto Sans SC", sans-serif` |
-| 数字 / 代码 | JetBrains Mono | `"SFMono-Regular", Consolas, monospace` |
-| 标题 | Inter（600） | 同上 |
+| UI text | Inter | `-apple-system, "Segoe UI", "Noto Sans SC", sans-serif` |
+| Numbers / code | JetBrains Mono | `"SFMono-Regular", Consolas, monospace` |
+| Headings | Inter (600) | Same as above |
 
-不引入装饰性字体。中文使用系统字体，避免加载体积。
+No decorative typefaces. Chinese text uses system fonts to avoid font payload.
 
-### 4.2 字号与行高
+### 4.2 Font Size and Line Height
 
-| Token | 字号 | 行高 | 用途 |
+| Token | Size | Line height | Usage |
 | --- | ---: | ---: | --- |
-| `text.xs` | 11px | 16px | 标签、单位 |
-| `text.sm` | 12px | 18px | 表格、次要信息 |
-| `text.base` | 13px | 20px | 正文 |
-| `text.md` | 14px | 22px | 主要读数 |
-| `text.lg` | 18px | 26px | 区块标题 |
-| `text.xl` | 24px | 32px | 页面标题 |
-| `text.display` | 40px | 48px | 总耗时/总成本 |
+| `text.xs` | 11px | 16px | Labels, units |
+| `text.sm` | 12px | 18px | Tables, secondary information |
+| `text.base` | 13px | 20px | Body text |
+| `text.md` | 14px | 22px | Primary readings |
+| `text.lg` | 18px | 26px | Section headings |
+| `text.xl` | 24px | 32px | Page headings |
+| `text.display` | 40px | 48px | Total duration / total cost |
 
-基准字号 13px，匹配高密度工程工具。正文不使用 16px，避免"消费级网站"感。
+Base font size is 13px, matching high-density engineering tools. Body text does not use 16px, to avoid a "consumer website" feel.
 
 ---
 
-## 5. 间距、栅格与形状
+## 5. Spacing, Grid, and Shape
 
-### 5.1 间距
+### 5.1 Spacing
 
-4px 基准：4 / 8 / 12 / 16 / 24 / 32 / 48 / 64。
+4px base: 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64.
 
-### 5.2 布局栅格
+### 5.2 Layout Grid
 
-| 区域 | 尺寸 |
+| Region | Size |
 | --- | --- |
-| 顶部栏 | 48px |
-| 左侧导航 | 232px（可折叠至 56px） |
-| 右侧详情 | 380px（可拖拽 320–520px） |
-| 内容区最小宽度 | 720px |
-| 页面最小宽度 | 1280px |
+| Top bar | 48px |
+| Left navigation | 232px (collapsible to 56px) |
+| Right details | 380px (draggable 320–520px) |
+| Minimum content width | 720px |
+| Minimum page width | 1280px |
 
-### 5.3 形状
+### 5.3 Shape
 
-| 元素 | 圆角 |
+| Element | Corner radius |
 | --- | --- |
-| 按钮 | 2px |
-| 输入框 | 2px |
-| 面板 / 卡片 | 0px |
-| 表格行 | 0px |
-| 标签（Tag） | 2px |
-| 分段条 | 0px |
-| 图标按钮 | 2px |
+| Buttons | 2px |
+| Inputs | 2px |
+| Panels / cards | 0px |
+| Table rows | 0px |
+| Tags | 2px |
+| Segment bars | 0px |
+| Icon buttons | 2px |
 
-禁止胶囊形（9999px）与圆形按钮，除非是纯图标操作且尺寸 ≤ 24px。
+Pill shapes (9999px) and circular buttons are prohibited, unless it is a pure icon action and the size is ≤ 24px.
 
-### 5.4 阴影
+### 5.4 Shadows
 
-仅用于悬浮层与下拉菜单：
+Used only for overlays and dropdown menus:
 
 - `shadow.overlay`: `0 8px 24px rgba(0,0,0,0.35), 0 0 0 1px #222A33`
-- 面板不使用阴影，用 1px 边框与背景层级区分。
+- Panels do not use shadows; they are separated by 1px borders and background elevation.
 
 ---
 
-## 6. 图标与 Logo
+## 6. Icons and Logo
 
-### 6.1 图标
+### 6.1 Icons
 
-- 线性图标，24px 网格，1.5px 描边。
-- 推荐 Lucide 作为基础集；关键数据图标自绘，避免风格不一致。
-- 图标不单独承载语义，必须配文本或 `aria-label`。
+- Line icons, 24px grid, 1.5px stroke.
+- Lucide is recommended as the base set; key data icons are drawn in-house to avoid stylistic inconsistency.
+- Icons do not carry meaning alone; they must be paired with text or an `aria-label`.
 
-### 6.2 Logo 概念
+### 6.2 Logo Concept
 
-**概念：光圈 / 棱镜分解。**
+**Concept: aperture / prism decomposition.**
 
-- 外轮廓：五片光圈叶片组成的近似圆形，中心为负空间。
-- 右下：三条从中心穿出的细线，分别代表"延迟、Token、成本"。
-- 单色石墨；仅中心一个小琥珀点作为强调。
-- 32×32 与 16×16 两个版本；16×16 去掉细线，仅保留光圈轮廓。
-- 禁止：发光、渐变、3D、拟人化。
+- Outer contour: an approximately circular shape made of five aperture blades, with negative space at the center.
+- Lower right: three thin lines radiating from the center, representing "latency, tokens, cost".
+- Monochrome graphite; only a single small amber dot at the center serves as the accent.
+- Two versions: 32×32 and 16×16; the 16×16 version drops the thin lines and keeps only the aperture contour.
+- Prohibited: glow, gradients, 3D, anthropomorphism.
 
-SVG 结构建议（设计稿，不是最终资产）：
+Suggested SVG structure (design sketch, not final asset):
 
 - `viewBox="0 0 32 32"`
-- 5 条弧线构成叶片，`stroke="currentColor"`，`stroke-width="1.5"`，`fill="none"`
-- 3 条线从 `(16,16)` 向右下发散，`stroke-width="1"`
-- 中心圆 `r="1.5"`，`fill="#C8963E"`
+- 5 arcs form the blades, `stroke="currentColor"`, `stroke-width="1.5"`, `fill="none"`
+- 3 lines radiate from `(16,16)` to the lower right, `stroke-width="1"`
+- Center circle `r="1.5"`, `fill="#C8963E"`
 
 ---
 
-## 7. 页面结构
+## 7. Page Structure
 
-### 7.1 全局布局
+### 7.1 Global Layout
 
     +--------------------------------------------------------------+
-    | Top Bar: 产品名 | 会话选择 | 搜索 | 时间范围 | 状态 | 设置     |
+    | Top Bar: Product | Session | Search | Time range | Status | Settings |
     +----------+--------------------------------------+------------+
     | Nav      | Main Content                         | Inspector  |
-    | Sessions |                                      | 属性/成本  |
-    | Requests |                                      |            |
+    | Sessions |                                      | Properties |
+    | Requests |                                      | / Cost     |
     | Costs    |                                      |            |
     | Compare  |                                      |            |
     | Health   |                                      |            |
     | Settings |                                      |            |
     +----------+--------------------------------------+------------+
 
-### 7.2 导航
+### 7.2 Navigation
 
-| 项 | 内容 |
+| Item | Content |
 | --- | --- |
-| Sessions | 诊断会话列表（一次进程运行） |
-| Requests | 请求列表与筛选 |
-| Costs | 成本账本与归因 |
-| Compare | 两次请求/两个版本的对比 |
-| Health | 采集器自监控：队列、丢弃、落盘延迟 |
-| Settings | 存储、隐私、价格表、采样 |
+| Sessions | Diagnostic session list (one process run) |
+| Requests | Request list and filters |
+| Costs | Cost ledger and attribution |
+| Compare | Comparison of two requests / two versions |
+| Health | Collector self-monitoring: queue, drops, persistence latency |
+| Settings | Storage, privacy, price table, sampling |
 
-### 7.3 Sessions 列表
+### 7.3 Sessions List
 
-列：
+Columns:
 
-- 开始时间
-- 应用 / 环境
-- 请求数
-- P50 / P95 延迟
-- 总成本
-- 错误数
-- 数据大小
+- Start time
+- Application / environment
+- Request count
+- P50 / P95 latency
+- Total cost
+- Error count
+- Data size
 
-空状态：显示 `runesvaner run -- <your app>` 命令，可一键复制。
+Empty state: show the `runesvaner run -- <your app>` command, copyable in one click.
 
-### 7.4 Requests 列表
+### 7.4 Requests List
 
-列：
+Columns:
 
-- 时间
-- Operation（chat / embeddings / tool / vector）
+- Time
+- Operation (chat / embeddings / tool / vector)
 - Provider / Model
-- 总耗时
+- Total duration
 - TTFT
-- Input / Output Token
-- 成本
-- 状态
-- 异常标记（重试、缓存、未知价格）
+- Input / Output tokens
+- Cost
+- Status
+- Anomaly markers (retry, cache, unknown price)
 
-交互：
+Interaction:
 
-- `J` / `K` 上下移动，`Enter` 打开详情。
-- `/` 聚焦搜索，`f` 打开筛选。
-- 列可排序；筛选器可保存为视图。
+- `J` / `K` move up and down, `Enter` opens details.
+- `/` focuses search, `f` opens filters.
+- Columns are sortable; filters can be saved as views.
 
-### 7.5 Request 详情：瀑布
+### 7.5 Request Detail: Waterfall
 
-结构：
+Structure:
 
-1. **摘要条**：总耗时、TTFT、Tokens/s、总成本、状态。
-2. **瀑布图**：横向时间轴，分段 lane。
-3. **分段表**：名称、耗时、占比、测量方法、estimated。
-4. **属性面板**：provider、model、tenant hash、prompt version、attempt。
-5. **成本卡**：分项、价格表版本、缓存命中率。
-6. **错误/重试卡**：错误类型、退避、是否可能重复计费。
+1. **Summary bar**: total duration, TTFT, Tokens/s, total cost, status.
+2. **Waterfall**: horizontal timeline, segmented lanes.
+3. **Segment table**: name, duration, share, measurement method, estimated.
+4. **Property panel**: provider, model, tenant hash, prompt version, attempt.
+5. **Cost card**: line items, price table version, cache hit rate.
+6. **Error / retry card**: error type, backoff, whether double billing is possible.
 
-瀑布图规则：
+Waterfall rules:
 
-- 时间轴使用自适应刻度（1ms / 10ms / 100ms / 1s）。
-- 并行分段使用多 lane；同一 lane 内按开始时间排序。
-- `estimated` 分段使用斜纹填充 + 虚线边框。
-- `unaccounted` 固定在底部，斜纹灰。
-- 悬浮显示：开始偏移、持续、占比、测量方法。
-- 点击分段：Inspector 显示原始属性与事件。
+- The timeline uses adaptive ticks (1ms / 10ms / 100ms / 1s).
+- Parallel segments use multiple lanes; within a lane, order by start time.
+- `estimated` segments use hatch fill + dashed border.
+- `unaccounted` is fixed at the bottom, hatched gray.
+- Hover shows: start offset, duration, share, measurement method.
+- Clicking a segment: the Inspector shows raw attributes and events.
 
-### 7.6 Costs 账本
+### 7.6 Costs Ledger
 
-顶部：
+Top:
 
-- 总成本（大号等宽数字）
-- 货币（默认 USD）
-- 价格表版本与生效日期
-- 时间范围
-- 数据完整度（采样加权、未知价格数量）
+- Total cost (large monospaced number)
+- Currency (USD by default)
+- Price table version and effective date
+- Time range
+- Data completeness (sampling-weighted, count of unknown prices)
 
-图表：
+Charts:
 
-- 按天的堆叠成本（Input / Output / Cached / Reasoning）
-- 按 Feature / Tenant / Model 的 Top N 表
-- 成本 vs 延迟散点图（异常点高亮）
-- 缓存命中率趋势
+- Stacked cost by day (Input / Output / Cached / Reasoning)
+- Top N table by Feature / Tenant / Model
+- Cost vs latency scatter plot (anomalies highlighted)
+- Cache hit rate trend
 
-异常区：
+Anomaly area:
 
-- 重试导致的潜在重复计费
-- 未知价格模型
-- 单位成本突增
-- 预算超限
+- Potential double billing caused by retries
+- Models with unknown prices
+- Sudden increase in unit cost
+- Budget overruns
 
 ### 7.7 Compare
 
-- 选择两个请求或两个时间窗口。
-- 并排瀑布，对齐相同分段。
-- 差值表：绝对差、百分比、方向。
-- 结论区：自动生成"生成阶段慢了 1.2s，主要来自输出 Token 增加 38%"这类可解释句子。
-- 自动结论必须可展开到证据，不允许黑箱。
+- Select two requests or two time windows.
+- Side-by-side waterfalls, aligned by the same segments.
+- Difference table: absolute difference, percentage, direction.
+- Conclusion area: automatically generates explainable sentences such as "the generation phase was 1.2s slower, mainly due to a 38% increase in output tokens".
+- Automatic conclusions must expand to evidence; black boxes are not allowed.
 
 ### 7.8 Health
 
-采集器自身的可观测性：
+Observability of the collector itself:
 
-- 队列长度
-- 丢弃事件数
-- 落盘延迟 P50/P95
-- 采集开销估算
-- 熔断状态
-- 版本与配置快照
+- Queue length
+- Drop event count
+- Persistence latency P50/P95
+- Estimated collection overhead
+- Circuit breaker state
+- Version and configuration snapshot
 
 ### 7.9 Settings
 
-- 存储路径、保留策略
-- 内容捕获级别（None / Metadata / Full）
-- 采样规则
-- 价格表来源与覆盖
-- 导出配置（OTLP endpoint、headers、脱敏）
-- 主题（深色 / 浅色 / 跟随系统）
+- Storage path, retention policy
+- Content capture level (None / Metadata / Full)
+- Sampling rules
+- Price table source and overrides
+- Export configuration (OTLP endpoint, headers, redaction)
+- Theme (dark / light / follow system)
 
 ---
 
-## 8. 组件规范
+## 8. Component Specifications
 
-### 8.1 按钮
+### 8.1 Buttons
 
-| 类型 | 背景 | 边框 | 文本 |
+| Type | Background | Border | Text |
 | --- | --- | --- | --- |
-| Primary | `accent` | 无 | `#0A0C0F` |
+| Primary | `accent` | None | `#0A0C0F` |
 | Secondary | `bg.raised` | `border.subtle` | `text.primary` |
-| Ghost | 透明 | 无 | `text.secondary` |
-| Danger | `danger` | 无 | `#0A0C0F` |
+| Ghost | Transparent | None | `text.secondary` |
+| Danger | `danger` | None | `#0A0C0F` |
 
-高度：28px（紧凑）/ 32px（默认）。内边距：12px。圆角：2px。
+Height: 28px (compact) / 32px (default). Padding: 12px. Corner radius: 2px.
 
-### 8.2 表格
+### 8.2 Tables
 
-- 行高 32px；表头 28px。
-- 表头使用 `text.xs` 大写字母间距 0.04em。
-- 数字右对齐、等宽。
-- 悬停背景 `bg.raised`；选中背景 `accent.muted` + 左侧 2px `accent` 边。
-- 不使用斑马纹。
+- Row height 32px; header 28px.
+- Headers use `text.xs` uppercase with 0.04em letter spacing.
+- Numbers are right-aligned and monospaced.
+- Hover background `bg.raised`; selected background `accent.muted` + 2px `accent` edge on the left.
+- No zebra striping.
 
-### 8.3 标签
+### 8.3 Tags
 
-- 高度 18px，字号 11px，圆角 2px。
-- 语义标签：`estimated`（黄）、`retry`（红）、`cached`（绿）、`unknown`（灰）。
-- 标签不使用填充饱和色；使用 12% 透明度背景 + 同色文本。
+- Height 18px, font size 11px, corner radius 2px.
+- Semantic tags: `estimated` (yellow), `retry` (red), `cached` (green), `unknown` (gray).
+- Tags do not use saturated fills; use a 12% opacity background + text in the same hue.
 
-### 8.4 过滤器
+### 8.4 Filters
 
-- 顶部一行 chips；支持 AND 组合。
-- 数值范围使用双输入框，不使用滑块（精度差）。
-- 时间范围使用预设 + 自定义。
+- A single row of chips at the top; supports AND combinations.
+- Numeric ranges use dual inputs, not sliders (poor precision).
+- Time ranges use presets + custom.
 
-### 8.5 图表
+### 8.5 Charts
 
-- 网格线 `border.subtle`，仅水平线。
-- 轴标签 `text.xs`，`text.muted`。
-- 不用 3D、不用阴影、不用渐变填充。
-- 悬浮十字线 + Tooltip；Tooltip 使用等宽数字。
-- 图例可点击过滤；颜色 + 纹理双重编码。
+- Grid lines `border.subtle`, horizontal lines only.
+- Axis labels `text.xs`, `text.muted`.
+- No 3D, no shadows, no gradient fills.
+- Hover crosshair + tooltip; tooltips use monospaced numbers.
+- Legends are clickable for filtering; color + texture dual encoding.
 
-### 8.6 空状态
+### 8.6 Empty States
 
-必须包含：
+Must contain:
 
-1. 一句解释。
-2. 一个可复制命令。
-3. 一个文档链接。
+1. One sentence of explanation.
+2. One copyable command.
+3. One documentation link.
 
-### 8.7 加载与错误
+### 8.7 Loading and Errors
 
-- 加载：静态骨架 + 200ms 延迟显示，避免闪烁。
-- 错误：错误码、原因、下一步、复制诊断信息。
-- 不使用幽默文案或表情符号。
+- Loading: static skeleton + 200ms delay before showing, to avoid flicker.
+- Errors: error code, cause, next step, copy diagnostic information.
+- Do not use humorous copy or emoji.
 
 ---
 
-## 9. 动效
+## 9. Motion
 
-| 场景 | 时长 | 曲线 |
+| Scenario | Duration | Curve |
 | --- | --- | --- |
-| 面板展开 | 160ms | ease-out |
-| 行选中 | 120ms | linear |
-| Inspector 切换 | 140ms | ease-out |
+| Panel expand | 160ms | ease-out |
+| Row selection | 120ms | linear |
+| Inspector switch | 140ms | ease-out |
 | Toast | 180ms | ease-out |
-| 图表更新 | 200ms | ease-out |
+| Chart update | 200ms | ease-out |
 
-禁止：弹跳、旋转、视差、发光脉冲。尊重 `prefers-reduced-motion`。
-
----
-
-## 10. 可访问性
-
-- 对比度 ≥ 4.5:1（正文），≥ 3:1（大字号与图形）。
-- 键盘可达：Tab 顺序、焦点可见（2px `accent` 外框）。
-- 瀑布图提供"表格视图"替代。
-- 图表提供文本摘要。
-- 状态不只用颜色；使用图标 + 文本 + 纹理。
-- 支持 200% 缩放不破布局。
-- 语言：UI 默认英文（`en-US`），可切换简体中文（`zh-Hans`）与标准德语（`de-DE`）；日期与数字按 locale 格式化。
+Prohibited: bounce, rotation, parallax, glow pulse. Respect `prefers-reduced-motion`.
 
 ---
 
-## 11. 响应式
+## 10. Accessibility
 
-| 宽度 | 行为 |
+- Contrast ≥ 4.5:1 (body text), ≥ 3:1 (large text and graphics).
+- Keyboard reachable: Tab order, visible focus (2px `accent` outline).
+- The waterfall provides a "table view" alternative.
+- Charts provide text summaries.
+- State is not conveyed by color alone; use icon + text + texture.
+- Support 200% zoom without breaking layout.
+- Language: the UI defaults to English (`en-US`), switchable to Simplified Chinese (`zh-Hans`) and Standard German (`de-DE`); dates and numbers are formatted per locale.
+
+---
+
+## 11. Responsive
+
+| Width | Behavior |
 | --- | --- |
-| ≥ 1440px | 三栏完整 |
-| 1280–1439px | Inspector 收窄至 320px |
-| 1024–1279px | Inspector 变为抽屉 |
-| < 1024px | 仅列表与详情，不保证完整诊断体验 |
+| ≥ 1440px | Full three columns |
+| 1280–1439px | Inspector narrows to 320px |
+| 1024–1279px | Inspector becomes a drawer |
+| < 1024px | List and details only; the full diagnostic experience is not guaranteed |
 
-桌面优先，不做移动端完整适配。
-
----
-
-## 12. 文案语气
-
-- 简洁、具体、可行动。
-- 使用工程术语，不拟人化。
-- 错误文案结构：`发生了什么` + `为什么` + `下一步`。
-- 示例：
-  - 好："TTFT 无法精确测量：provider 未返回首字节时间。已标记为估算。"
-  - 差："哎呀，好像出了点问题～"
+Desktop first; no full mobile adaptation.
 
 ---
 
-## 13. 设计交付物
+## 12. Copy Tone
 
-| 交付物 | 形式 | 状态 |
+- Concise, specific, actionable.
+- Use engineering terminology; no anthropomorphism.
+- Error copy structure: `what happened` + `why` + `next step`.
+- Examples:
+  - Good: "TTFT cannot be measured precisely: the provider did not return time to first byte. Marked as estimated."
+  - Bad: "Oops, something seems to have gone wrong~"
+
+---
+
+## 13. Design Deliverables
+
+| Deliverable | Form | Status |
 | --- | --- | --- |
-| Design tokens | JSON + CSS variables | 待 M1 |
-| Logo | SVG（32/16） | 待设计 |
-| 图标集 | SVG sprite | 待 M1 |
-| 页面线框 | 本文档 | Draft |
-| 高保真稿 | Figma / Penpot | 已决议 D-06；稿期待 M1 |
-| 组件库 | React + CSS Modules | 待 M2 |
+| Design tokens | JSON + CSS variables | Pending M1 |
+| Logo | SVG (32/16) | Pending design |
+| Icon set | SVG sprite | Pending M1 |
+| Page wireframes | This document | Draft |
+| High-fidelity mockups | Figma / Penpot | Decided D-06; mockups pending M1 |
+| Component library | React + CSS Modules | Pending M2 |
 
-### 13.1 CSS Token 示例
+### 13.1 CSS Token Example
 
     :root {
       --ap-bg-canvas: #0A0C0F;
@@ -495,12 +495,12 @@ SVG 结构建议（设计稿，不是最终资产）：
 
 ---
 
-## 14. 决议状态
+## 14. Decision Status
 
-D-06、D-12、D-16 已决议（2026-11-25）：
+D-06, D-12, D-16 resolved (2026-11-25):
 
-- D-06：React 19 + TypeScript + Vite + Redux Toolkit + RTK Query；CSS Modules + design tokens；Radix Primitives；uPlot + 自绘瀑布。
-- D-12：提供浅色主题；M2 深色优先，1.0 完成浅色；必须避免"AI 味"。
-- D-16：UI 默认英文，可切换简体中文与标准德语（`de-DE`）。
-- D-07：Studio 随 CLI 内嵌启动（本地 host），不单独部署。
-- D-16：UI 文案是否默认英文。
+- D-06: React 19 + TypeScript + Vite + Redux Toolkit + RTK Query; CSS Modules + design tokens; Radix Primitives; uPlot + custom-drawn waterfall.
+- D-12: Provide a light theme; dark first in M2, light completed in 1.0; must avoid "AI flavor".
+- D-16: The UI defaults to English, switchable to Simplified Chinese and Standard German (`de-DE`).
+- D-07: Studio starts embedded with the CLI (local host) and is not deployed separately.
+- D-16: Whether UI copy defaults to English.

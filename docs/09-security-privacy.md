@@ -1,84 +1,84 @@
-# 安全与隐私设计
+# Security and Privacy Design
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 工程、安全、合规 |
-| 关联文档 | `05-technical-design.md`、`06-observability-model.md`、`10-open-source-governance.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Engineering, Security, Compliance |
+| Related documents | `05-technical-design.md`, `06-observability-model.md`, `10-open-source-governance.md` |
 
 ---
 
-## 1. 安全目标
+## 1. Security Goals
 
-1. **不泄露内容**：默认不采集 Prompt / Completion；不记录密钥。
-2. **不扩大攻击面**：本地 Studio 仅回环、带令牌、无外部资源。
-3. **不破坏业务**：采集链路故障不影响请求。
-4. **可审计**：数据在哪、保留多久、导出到哪里，用户可查。
-5. **供应链可信**：依赖最小化、签名、SBOM、漏洞响应。
+1. **Do not leak content**: Do not collect Prompt / Completion by default; do not record secrets.
+2. **Do not expand the attack surface**: Local Studio binds to loopback only, requires a token, and uses no external resources.
+3. **Do not break the business**: A failure in the collection pipeline does not affect requests.
+4. **Auditable**: Users can check where data is, how long it is retained, and where it is exported.
+5. **Trustworthy supply chain**: Minimal dependencies, signing, SBOM, vulnerability response.
 
 ---
 
-## 2. 资产与信任边界
+## 2. Assets and Trust Boundaries
 
-### 2.1 资产
+### 2.1 Assets
 
-| 资产 | 敏感度 | 位置 |
+| Asset | Sensitivity | Location |
 | --- | --- | --- |
-| Prompt / Completion | 高 | 进程内存、可选本地文件 |
-| API Key / Token | 极高 | 进程内存、环境变量 |
-| 租户 / 用户标识 | 高 | 本地文件、导出 |
-| 成本与用量 | 中 | 本地文件、导出 |
-| 价格表 | 低 | 本地文件、包内 |
-| 本地 Studio 令牌 | 高 | 进程内存、临时文件 |
-| 诊断会话文件 | 中高 | 用户目录 |
+| Prompt / Completion | High | Process memory, optional local files |
+| API Key / Token | Very high | Process memory, environment variables |
+| Tenant / user identifiers | High | Local files, export |
+| Cost and usage | Medium | Local files, export |
+| Price table | Low | Local files, in-package |
+| Local Studio token | High | Process memory, temporary files |
+| Diagnostic session files | Medium-high | User directory |
 
-### 2.2 信任边界
+### 2.2 Trust boundaries
 
-    [业务进程]
-      ├── Runesvaner 采集（同进程，可信）
-      ├── 本地文件系统（用户权限，半可信）
-      ├── Studio HTTP（回环，需认证）
-      └── OTLP 导出（外部网络，不可信）
+    [Business process]
+      ├── Runesvaner collection (same process, trusted)
+      ├── Local file system (user permissions, semi-trusted)
+      ├── Studio HTTP (loopback, authentication required)
+      └── OTLP export (external network, untrusted)
 
-| 边界 | 威胁 |
+| Boundary | Threat |
 | --- | --- |
-| 进程内 | 恶意库、反射滥用、内存转储 |
-| 文件系统 | 其他本地用户读取、符号链接、路径穿越 |
-| Studio HTTP | DNS rebinding、CSRF、XSS、未授权访问 |
-| OTLP | 中间人、错误端点、敏感字段泄露 |
-| 价格表 | 恶意 JSON、路径穿越、远端篡改 |
-| 供应链 | 依赖投毒、构建机入侵 |
+| In-process | Malicious libraries, reflection abuse, memory dumps |
+| File system | Access by other local users, symbolic links, path traversal |
+| Studio HTTP | DNS rebinding, CSRF, XSS, unauthorized access |
+| OTLP | Man-in-the-middle, wrong endpoint, sensitive field leakage |
+| Price table | Malicious JSON, path traversal, remote tampering |
+| Supply chain | Dependency poisoning, build machine compromise |
 
 ---
 
-## 3. 隐私设计
+## 3. Privacy Design
 
-### 3.1 内容捕获级别
+### 3.1 Content capture levels
 
-| 级别 | 采集 | 默认 | 用途 |
+| Level | Collected | Default | Purpose |
 | --- | --- | --- | --- |
-| `None` | 不采集 Prompt/Completion | 是 | 绝大多数场景 |
-| `MetadataOnly` | 长度、哈希、Token 估算 | 否 | 需要关联但不看内容 |
-| `Full` | 原文（有上限） | 否 | 本地调试，显式开启 |
+| `None` | Prompt/Completion not collected | Yes | The vast majority of scenarios |
+| `MetadataOnly` | Length, hash, token estimate | No | Correlation needed without viewing content |
+| `Full` | Original text (with limits) | No | Local debugging, explicitly enabled |
 
-规则：
+Rules:
 
-- `Full` 开启时，CLI 与 Studio 显示醒目警告。
-- `Full` 默认保留 7 天，且不计入常规聚合导出。
-- `Full` 不改变 OTLP 默认导出行为；导出前必须脱敏。
+- When `Full` is enabled, the CLI and Studio display a prominent warning.
+- `Full` is retained for 7 days by default and is not included in regular aggregate exports.
+- `Full` does not change the default OTLP export behavior; redaction is mandatory before export.
 
-### 3.2 哈希与标识
+### 3.2 Hashing and identifiers
 
-- `user` / `tenant` 默认 SHA-256 截断（16 hex），加进程级 salt。
-- salt 存储于本地配置文件，权限 0600；不导出。
-- 哈希不是匿名化承诺；文档明确"可关联、不可逆"的边界。
-- 不哈希 `model`、`provider`、`feature` 等低敏维度。
+- `user` / `tenant` are truncated SHA-256 (16 hex) with a process-level salt by default.
+- The salt is stored in a local configuration file with permissions 0600; it is not exported.
+- Hashing is not a promise of anonymization; the document clearly states the boundary of "correlatable, irreversible".
+- Low-sensitivity dimensions such as `model`, `provider`, and `feature` are not hashed.
 
-### 3.3 敏感 Header
+### 3.3 Sensitive Headers
 
-默认丢弃：
+Dropped by default:
 
 - `Authorization`
 - `Proxy-Authorization`
@@ -89,225 +89,225 @@
 - `x-amz-security-token`
 - `x-goog-api-key`
 
-规则：
+Rules:
 
-- 白名单优先于黑名单：只采集明确允许的头。
-- 若用户自定义 header 采集，必须显式配置，并在文档中警告。
+- Allowlist takes precedence over denylist: only explicitly allowed headers are collected.
+- If users collect custom headers, it must be explicitly configured and warned about in the documentation.
 
-### 3.4 日志
+### 3.4 Logs
 
-- 日志不包含 Prompt、Completion、Key、Cookie。
-- 错误消息只记录哈希或类型；不记录原始异常消息中的敏感内容（可能包含请求体）。
-- 调试日志默认关闭；开启时显示警告。
+- Logs do not contain Prompt, Completion, Key, or Cookie.
+- Error messages record only hashes or types; sensitive content in the original exception message (which may contain the request body) is not recorded.
+- Debug logging is off by default; a warning is displayed when enabled.
 
 ---
 
-## 4. 本地 Studio 安全
+## 4. Local Studio Security
 
-### 4.1 网络绑定
+### 4.1 Network binding
 
-- 默认 `127.0.0.1`，随机端口。
-- 禁止默认 `0.0.0.0`；如用户显式要求远程访问，必须：
-  - 显示高风险警告。
-  - 要求设置访问令牌。
-  - 文档说明反向代理与 TLS 责任。
+- Defaults to `127.0.0.1` with a random port.
+- Default `0.0.0.0` is prohibited; if the user explicitly requests remote access, you must:
+  - Display a high-risk warning.
+  - Require an access token to be set.
+  - Document the responsibilities for reverse proxy and TLS.
 
-### 4.2 认证
+### 4.2 Authentication
 
-- 启动时生成 32 字节随机令牌（`RandomNumberGenerator`）。
-- URL 携带一次性令牌；API 使用 `Authorization: Bearer`。
-- 令牌仅存于进程内存；进程退出失效。
-- 不把令牌写入 shell history：CLI 输出使用 `open` 命令或本地文件。
+- Generate a 32-byte random token at startup (`RandomNumberGenerator`).
+- The URL carries a one-time token; the API uses `Authorization: Bearer`.
+- The token is stored only in process memory; it becomes invalid when the process exits.
+- Do not write the token to shell history: CLI output uses the `open` command or a local file.
 
-### 4.3 Host 校验与 DNS Rebinding
+### 4.3 Host validation and DNS rebinding
 
-- 校验 `Host` 头为 `127.0.0.1:<port>` 或 `localhost:<port>`。
-- 校验 `Origin`（若存在）为同源。
-- 关闭 CORS；不响应跨域预检。
-- 设置 `X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`。
-- CSP：`default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'`。
-- 不使用外部 CDN、字体、图标。
+- Validate that the `Host` header is `127.0.0.1:<port>` or `localhost:<port>`.
+- Validate that `Origin` (if present) is same-origin.
+- Disable CORS; do not respond to cross-origin preflight requests.
+- Set `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`.
+- CSP: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'`.
+- Do not use external CDNs, fonts, or icons.
 
-### 4.4 输入处理
+### 4.4 Input handling
 
-- 查询参数白名单与长度限制。
-- 分页上限（默认 100，最大 1000）。
-- 排序字段白名单，防 SQL 注入。
-- JSONL 解析使用 `Utf8JsonReader` + 源生成；未知字段忽略。
-- 渲染使用 React 默认转义；禁止 `dangerouslySetInnerHTML`。
-- 文件名/路径参数不接受用户输入；会话 ID 使用 ULID 校验。
+- Query parameter allowlist and length limits.
+- Pagination limits (default 100, maximum 1000).
+- Sort field allowlist to prevent SQL injection.
+- JSONL parsing uses `Utf8JsonReader` + source generation; unknown fields are ignored.
+- Rendering uses React default escaping; `dangerouslySetInnerHTML` is prohibited.
+- File name/path parameters do not accept user input; session IDs are validated as ULIDs.
 
 ### 4.5 CSRF
 
-- 本地 token 已提供认证；额外要求：
-  - 所有写操作使用 `POST` + `Content-Type: application/json`。
-  - 校验 `Origin` / `Sec-Fetch-Site`。
-  - 不使用 cookie 认证。
+- The local token already provides authentication; additionally require:
+  - All write operations use `POST` + `Content-Type: application/json`.
+  - Validate `Origin` / `Sec-Fetch-Site`.
+  - Do not use cookie authentication.
 
 ---
 
-## 5. 文件系统安全
+## 5. File System Security
 
-| 威胁 | 缓解 |
+| Threat | Mitigation |
 | --- | --- |
-| 路径穿越 | 所有路径由配置根目录 + 固定子目录组成；拒绝 `..` |
-| 符号链接 | 写入前检查目标不是 symlink；使用 `FileOptions` 安全打开 |
-| 权限过大 | Unix `0600` 文件、`0700` 目录；Windows ACL 仅当前用户 |
-| 文件被替换 | 打开时校验 inode/句柄；敏感文件使用独占写 |
-| 磁盘耗尽 | 保留策略 + 最大大小 + 熔断 |
-| 恶意 JSONL | 限制单行大小、嵌套深度、字段数量 |
-| SQLite WAL/SHM | 与主库同权限（0600）；关闭时清理；不接受用户指定路径 |
-| 归档炸弹 | 不支持压缩导入；如支持，限制解压比 |
+| Path traversal | All paths consist of a configured root directory + fixed subdirectories; reject `..` |
+| Symbolic links | Check that the target is not a symlink before writing; open safely using `FileOptions` |
+| Excessive permissions | Unix `0600` files, `0700` directories; Windows ACL for the current user only |
+| File replaced | Validate the inode/handle when opening; use exclusive writes for sensitive files |
+| Disk exhaustion | Retention policy + maximum size + circuit breaker |
+| Malicious JSONL | Limit line size, nesting depth, and field count |
+| SQLite WAL/SHM | Same permissions as the main database (0600); cleaned up on shutdown; do not accept user-specified paths |
+| Archive bomb | Compressed import is not supported; if supported, limit the decompression ratio |
 
-默认目录：
+Default directories:
 
-    ~/.runesvaner/            # 用户级
-    .runesvaner/              # 项目级（优先）
+    ~/.runesvaner/            # User-level
+    .runesvaner/              # Project-level (preferred)
 
-v1 平台范围：Windows 10/11 与 Linux；macOS 非目标（D-15）。
+v1 platform scope: Windows 10/11 and Linux; macOS is a non-goal (D-15).
 
 ---
 
-## 6. 导出安全
+## 6. Export Security
 
 ### 6.1 OTLP
 
-- 默认关闭。
-- 端点必须显式配置；默认不允许 `http://`（除非 localhost）。
-- 支持 `https://` 与本地 collector。
-- Headers 存储在配置中，权限 0600；日志中脱敏。
-- 导出前执行 `IContentRedactor`。
-- 失败不影响业务。
+- Off by default.
+- The endpoint must be explicitly configured; `http://` is not allowed by default (except localhost).
+- Supports `https://` and local collectors.
+- Headers are stored in the configuration with permissions 0600; redacted in logs.
+- Execute `IContentRedactor` before export.
+- Failures do not affect the business.
 
-### 6.2 导出字段
+### 6.2 Exported fields
 
-默认导出：
+Exported by default:
 
-- 时间、耗时、分段、Token、成本、provider、model、status。
-- `feature`、`tenant_hash`、`prompt_version`（低基数、哈希）。
+- Time, duration, segments, tokens, cost, provider, model, status.
+- `feature`, `tenant_hash`, `prompt_version` (low cardinality, hashed).
 
-默认不导出：
+Not exported by default:
 
-- Prompt / Completion 原文。
-- `user_id` 原文。
-- 原始 URL（可能含查询参数）。
-- 异常消息原文。
+- Prompt / Completion original text.
+- `user_id` original text.
+- Raw URL (may contain query parameters).
+- Raw exception messages.
 
-### 6.3 第三方兼容
+### 6.3 Third-party compatibility
 
-- Langfuse / Phoenix 通过 OTLP 接收；字段映射在文档中列出。
-- 不保证第三方平台的隐私策略；用户需自行评估。
-- 提供"仅本地"模式，完全不导出。
+- Langfuse / Phoenix receive via OTLP; field mappings are listed in the documentation.
+- The privacy policies of third-party platforms are not guaranteed; users must evaluate them themselves.
+- Provides a "local-only" mode with no export at all.
 
 ---
 
-## 7. 供应链安全
+## 7. Supply Chain Security
 
-| 措施 | 说明 |
+| Measure | Description |
 | --- | --- |
-| 依赖最小化 | 核心零第三方依赖；可选包按需 |
-| 锁定版本 | `Directory.Packages.props` 集中管理 |
-| NuGet 签名 | 发布包签名；验证依赖签名 |
-| SBOM | 每次发布生成 SPDX/CycloneDX |
-| CodeQL | GitHub Actions 每周 + PR |
-| Dependabot | 每周依赖更新；安全更新即时 |
-| Secret scanning | 启用 GitHub secret scanning + push protection |
-| 构建隔离 | GitHub-hosted runner；最小权限 token |
-| 发布认证 | NuGet Trusted Publishing（OIDC），不使用长期 API Key |
-| 制品签名 | GitHub Artifact Attestations（如可用） |
-| 代码审查 | 至少 1 名维护者批准；敏感变更 2 人 |
+| Dependency minimization | Core has zero third-party dependencies; optional packages are on demand |
+| Version pinning | Centrally managed in `Directory.Packages.props` |
+| NuGet signing | Release packages are signed; dependency signatures are verified |
+| SBOM | SPDX/CycloneDX generated on every release |
+| CodeQL | GitHub Actions weekly + on PR |
+| Dependabot | Weekly dependency updates; immediate security updates |
+| Secret scanning | Enable GitHub secret scanning + push protection |
+| Build isolation | GitHub-hosted runners; least-privilege tokens |
+| Release authentication | NuGet Trusted Publishing (OIDC), no long-lived API keys |
+| Artifact signing | GitHub Artifact Attestations (if available) |
+| Code review | At least 1 maintainer approval; 2 people for sensitive changes |
 
-### 7.1 依赖审查清单
+### 7.1 Dependency review checklist
 
-新增依赖必须回答：
+New dependencies must answer:
 
-1. 许可证是否兼容 Apache-2.0？
-2. 是否支持 AOT/Trim？
-3. 维护状态与安全记录？
-4. 体积增量？
-5. 是否可被替代？
-6. 是否引入原生依赖？
+1. Is the license compatible with Apache-2.0?
+2. Does it support AOT/Trim?
+3. Maintenance status and security record?
+4. Size increase?
+5. Can it be replaced?
+6. Does it introduce native dependencies?
 
 ---
 
-## 8. 威胁模型（STRIDE 简化）
+## 8. Threat Model (simplified STRIDE)
 
-| 威胁 | 场景 | 缓解 |
+| Threat | Scenario | Mitigation |
 | --- | --- | --- |
-| Spoofing | 伪造 Studio 请求 | 本地 token + Host/Origin 校验 |
-| Tampering | 篡改 JSONL / 价格表 | 校验和；只读打开；版本字段 |
-| Repudiation | 无法证明数据来源 | session_id、时间戳、schema 版本 |
-| Information Disclosure | Prompt 泄露 | 默认不采集；导出脱敏；文件权限 |
-| Denial of Service | 大量请求导致队列膨胀 | 背压、丢弃最旧、熔断 |
-| Elevation of Privilege | 通过路径穿越写文件 | 路径白名单、symlink 检查 |
-| XSS | 恶意 Prompt 在 Studio 渲染 | React 转义；CSP；禁止 HTML 注入 |
-| CSRF | 恶意网页调用本地 API | token + Origin 校验 |
-| DNS Rebinding | 恶意域名解析到 127.0.0.1 | Host 校验 + token |
-| 供应链 | 恶意 NuGet 包 | 签名、锁定、审查、SBOM |
-| 提示注入 | 恶意内容影响诊断结论 | 诊断结论只基于数值；不执行内容 |
+| Spoofing | Forged Studio requests | Local token + Host/Origin validation |
+| Tampering | Tampered JSONL / price table | Checksums; open read-only; version field |
+| Repudiation | Cannot prove data provenance | session_id, timestamp, schema version |
+| Information Disclosure | Prompt leakage | Not collected by default; export redaction; file permissions |
+| Denial of Service | Many requests cause queue growth | Backpressure, drop oldest, circuit breaker |
+| Elevation of Privilege | Write files via path traversal | Path allowlist, symlink check |
+| XSS | Malicious Prompt rendered in Studio | React escaping; CSP; no HTML injection |
+| CSRF | Malicious web page calls local API | token + Origin validation |
+| DNS Rebinding | Malicious domain resolves to 127.0.0.1 | Host validation + token |
+| Supply chain | Malicious NuGet package | Signing, pinning, review, SBOM |
+| Prompt injection | Malicious content affects diagnostic conclusions | Diagnostic conclusions are based only on numeric values; content is not executed |
 
-> 提示注入不是 Runesvaner 的执行风险（不调用 LLM 处理内容），但若未来做"AI 辅助根因分析"，必须重新评估。
-
----
-
-## 9. 合规提示
-
-以下为工程建议，非法律意见：
-
-- **GDPR**：若采集用户标识或内容，需明确合法性基础、保留期限、数据主体权利。
-- **CCPA**：提供删除与导出机制。
-- **数据驻留**：本地优先天然满足；OTLP 导出需用户确认区域。
-- **行业合规**：医疗、金融场景默认 `ContentCapture.None`。
-- **DPA**：项目本身不提供 SaaS，无 DPA；企业自建需自行评估。
+> Prompt injection is not an execution risk for Runesvaner (it does not call an LLM to process content), but if "AI-assisted root cause analysis" is added in the future, it must be re-evaluated.
 
 ---
 
-## 10. 安全测试
+## 9. Compliance Notes
 
-| 测试 | 频率 |
+The following are engineering recommendations, not legal advice:
+
+- **GDPR**: If user identifiers or content are collected, the legal basis, retention period, and data subject rights must be defined.
+- **CCPA**: Provide deletion and export mechanisms.
+- **Data residency**: Local-first naturally satisfies this; OTLP export requires the user to confirm the region.
+- **Industry compliance**: In healthcare and financial scenarios, `ContentCapture.None` is the default.
+- **DPA**: The project itself does not provide SaaS and has no DPA; enterprises self-hosting must evaluate it themselves.
+
+---
+
+## 10. Security Testing
+
+| Test | Frequency |
 | --- | --- |
-| 依赖漏洞扫描 | 每次 PR + 每日 |
-| CodeQL | 每次 PR + 每周 |
-| Secret 扫描 | 每次 push |
-| 路径穿越/符号链接测试 | 每次存储变更 |
-| Studio 认证绕过测试 | 每次 API 变更 |
-| XSS/CSRF 测试 | 每次 UI 变更 |
-| 恶意 JSONL 模糊测试 | M2 起 |
-| AOT 安全 smoke | 每次发布 |
-| 第三方渗透测试 | 1.0 前（预算允许） |
+| Dependency vulnerability scanning | Every PR + daily |
+| CodeQL | Every PR + weekly |
+| Secret scanning | Every push |
+| Path traversal/symlink tests | Every storage change |
+| Studio authentication bypass tests | Every API change |
+| XSS/CSRF tests | Every UI change |
+| Malicious JSONL fuzzing | From M2 |
+| AOT security smoke | Every release |
+| Third-party penetration testing | Before 1.0 (budget permitting) |
 
 ---
 
-## 11. 漏洞响应
+## 11. Vulnerability Response
 
-1. 接收：`SECURITY.md` 提供私下渠道。
-2. 确认：48 小时内响应。
-3. 修复：P0 一个发布周期；P1 两个周期。
-4. 披露：修复后 90 天或与报告者约定。
-5. 致谢：经同意后列出。
-6. CVE：必要时申请。
+1. Receive: `SECURITY.md` provides a private channel.
+2. Acknowledge: respond within 48 hours.
+3. Fix: P0 within one release cycle; P1 within two cycles.
+4. Disclose: 90 days after the fix or as agreed with the reporter.
+5. Credit: listed after consent.
+6. CVE: request when necessary.
 
 ---
 
-## 12. 事件响应预案
+## 12. Incident Response Plan
 
-| 事件 | 动作 |
+| Incident | Action |
 | --- | --- |
-| 包被投毒 | 撤包、发布安全公告、轮换密钥 |
-| Studio 认证绕过 | 立即发布补丁、建议用户关闭 Studio |
-| 内容泄露 | 停止导出、清理文件、通知用户 |
-| 供应链攻击 | 冻结发布、审计构建、重建制品 |
-| 价格表错误 | 发布修正版本、标注历史数据 |
+| Package poisoned | Delist the package, publish a security advisory, rotate keys |
+| Studio authentication bypass | Release a patch immediately, advise users to shut down Studio |
+| Content leakage | Stop export, clean up files, notify users |
+| Supply chain attack | Freeze releases, audit the build, rebuild artifacts |
+| Price table error | Release a corrected version, annotate historical data |
 
 ---
 
-## 13. 决议状态
+## 13. Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本文件直接相关：
+D-01–D-25 have all been decided; see `15-decision-log.md`. Directly related to this document:
 
-- D-07：库 SQLite 默认；CLI AOT 默认 JSONL；失败回退。
-- D-09：默认内容捕获 `None`。
-- D-10：暂不商业化；接受无捆绑赞助；不做托管服务。
-- D-11：商标个人持有；36 个月不活跃可继任转让。
-- D-13：OTLP 默认关闭。
-- D-20：不强制兼容第三方语义。
+- D-07: Library SQLite by default; CLI AOT JSONL by default; fallback on failure.
+- D-09: Default content capture is `None`.
+- D-10: No commercialization for now; unbundled sponsorship is accepted; no hosted service.
+- D-11: Trademark held personally; successor transfer possible after 36 months of inactivity.
+- D-13: OTLP off by default.
+- D-20: No forced compatibility with third-party semantics.

@@ -1,239 +1,239 @@
-# 风险登记册
+# Risk Register
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 发起人、维护者 |
-| 关联文档 | `00-project-charter.md`、`11-roadmap.md`、`15-decision-log.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Founder, maintainers |
+| Related documents | `00-project-charter.md`, `11-roadmap.md`, `15-decision-log.md` |
 
 ---
 
-## 1. 评分方法
+## 1. Scoring Method
 
-| 维度 | 取值 |
+| Dimension | Value |
 | --- | --- |
-| 概率 P | 1 低 / 2 中 / 3 高 |
-| 影响 I | 1 低 / 2 中 / 3 高 |
-| 暴露 E | P × I（1–9） |
-| 优先级 | E ≥ 6 高；4–5 中；≤ 3 低 |
+| Probability P | 1 Low / 2 Medium / 3 High |
+| Impact I | 1 Low / 2 Medium / 3 High |
+| Exposure E | P × I (1–9) |
+| Priority | E ≥ 6 High; 4–5 Medium; ≤ 3 Low |
 
-复审节奏：每个里程碑结束时复审全部高风险；每月复审 Top 10。
+Review cadence: review all high risks at the end of each milestone; review the Top 10 monthly.
 
 ---
 
-## 2. 风险矩阵
+## 2. Risk Matrix
 
-| ID | 风险 | 类别 | P | I | E | 优先级 |
+| ID | Risk | Category | P | I | E | Priority |
 | --- | --- | --- | ---: | ---: | ---: | --- |
-| R-01 | Microsoft 在 MEAI 中直接提供等价的延迟分解与成本归因 | 市场 | 2 | 3 | 6 | 高 |
-| R-02 | Langfuse / Phoenix 下沉 .NET 原生 SDK，挤压空间 | 市场 | 2 | 2 | 4 | 中 |
-| R-03 | 成本计算错误导致信任崩塌 | 产品 | 2 | 3 | 6 | 高 |
-| R-04 | 延迟分段估算不可信，用户认为"编数字" | 产品 | 3 | 3 | 9 | 高 |
-| R-05 | 流式包装破坏取消/异常语义 | 技术 | 2 | 3 | 6 | 高 |
-| R-06 | SQLite AOT 兼容性（#36068）/ OTel 可选依赖失败 | 技术 | 3 | 2 | 6 | 高 |
-| R-07 | 采集开销超标，用户移除 | 技术 | 2 | 3 | 6 | 高 |
-| R-08 | 范围蔓延，里程碑无法交付 | 运营 | 3 | 3 | 9 | 高 |
-| R-09 | 个人维护倦怠，项目停滞 | 运营 | 3 | 3 | 9 | 高 |
-| R-10 | CLA 流程未自动化，阻碍贡献 | 社区 | 2 | 2 | 4 | 中 |
-| R-11 | Runesvaner 商标未检索（暂缓），后期可能冲突 | 法律 | 2 | 2 | 4 | 中 |
-| R-12 | 价格表来源/准确性/版权问题 | 法律 | 2 | 2 | 4 | 中 |
-| R-13 | 隐私事件（内容泄露） | 安全 | 1 | 3 | 3 | 低（但零容忍） |
-| R-14 | 供应链攻击（依赖/构建） | 安全 | 1 | 3 | 3 | 低（但零容忍） |
-| R-15 | 数据 schema 不稳定，消费者破坏 | 技术 | 2 | 2 | 4 | 中 |
-| R-16 | MEAI API 破坏性变更 | 技术 | 2 | 2 | 4 | 中 |
-| R-17 | UI"AI 味"导致口碑差 | 产品 | 2 | 2 | 4 | 中 |
-| R-18 | 高基数指标导致监控成本爆炸 | 技术 | 2 | 2 | 4 | 中 |
-| R-19 | 采样偏差导致成本统计错误 | 产品 | 2 | 3 | 6 | 高 |
-| R-20 | 本地 Studio 安全漏洞 | 安全 | 2 | 3 | 6 | 高 |
-| R-21 | 商业厂商（Progress 等）抢占 MEAI 可观测 | 市场 | 2 | 2 | 4 | 中 |
-| R-22 | .NET 版本支持负担过重 | 技术 | 2 | 2 | 4 | 中 |
-| R-23 | 文档/示例不足导致采用失败 | 运营 | 3 | 2 | 6 | 高 |
-| R-24 | 治理冲突（Owner 与维护者） | 社区 | 2 | 2 | 4 | 中 |
+| R-01 | Microsoft provides equivalent latency breakdown and cost attribution directly in MEAI | Market | 2 | 3 | 6 | High |
+| R-02 | Langfuse / Phoenix ship native .NET SDKs, squeezing the space | Market | 2 | 2 | 4 | Medium |
+| R-03 | Cost calculation errors destroy trust | Product | 2 | 3 | 6 | High |
+| R-04 | Latency segmentation estimates are not credible; users believe the numbers are "made up" | Product | 3 | 3 | 9 | High |
+| R-05 | The streaming wrapper breaks cancellation/exception semantics | Technical | 2 | 3 | 6 | High |
+| R-06 | SQLite AOT compatibility (#36068) / OTel optional dependency failure | Technical | 3 | 2 | 6 | High |
+| R-07 | Collection overhead exceeds targets and users remove it | Technical | 2 | 3 | 6 | High |
+| R-08 | Scope creep; milestones cannot be delivered | Operations | 3 | 3 | 9 | High |
+| R-09 | Individual maintainer burnout; the project stalls | Operations | 3 | 3 | 9 | High |
+| R-10 | CLA process not automated, hindering contributions | Community | 2 | 2 | 4 | Medium |
+| R-11 | Runesvaner trademark not searched (deferred); conflict may arise later | Legal | 2 | 2 | 4 | Medium |
+| R-12 | Price table source/accuracy/copyright issues | Legal | 2 | 2 | 4 | Medium |
+| R-13 | Privacy incident (content leak) | Security | 1 | 3 | 3 | Low (but zero tolerance) |
+| R-14 | Supply chain attack (dependencies/build) | Security | 1 | 3 | 3 | Low (but zero tolerance) |
+| R-15 | Data schema instability breaks consumers | Technical | 2 | 2 | 4 | Medium |
+| R-16 | MEAI API breaking changes | Technical | 2 | 2 | 4 | Medium |
+| R-17 | UI "AI-like" feel leads to poor reputation | Product | 2 | 2 | 4 | Medium |
+| R-18 | High-cardinality metrics cause monitoring cost explosion | Technical | 2 | 2 | 4 | Medium |
+| R-19 | Sampling bias causes incorrect cost statistics | Product | 2 | 3 | 6 | High |
+| R-20 | Local Studio security vulnerability | Security | 2 | 3 | 6 | High |
+| R-21 | Commercial vendors (Progress and others) preempt MEAI observability | Market | 2 | 2 | 4 | Medium |
+| R-22 | .NET version support burden is too heavy | Technical | 2 | 2 | 4 | Medium |
+| R-23 | Insufficient documentation/examples cause adoption failure | Operations | 3 | 2 | 6 | High |
+| R-24 | Governance conflict (Owner vs. maintainers) | Community | 2 | 2 | 4 | Medium |
 
 ---
 
-## 3. 关键风险与缓解
+## 3. Key Risks and Mitigations
 
-### R-04 延迟分段估算不可信（E=9）
+### R-04 Latency segmentation estimates are not credible (E=9)
 
-**触发信号**：用户反馈"这个数字不对"；同一请求多次测量差异 > 10%；Provider 排队与网络无法区分。
+**Trigger signals**: users report "this number is wrong"; repeated measurements of the same request differ by > 10%; provider queue time cannot be distinguished from network time.
 
-**缓解**：
+**Mitigations**:
 
-1. 分段分层：实测 / 事件推导 / 估算 / 残差，全部标注 `measurement`。
-2. UI 不使用精确视觉（如无误差线的仪表盘）；估算段用斜纹 + 虚线。
-3. 文档明确"Provider 排队包含网络 RTT"。
-4. 提供"原始事件"视图，让用户自行核对。
-5. 对无法测量的段显示 `unknown`，而不是 0。
+1. Segment layering: measured / event-derived / estimated / residual, all labeled with `measurement`.
+2. The UI does not use precision visuals (for example, gauges without error bars); estimated segments use hatching and dashed lines.
+3. Documentation explicitly states that "provider queue includes network RTT".
+4. Provide a "raw events" view so users can verify it themselves.
+5. Show `unknown` instead of 0 for segments that cannot be measured.
 
-**剩余风险**：中。无法完全消除外部服务的黑盒。
+**Residual risk**: medium. The black box of external services cannot be fully eliminated.
 
-### R-08 范围蔓延（E=9）
+### R-08 Scope creep (E=9)
 
-**触发信号**：Must 清单持续增长；里程碑延期超过一个周期；PR 涉及非目标功能。
+**Trigger signals**: the Must list keeps growing; a milestone slips by more than one cycle; a PR involves non-goal features.
 
-**缓解**：
+**Mitigations**:
 
-1. 非目标清单写入章程，PR 模板要求勾选。
-2. 新增 Must 必须替换一个现有 Must，或推迟里程碑。
-3. 每个里程碑只做一个"主菜"，其余为配菜。
-4. 每月复审范围。
+1. Write the non-goals list into the charter; the PR template requires a check.
+2. A new Must must replace an existing Must, or the milestone is postponed.
+3. Each milestone has only one "main dish"; the rest are side dishes.
+4. Review scope monthly.
 
-### R-09 维护倦怠（E=9）
+### R-09 Maintainer burnout (E=9)
 
-**触发信号**：Issue 响应 > 7 天；连续两个里程碑无外部贡献者；发起人投入下降。
+**Trigger signals**: issue response time > 7 days; two consecutive milestones without external contributors; founder investment declines.
 
-**缓解**：
+**Mitigations**:
 
-1. CLA + 维护者梯队，至少 2 人可发布。
-2. 自动化：CI、发布、文档、依赖更新。
-3. 限制支持范围（只支持 LTS + 最新 STS）。
-4. 公开路线图，降低沟通成本。
-5. 设置"维护窗口"，非窗口期不承诺即时响应。
-6. 继任计划（见 `10`）。
+1. CLA plus a maintainer ladder; at least 2 people able to release.
+2. Automation: CI, release, documentation, dependency updates.
+3. Limit the support scope (only LTS + latest STS).
+4. Public roadmap to reduce communication cost.
+5. Set "maintenance windows"; do not promise immediate response outside them.
+6. Succession plan (see `10`).
 
-### R-01 官方吸收（E=6）
+### R-01 Absorption by the official offering (E=6)
 
-**触发信号**：MEAI 发布成本/瀑布功能；.NET 团队宣布相关工具。
+**Trigger signals**: MEAI ships cost/waterfall features; the .NET team announces related tooling.
 
-**缓解**：
+**Mitigations**:
 
-1. 差异化在"本地优先 + AOT + 开发者体验"，而非单一字段。
-2. 与 OTel 互操作，官方越强，Runesvaner 越像"前端剖析器"。
-3. 若官方覆盖，转向 Native AOT 启动/体积或成本账本单点。
-4. 不与其正面竞争标准制定。
+1. Differentiate on "local-first + AOT + developer experience", not on a single field.
+2. Interoperate with OTel; the stronger the official offering, the more Runesvaner resembles a "front-end profiler".
+3. If the official offering covers it, pivot to Native AOT startup/size or the cost ledger as a single point.
+4. Do not compete head-on on standards development.
 
-### R-03 成本错误（E=6）
+### R-03 Cost errors (E=6)
 
-**触发信号**：与账单差异 > 5%；用户报告未知模型计费为 0；价格表过期。
+**Trigger signals**: difference from the bill > 5%; users report unknown models billed as 0; the price table is stale.
 
-**缓解**：
+**Mitigations**:
 
-1. 价格表版本化、来源、生效时间、校验和。
-2. 未知模型 `unknown`，不猜测。
-3. 与至少 2 家 provider 账单样例核对。
-4. UI 显示"估算/已核对"状态。
-5. 提供用户覆盖与差异报告。
-6. 成本计算单元测试覆盖边界。
+1. Price table versioning, source, effective time, checksum.
+2. `unknown` for unknown models; do not guess.
+3. Verify against billing samples from at least 2 providers.
+4. The UI shows "estimated/verified" status.
+5. Provide user overrides and a difference report.
+6. Cost calculation unit tests cover boundaries.
 
-### R-05 流式语义破坏（E=6）
+### R-05 Broken streaming semantics (E=6)
 
-**触发信号**：取消失效；异常被吞；chunk 顺序变化；内存增长。
+**Trigger signals**: cancellation stops working; exceptions are swallowed; chunk order changes; memory grows.
 
-**缓解**：
+**Mitigations**:
 
-1. 最小包装：只记录时间戳，不缓存内容。
-2. 专项测试矩阵（正常/空 chunk/异常/取消/超时/慢消费者）。
-3. 不在包装器内调用 `ToList`。
-4. 与 MEAI 契约测试。
-5. 代码审查清单包含流式语义。
+1. Minimal wrapper: record timestamps only; do not buffer content.
+2. Dedicated test matrix (normal/empty chunk/exception/cancellation/timeout/slow consumer).
+3. Do not call `ToList` inside the wrapper.
+4. Contract tests with MEAI.
+5. The code review checklist includes streaming semantics.
 
-### R-06 SQLite AOT 兼容性（#36068）（E=6）
+### R-06 SQLite AOT compatibility (#36068) (E=6)
 
-**触发信号**：AOT smoke 初始化 SQLite 失败；缺 `e_sqlite3`；WAL/查询异常。
+**Trigger signals**: AOT smoke fails to initialize SQLite; `e_sqlite3` is missing; WAL/query exceptions.
 
-**缓解**：
+**Mitigations**:
 
-1. 库/应用内 SQLite 默认；CLI 以 Native AOT 发布时默认 JSONL。
-2. `--storage sqlite` 时尝试；失败自动回退 JSONL，记录 `storage.fallback=jsonl`。
-3. M1 验证 workaround：native 资产复制、`SQLitePCLRaw` 初始化、WAL、查询；结果写入 ADR。
-4. 若不可行，M2 提供框架依赖 CLI（SQLite 默认），不替代 AOT CLI。
-5. 文档明确"默认 SQLite"在 AOT 下的宿主差异，避免误导。
+1. SQLite by default in the library/application; JSONL by default when the CLI is published with Native AOT.
+2. With `--storage sqlite`, attempt it; on failure fall back to JSONL and record `storage.fallback=jsonl`.
+3. M1 validates the workaround: native asset copy, `SQLitePCLRaw` initialization, WAL, queries; record the result in an ADR.
+4. If not feasible, M2 provides a framework-dependent CLI (SQLite default) that does not replace the AOT CLI.
+5. Documentation explicitly states the host difference of "SQLite by default" under AOT to avoid misleading users.
 
-### R-07 开销超标（E=6）
+### R-07 Overhead exceeds targets (E=6)
 
-**触发信号**：P95 > 1 ms；CPU > 1%；分配 > 2 KB；用户关闭。
+**Trigger signals**: P95 > 1 ms; CPU > 1%; allocations > 2 KB; users disable it.
 
-**缓解**：
+**Mitigations**:
 
-1. 采样前置；未采样零记录。
-2. 结构体、预分配、无 LINQ、无日志。
-3. 异步落盘；队列满丢弃。
-4. CI 基准门槛。
-5. 提供"最小模式"（仅根 Span + 用量）。
-6. 公开开销报告。
+1. Sampling upfront; zero records when not sampled.
+2. Structs, pre-allocation, no LINQ, no logging.
+3. Async disk write; drop when the queue is full.
+4. CI benchmark thresholds.
+5. Provide a "minimal mode" (root span + usage only).
+6. Publish overhead reports.
 
-### R-19 采样偏差（E=6）
+### R-19 Sampling bias (E=6)
 
-**触发信号**：采样模式成本与全量差异 > 10%；尾采样只保留慢请求。
+**Trigger signals**: cost under sampling differs from full capture by > 10%; tail sampling keeps only slow requests.
 
-**缓解**：
+**Mitigations**:
 
-1. 记录 `sampling.probability`。
-2. 聚合使用加权。
-3. UI 显示采样模式与置信度。
-4. 默认本地 100%；生产建议 10%。
-5. 尾采样单独统计，不与全量混算。
+1. Record `sampling.probability`.
+2. Use weighting in aggregation.
+3. The UI shows the sampling mode and confidence.
+4. 100% locally by default; 10% recommended in production.
+5. Count tail sampling separately; do not mix it with full capture.
 
-### R-20 Studio 安全（E=6）
+### R-20 Studio security (E=6)
 
-**触发信号**：无 token 可访问；Host 校验失败；XSS 报告。
+**Trigger signals**: accessible without a token; Host validation fails; XSS reported.
 
-**缓解**：
+**Mitigations**:
 
-1. 回环绑定 + 随机 token。
-2. Host/Origin 校验、CSP、无外部资源。
-3. React 转义、禁止 `dangerouslySetInnerHTML`。
-4. 安全测试纳入 CI。
-5. 1.0 前渗透测试。
+1. Loopback binding + random token.
+2. Host/Origin validation, CSP, no external resources.
+3. React escaping; `dangerouslySetInnerHTML` prohibited.
+4. Security tests included in CI.
+5. Penetration test before 1.0.
 
-### R-23 文档不足（E=6）
+### R-23 Insufficient documentation (E=6)
 
-**触发信号**：Issue 中重复"怎么接入"；试用者卡在第一步；README 跳出率高。
+**Trigger signals**: repeated "how do I integrate" in issues; trial users get stuck at the first step; high README bounce rate.
 
-**缓解**：
+**Mitigations**:
 
-1. 5 分钟快速开始，真实可运行。
-2. 每个 Must 功能有示例与故障排查。
-3. 文档与代码同 PR。
-4. 录屏/GIF（M2）。
-5. 文档站搜索（M3）。
+1. A 5-minute quick start that actually runs.
+2. Every Must feature has an example and troubleshooting guidance.
+3. Documentation in the same PR as code.
+4. Screen recordings/GIFs (M2).
+5. Documentation site search (M3).
 
 ---
 
-## 4. 风险与里程碑
+## 4. Risks and Milestones
 
-| 里程碑 | 必须缓解到"中"以下的风险 |
+| Milestone | Risks that must be mitigated below "Medium" |
 | --- | --- |
-| M0 | R-11 商标（暂缓）、R-12 价格表来源、R-24 治理 |
-| M1 | R-05 流式、R-07 开销、R-15 schema |
-| M2 | R-03 成本、R-04 分段、R-20 Studio、R-19 采样 |
-| M3 | R-02 竞品、R-10 CLA 自动化、R-18 高基数 |
-| M4 | R-01 官方、R-09 维护、R-13/R-14 安全 |
+| M0 | R-11 trademark (deferred), R-12 price table source, R-24 governance |
+| M1 | R-05 streaming, R-07 overhead, R-15 schema |
+| M2 | R-03 cost, R-04 segmentation, R-20 Studio, R-19 sampling |
+| M3 | R-02 competitors, R-10 CLA automation, R-18 high cardinality |
+| M4 | R-01 official offering, R-09 maintenance, R-13/R-14 security |
 
 ---
 
-## 5. 零容忍风险
+## 5. Zero-Tolerance Risks
 
-以下风险即使概率低，也必须设计为"不会发生"或"发生时可控"：
+The following risks must be designed so that they "cannot happen" or "are controllable when they do", even if their probability is low:
 
-| 风险 | 设计原则 |
+| Risk | Design principle |
 | --- | --- |
-| 内容泄露 | 默认不采集；导出脱敏；文件权限 |
-| 密钥泄露 | 永不采集 Authorization；日志过滤 |
-| 业务被拖垮 | 采集熔断；异步；丢弃 |
-| 供应链投毒 | 依赖最小化；签名；SBOM；锁定 |
-| 本地 UI 被远程访问 | 回环 + token + Host 校验 |
+| Content leak | No collection by default; export redaction; file permissions |
+| Secret leak | Never collect Authorization; log filtering |
+| Business dragged down | Collection circuit breaking; async; drop |
+| Supply chain poisoning | Dependency minimization; signing; SBOM; locking |
+| Local UI accessed remotely | Loopback + token + Host validation |
 
 ---
 
-## 6. 风险复审记录
+## 6. Risk Review Log
 
-| 日期 | 里程碑 | 变更 |
+| Date | Milestone | Change |
 | --- | --- | --- |
-| 2026-11-25 | M0 | 初始登记 |
+| 2026-11-25 | M0 | Initial registration |
 
 ---
 
-## 7. 决议状态
+## 7. Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md` 与 `19-open-implementation-decisions.md`。与本登记册直接相关：
+D-01–D-25 are all decided; see `15-decision-log.md` and `19-open-implementation-decisions.md`. Directly relevant to this register:
 
-- D-01：AI 负载诊断首发（R-01/R-02）。
-- D-02：Runesvaner；商标暂缓（D-25，R-11）。
-- D-03/D-04：Apache-2.0 / ICLA+CCLA（R-10）。
-- D-07：库 SQLite 默认；CLI AOT 默认 JSONL；失败回退（R-06）。
-- D-10：暂不商业化（R-09/R-13）。
-- D-18：AOT 研究分支（R-06）。
+- D-01: AI workload diagnostics first (R-01/R-02).
+- D-02: Runesvaner; trademark deferred (D-25, R-11).
+- D-03/D-04: Apache-2.0 / ICLA+CCLA (R-10).
+- D-07: SQLite by default in the library; JSONL by default in CLI AOT; fallback on failure (R-06).
+- D-10: no commercialization for now (R-09/R-13).
+- D-18: AOT research branch (R-06).

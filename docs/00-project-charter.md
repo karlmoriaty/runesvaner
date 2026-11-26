@@ -1,217 +1,217 @@
-# 项目章程：Runesvaner
+# Project Charter: Runesvaner
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Accepted（D-01–D-25 已决议） |
-| 版本 | 1.0 |
-| 日期 | 2026-11-25 |
-| 作者 | 项目发起人 + CodeArts 设计代理 |
-| 受众 | 项目发起人、潜在维护者、早期贡献者 |
-| 关联文档 | `01-market-research.md`、`03-prd.md`、`15-decision-log.md` |
+| Document status | Accepted (D-01–D-25 resolved) |
+| Version | 1.0 |
+| Date | 2026-11-25 |
+| Author | Project sponsor + CodeArts design agent |
+| Audience | Project sponsor, prospective maintainers, early contributors |
+| Related documents | `01-market-research.md`, `03-prd.md`, `15-decision-log.md` |
 
 ---
 
-## 1. 一句话定义
+## 1. One-Line Definition
 
-Runesvaner 是一个面向 .NET AI 应用的**进程内性能与成本剖析器**：把一次 LLM / Embedding / 检索请求拆解成可解释的延迟瀑布和成本账单，并在 Native AOT、Trimming、本地优先的约束下保持可用。
+Runesvaner is an **in-process performance and cost profiler** for .NET AI applications: it decomposes a single LLM / Embedding / retrieval request into an explainable latency waterfall and cost ledger, and remains usable under Native AOT, Trimming, and local-first constraints.
 
-## 2. 愿景
+## 2. Vision
 
-让 .NET 开发者面对 AI 负载时，不再只能看到"一个很慢的 Span"或"一张月底账单"，而是能在一次请求的粒度上回答三个问题：
+When .NET developers face AI workloads, they should no longer see only "a very slow Span" or "a month-end bill"; instead, they should be able to answer three questions at the granularity of a single request:
 
-1. **慢在哪一段？**
-2. **贵在哪一项？**
-3. **下一次改什么？**
+1. **Which segment is slow?**
+2. **Which item is expensive?**
+3. **What should change next time?**
 
-## 3. 问题陈述
+## 3. Problem Statement
 
-### 3.1 现有工具的能力边界
+### 3.1 Capability Boundaries of Existing Tools
 
-.NET 通用诊断工具链解决的是进程级与运行时级问题：
+The general .NET diagnostics toolchain addresses process-level and runtime-level problems:
 
-- `dotnet-trace` / `dotnet-counters` / `dotnet-dump` 面向 CPU、GC、线程池、锁、异常、内存转储。
-- OpenTelemetry 面向分布式追踪与指标，能给出 Span 起止时间与标准 GenAI 属性。
-- Langfuse、Arize Phoenix、OpenLLMetry 面向 LLM 可观测平台，强于 Trace 聚合、评估、Prompt 管理。
+- `dotnet-trace` / `dotnet-counters` / `dotnet-dump` target CPU, GC, thread pool, locks, exceptions, and memory dumps.
+- OpenTelemetry targets distributed tracing and metrics, and can provide Span start/end times and standard GenAI attributes.
+- Langfuse, Arize Phoenix, and OpenLLMetry target LLM observability platforms, and are strong in trace aggregation, evaluation, and Prompt management.
 
-它们共同留下三个缝隙：
+Together they leave three gaps:
 
-| 缝隙 | 具体表现 |
+| Gap | Manifestation |
 | --- | --- |
-| 延迟分解 | 只有一个总耗时 Span，无法区分网络、排队、首 Token、生成、工具、向量检索、序列化的占比 |
-| 成本归因 | 只有 Token 计数，缺少价格表版本、缓存折扣、重试重复计费、按功能/租户/ Prompt 版本的归因 |
-| 运行形态 | .NET AI 服务越来越多使用 Native AOT / Trimming，通用 Profiler 与部分 OTel 组件在此形态下受限或体积昂贵 |
+| Latency decomposition | Only one total-duration Span; unable to distinguish the shares of network, queueing, first token, generation, tools, vector retrieval, and serialization |
+| Cost attribution | Only token counts; lacking price table versions, cache discounts, duplicate billing from retries, and attribution by feature/tenant/Prompt version |
+| Runtime form | .NET AI services increasingly use Native AOT / Trimming, where general profilers and some OTel components are limited or costly in size |
 
-### 3.2 为什么现在
+### 3.2 Why Now
 
-- `Microsoft.Extensions.AI` 已形成 .NET AI 的统一抽象，并在 10.x / 11.x 线提供 `UseOpenTelemetry` 中间件；这为"在中间件层做深度剖析"提供了稳定抓手。
-- `Microsoft.Extensions.VectorData` 已进入 10.x / 11.x，RAG 链路可以被统一观测。
-- Native AOT 自 .NET 8 起支持 EventPipe，但**托管堆分析仍不支持**，且 EventPipe 是可选组件；AOT 诊断仍是明确的工程缺口。
-- 主流 LLM 可观测平台以 Python / TypeScript 为主，.NET 侧只有零散、低下载量的尝试，尚无主导者。
+- `Microsoft.Extensions.AI` has established a unified abstraction for .NET AI and provides `UseOpenTelemetry` middleware on the 10.x / 11.x lines; this offers a stable foothold for "deep profiling at the middleware layer".
+- `Microsoft.Extensions.VectorData` has entered 10.x / 11.x, so the RAG pipeline can be uniformly observed.
+- Native AOT has supported EventPipe since .NET 8, but **managed heap analysis is still not supported**, and EventPipe is an optional component; AOT diagnostics remains a clear engineering gap.
+- Mainstream LLM observability platforms are mainly Python / TypeScript; the .NET side has only scattered, low-download attempts, with no dominant player.
 
-## 4. 目标与非目标
+## 4. Goals and Non-Goals
 
-### 4.1 目标（v1）
+### 4.1 Goals (v1)
 
-1. 为 `IChatClient` 与 `IEmbeddingGenerator` 提供低开销、可组合的剖析中间件。
-2. 输出请求级延迟瀑布，明确标注每段的测量方式与估算误差。
-3. 输出可追溯的成本账单，价格表带版本、来源与生效时间。
-4. 支持流式响应诊断：TTFT、Token 间延迟、取消、中断。
-5. 默认不采集内容；本地存储；可选 OTLP 导出。
-6. 核心包 AOT / Trim 安全，CLI 可 Native AOT 发布。
-7. 让"安装 → 运行 → 看到一次请求的瀑布图"在 5 分钟内完成。
+1. Provide low-overhead, composable profiling middleware for `IChatClient` and `IEmbeddingGenerator`.
+2. Output a request-level latency waterfall, explicitly marking the measurement method and estimation error of each segment.
+3. Output a traceable cost ledger, with the price table carrying version, source, and effective time.
+4. Support streaming response diagnostics: TTFT, inter-token latency, cancellation, and interruption.
+5. Do not collect content by default; store locally; make OTLP export optional.
+6. Keep the core package AOT / Trim safe; the CLI can be published with Native AOT.
+7. Make "install → run → see the waterfall for one request" complete within 5 minutes.
 
-### 4.2 非目标（v1）
+### 4.2 Non-Goals (v1)
 
-- 通用 CPU / 内存 Profiler。
-- LLM 评估（Eval）、数据集管理、Prompt 实验平台。
-- 代理网关或请求转发。
-- 托管 SaaS。
-- 自动修改业务代码或自动调优。
-- 捕获并默认上传 Prompt / Completion 正文。
-- 替代 OpenTelemetry、Langfuse、Phoenix、Grafana。
+- General CPU / memory profiler.
+- LLM evaluation (Eval), dataset management, and Prompt experimentation platform.
+- Proxy gateway or request forwarding.
+- Hosted SaaS.
+- Automatically modifying business code or automatic tuning.
+- Capturing and uploading Prompt / Completion bodies by default.
+- Replacing OpenTelemetry, Langfuse, Phoenix, or Grafana.
 
-### 4.3 明确暂缓
+### 4.3 Explicitly Deferred
 
-| 方向 | 原因 | 去向 |
+| Direction | Reason | Disposition |
 | --- | --- | --- |
-| Native AOT 托管堆分析 | 需要深入 runtime / GC，个人项目风险高 | 作为 v2 研究项，不作为首发卖点 |
-| 通用 AOT 启动/体积归因 | 与 ILC 工具链耦合深 | 作为独立实验分支 |
-| 分布式跨服务 Trace 合并 | OTel 已覆盖 | 通过 OTLP 互操作 |
-| AI 辅助根因分析 | 隐私与可信度风险 | v2 可选，本地优先 |
+| Native AOT managed heap analysis | Requires deep runtime / GC work; high risk for an individual project | As a v2 research item, not a launch selling point |
+| General AOT startup/size attribution | Deeply coupled with the ILC toolchain | As an independent experimental branch |
+| Distributed cross-service trace merging | Already covered by OTel | Via OTLP interoperability |
+| AI-assisted root cause analysis | Privacy and credibility risks | Optional in v2, local-first |
 
-## 5. 目标用户
+## 5. Target Users
 
-| 优先级 | 用户 | 核心诉求 |
+| Priority | User | Core Need |
 | --- | --- | --- |
-| P0 | .NET 后端工程师 | 定位 RAG/Agent 请求慢在哪、贵在哪 |
-| P0 | AI 平台/基础设施团队 | 统一接入、低开销、可导出、AOT 可用 |
-| P1 | 独立开发者 / 初创团队 | 零门槛、本地、不要 SaaS 账单 |
-| P1 | SRE / FinOps | 成本归因、预算告警、重试重复计费 |
-| P2 | 技术负责人 | 模型/版本/功能维度的对比与决策依据 |
+| P0 | .NET backend engineers | Locate where a RAG/Agent request is slow and where it is expensive |
+| P0 | AI platform/infrastructure teams | Unified integration, low overhead, exportable, AOT-usable |
+| P1 | Independent developers / startup teams | Zero barrier, local, no SaaS bill |
+| P1 | SRE / FinOps | Cost attribution, budget alerts, duplicate billing from retries |
+| P2 | Tech leads | Comparison and decision basis by model/version/feature |
 
-## 6. 成功指标
+## 6. Success Metrics
 
-### 6.1 北极星指标
+### 6.1 North Star Metric
 
-**WADP（Weekly Active Diagnosed Projects）**：每周至少产生一次有效诊断会话的独立项目数。
+**WADP (Weekly Active Diagnosed Projects)**: the number of independent projects that produce at least one valid diagnostic session per week.
 
-不以 GitHub Stars 作为唯一成功标准，但设定参考目标：
+GitHub Stars is not used as the sole success criterion, but the following reference targets are set:
 
-| 阶段 | 参考目标 |
+| Stage | Reference Target |
 | --- | --- |
-| M1 | 10 个外部试用项目 |
-| M2 | 100 个外部试用项目；NuGet 月下载 1,000 |
-| M3 | 1,000 个活跃项目；外部贡献者 ≥ 5 |
-| 1.0 后 12 个月 | GitHub Stars ≥ 5,000；WADP ≥ 500 |
+| M1 | 10 external trial projects |
+| M2 | 100 external trial projects; 1,000 NuGet monthly downloads |
+| M3 | 1,000 active projects; external contributors ≥ 5 |
+| 12 months after 1.0 | GitHub Stars ≥ 5,000; WADP ≥ 500 |
 
-> Stars 受传播影响大，仅作为滞后指标；WADP 与"诊断后采取行动"的比例才是领先指标。
+> Stars are heavily influenced by propagation and serve only as a lagging indicator; WADP and the proportion of "action taken after diagnosis" are the leading indicators.
 
-### 6.2 护栏指标
+### 6.2 Guardrail Metrics
 
-| 指标 | 门槛 |
+| Metric | Threshold |
 | --- | --- |
-| 采集开销（无 I/O、采样开启） | 单请求 P95 增量 ≤ 1 ms，CPU ≤ 1% |
-| 采集失败对业务影响 | 0（熔断后静默降级） |
-| 成本计算可追溯率 | 100% 的账单带价格表版本 |
-| AOT Smoke | Windows/Linux 双平台全绿 |
-| 内容泄露事件 | 0 |
-| P0 缺陷平均修复 | 一个发布周期内 |
+| Collection overhead (no I/O, sampling enabled) | Single-request P95 increment ≤ 1 ms, CPU ≤ 1% |
+| Business impact of collection failure | 0 (silent degradation after circuit breaking) |
+| Cost calculation traceability rate | 100% of bills carry a price table version |
+| AOT Smoke | All green on both Windows/Linux |
+| Content leakage incidents | 0 |
+| Average fix time for P0 defects | Within one release cycle |
 
-## 7. 范围与版本
+## 7. Scope and Versions
 
-### 7.1 v1 范围
+### 7.1 v1 Scope
 
-- Microsoft.Extensions.AI：Chat + Embedding。
-- Semantic Kernel：作为 Should。
-- Microsoft.Extensions.VectorData：作为 Should。
-- 库/应用内 SQLite 默认；CLI AOT 默认 JSONL；失败回退与交换。
-- CLI：`run`、`report`、`top`、`export`、`open`。
-- 本地 Studio。
-- OTLP 导出（可选包）。
-- 尾采样、预算告警。
+- Microsoft.Extensions.AI: Chat + Embedding.
+- Semantic Kernel: as Should.
+- Microsoft.Extensions.VectorData: as Should.
+- Library/in-app SQLite by default; CLI AOT defaults to JSONL; failure fallback and swap.
+- CLI: `run`, `report`, `top`, `export`, `open`.
+- Local Studio.
+- OTLP export (optional package).
+- Tail sampling, budget alerts.
 
-### 7.2 v2 候选
+### 7.2 v2 Candidates
 
-- Agent / MCP 工具调用树。
-- 多模态 Token 估算。
-- 分布式诊断会话合并。
-- Native AOT 启动/体积归因研究分支（社区维护，不承诺交付）。
-- Roslyn AOT 分析器（`Runesvaner.Analyzers`）。
-- 与 `dotnet-counters` 的进程级指标联动。
+- Agent / MCP tool call tree.
+- Multimodal token estimation.
+- Distributed diagnostic session merging.
+- Native AOT startup/size attribution research branch (community-maintained, no delivery commitment).
+- Roslyn AOT analyzer (`Runesvaner.Analyzers`).
+- Integration with process-level metrics from `dotnet-counters`.
 
-## 8. 关键假设与验证
+## 8. Key Assumptions and Validation
 
-| 假设 | 验证方式 | 失败信号 |
+| Assumption | Validation Method | Failure Signal |
 | --- | --- | --- |
-| .NET 团队需要请求级延迟分解，而不只是 OTel Span | 10 个深度访谈 + M1 试用反馈 | 用户认为 OTel + Grafana 已足够 |
-| 成本归因是刚需，且愿意维护价格表 | 观察价格表更新 Issue / PR 数量 | 无人提交价格修正 |
-| AOT 兼容是差异化，而非伪需求 | AOT 用户访谈 + 下载包 TFM 分布 | AOT 用户占比 < 5% |
-| 本地优先能打动用户 | 试用转化率 | 用户坚持必须云端协作 |
-| MEAI 中间件是正确接入点 | 接入代码行数与留存 | 用户要求直接集成各家 SDK |
+| .NET teams need request-level latency decomposition, not just OTel Spans | 10 in-depth interviews + M1 trial feedback | Users believe OTel + Grafana is sufficient |
+| Cost attribution is a must-have, and users are willing to maintain price tables | Observe the number of price table update Issues / PRs | No one submits price corrections |
+| AOT compatibility is a differentiator, not a pseudo-need | AOT user interviews + TFM distribution of downloaded packages | AOT users account for < 5% |
+| Local-first can win over users | Trial conversion rate | Users insist that cloud collaboration is mandatory |
+| MEAI middleware is the correct integration point | Integration LOC and retention | Users require direct integration with each vendor SDK |
 
-## 9. 约束
+## 9. Constraints
 
-1. **个人项目**：非隶属组织；维护带宽有限，必须控制范围。
-2. **CLA**：允许更多维护者，但需要贡献者签署；CLA 文本需法律审阅。
-3. **AOT**：核心路径不得引入反射与动态代码。
-4. **零依赖核心**：避免把 OTel SDK 变成强制依赖。
-5. **隐私默认**：默认不采集内容，不做隐式上传。
-6. **成本可信**：宁可不显示，也不猜测未知模型价格。
-7. **文档先行**：开工前所有设计以 Markdown 固化，关键决策需发起人拍板。
-8. **平台范围**：Windows 10/11 与 Linux；macOS 非目标（D-15）。
+1. **Individual project**: not affiliated with an organization; limited maintenance bandwidth, so scope must be controlled.
+2. **CLA**: allows more maintainers, but contributors must sign; the CLA text requires legal review.
+3. **AOT**: core paths must not introduce reflection or dynamic code.
+4. **Zero-dependency core**: avoid making the OTel SDK a mandatory dependency.
+5. **Privacy by default**: do not collect content by default, and do not upload implicitly.
+6. **Cost trustworthiness**: rather show nothing than guess the price of an unknown model.
+7. **Documentation first**: all design is fixed in Markdown before development starts; key decisions require the sponsor's approval.
+8. **Platform scope**: Windows 10/11 and Linux; macOS is a non-goal (D-15).
 
-## 10. 治理原则
+## 10. Governance Principles
 
-- **BDFL + 维护者**：发起人拥有最终决策权；日常合并由维护者按 lazy consensus 处理。
-- **RFC 流程**：影响公共 API、数据模型、许可证、治理的变更必须走 RFC。
-- **公开路线图**：里程碑与退出标准公开，避免"黑箱优先级"。
-- **贡献者体验**：一键构建、可复现基准、清晰的 good first issue。
-- **安全优先**：漏洞私下披露，修复后再公开细节。
+- **BDFL + maintainers**: the sponsor holds final decision authority; day-to-day merges are handled by maintainers under lazy consensus.
+- **RFC process**: changes affecting the public API, data model, license, or governance must go through an RFC.
+- **Public roadmap**: milestones and exit criteria are public to avoid "black-box prioritization".
+- **Contributor experience**: one-command build, reproducible benchmarks, and clear good first issues.
+- **Security first**: vulnerabilities are disclosed privately; details are made public after a fix.
 
-## 11. 与两个初始切口的关系
+## 11. Relationship to the Two Initial Wedges
 
-发起人提出两个候选切口：
+The sponsor proposed two candidate wedges:
 
-1. Native AOT 兼容诊断器。
-2. 面向 AI 负载的诊断工具。
+1. Native AOT compatible diagnostics.
+2. A diagnostics tool for AI workloads.
 
-发起人已于 2026-11-25 决议（D-01）：**以 AI 负载诊断为主赛道，把 Native AOT 作为一等公民约束与第二阶段差异化**。
+The sponsor decided on 2026-11-25 (D-01): **take AI workload diagnostics as the primary track, and treat Native AOT as a first-class citizen constraint and second-phase differentiator**.
 
-理由摘要（完整论证见 `01-market-research.md`）：
+Reason summary (full argument in `01-market-research.md`):
 
-- Native AOT 的 EventPipe 已在 .NET 8 起可用，传统工具并非完全失效；真正空白是托管堆分析，技术风险与个人项目不匹配。
-- AI 负载诊断有明确、可验证、可收费（或可赞助）的用户价值，且 .NET 侧竞争薄弱。
-- AOT 兼容是 AI 诊断产品的"护城河"而非"主战场"：它让 Runesvaner 在 AOT 部署的 AI 服务中仍然可用，而多数 OTel 方案在此形态下体积与兼容性吃紧。
+- Native AOT EventPipe has been available since .NET 8, so traditional tools are not entirely ineffective; the real gap is managed heap analysis, whose technical risk does not match an individual project.
+- AI workload diagnostics has clear, verifiable, and monetizable (or sponsor-able) user value, and .NET-side competition is weak.
+- AOT compatibility is the "moat" of an AI diagnostics product rather than "the main battlefield": it keeps Runesvaner usable in AI services deployed with AOT, where most OTel solutions struggle with size and compatibility.
 
-## 12. 终止 / 转向条件（Kill Criteria）
+## 12. Kill Criteria
 
-出现以下任一情况，应暂停或转向，而不是继续堆功能：
+If any of the following occurs, pause or pivot rather than continuing to pile on features:
 
-1. M2 结束后，外部试用项目 < 10，且访谈中"愿意推荐"比例 < 30%。
-2. 采集开销连续两个里程碑不达标（P95 > 2 ms 或 CPU > 2%）。
-3. 成本计算被证明不可信（同一请求重复计算差异 > 5% 且无法解释）。
-4. Microsoft 官方在 MEAI 中直接提供等价的延迟分解与成本归因，且开源免费。
-5. 维护者数量长期为 0，发起人连续两个季度无法投入。
+1. After M2 ends, external trial projects < 10, and the "willing to recommend" proportion in interviews < 30%.
+2. Collection overhead fails to meet targets for two consecutive milestones (P95 > 2 ms or CPU > 2%).
+3. Cost calculation is proven untrustworthy (difference in repeated calculation of the same request > 5% and unexplainable).
+4. Microsoft officially provides equivalent latency decomposition and cost attribution directly in MEAI, open source and free.
+5. The number of maintainers remains 0 for a long time, and the sponsor cannot contribute for two consecutive quarters.
 
-转向选项：
+Pivot options:
 
-- 收缩为"成本账本"单一功能库。
-- 收缩为"Native AOT 启动/体积归因"工具。
-- 转为纯 OTLP Processor，寄生在现有 OTel 生态中。
+- Shrink to a single-function library for the "cost ledger".
+- Shrink to a "Native AOT startup/size attribution" tool.
+- Become a pure OTLP Processor, parasitizing the existing OTel ecosystem.
 
-## 13. 决议状态
+## 13. Decision Status
 
-D-01–D-25 已全部决议，记录见 `15-decision-log.md`。与本章程直接相关：
+D-01–D-25 are all resolved; see `15-decision-log.md`. Directly related to this charter:
 
-- D-01 主赛道：AI 负载诊断首发，AOT 为约束与 v2 分支。
-- D-02 项目名：Runesvaner。
-- D-03 许可证：Apache-2.0。
-- D-04 CLA：ICLA + CCLA。
-- D-05 目标框架：`net10.0`，M3 评估 `net11.0`。
-- D-07 存储：库 SQLite 默认；CLI AOT 默认 JSONL；失败回退。
-- D-10 商业化：暂不商业化，接受无捆绑赞助。
+- D-01 Primary track: AI workload diagnostics launched first, AOT as a constraint and v2 branch.
+- D-02 Project name: Runesvaner.
+- D-03 License: Apache-2.0.
+- D-04 CLA: ICLA + CCLA.
+- D-05 Target framework: `net10.0`, evaluate `net11.0` at M3.
+- D-07 Storage: library SQLite by default; CLI AOT defaults to JSONL; fallback on failure.
+- D-10 Commercialization: no commercialization for now, accepting non-bundled sponsorship.
 
-## 14. 参考
+## 14. References
 
 - [.NET Native AOT diagnostics](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/diagnostics)
 - [Microsoft.Extensions.AI libraries](https://learn.microsoft.com/en-us/dotnet/ai/microsoft-extensions-ai)

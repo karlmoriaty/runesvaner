@@ -1,493 +1,493 @@
-# 隐形需求清单
+# Hidden Requirements Checklist
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 产品、工程、设计、测试 |
-| 关联文档 | `03-prd.md`、`05-technical-design.md`、`06-observability-model.md`、`09-security-privacy.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Product, engineering, design, testing |
+| Related documents | `03-prd.md`, `05-technical-design.md`, `06-observability-model.md`, `09-security-privacy.md` |
 
-> 这些需求通常不会出现在用户故事里，但一旦缺失，产品会"看起来能用、实际不可信"。每条都给出隐藏原因与验收建议。
-
----
-
-## A. 测量与统计可信度
-
-### H-01 单调时钟与墙钟分离
-
-- **需求**：所有耗时用单调时钟；展示时间用墙钟。
-- **隐藏原因**：NTP 校时、夏令时、手动改时间会让墙钟差值为负或跳变。
-- **缺失后果**：出现负耗时、P95 抖动、跨天统计错误。
-- **验收**：单元测试注入回拨时钟，耗时不出现负值；JSON 同时记录 `monotonic_ns` 与 UTC 时间。
-
-### H-02 时钟粒度与平台差异
-
-- **需求**：文档说明不同 OS 的计时粒度；不为微秒级差异做过度承诺。
-- **隐藏原因**：Windows 默认计时器粒度可能为 15.6ms，Linux 通常更好。
-- **缺失后果**：短请求的分段出现 0 或抖动，用户认为数据造假。
-- **验收**：基准报告标注平台与粒度；小于粒度的段标 `estimated` 或合并。
-
-### H-03 网络时间与 Provider 处理时间不可精确分离
-
-- **需求**：`provider_queue` 明确标注包含网络 RTT，是估算值。
-- **隐藏原因**：客户端只能看到"上传完成"和"首字节"，无法知道服务端何时开始处理。
-- **缺失后果**：用户把网络延迟误判为模型慢，优化错方向。
-- **验收**：UI Tooltip 与文档说明；提供 `estimated=true`；不给出"Provider 排队精确值"。
-
-### H-04 TTFT 定义歧义
-
-- **需求**：同时区分 TTFB、TTFT、首 chunk；TTFT 只认首个非空 delta。
-- **隐藏原因**：不同 provider 会先发 role-only chunk、心跳、空 delta。
-- **缺失后果**：TTFT 偏小，用户体验指标失真。
-- **验收**：流式测试覆盖空 chunk；报告字段 `ttfb_us` 与 `ttft_us` 分开。
-
-### H-05 并行分段与重叠
-
-- **需求**：支持 lane；显示 `overlap`；不把并行时间简单相加。
-- **隐藏原因**：并行工具调用、并发检索、流式生成与工具调用可能重叠。
-- **缺失后果**：分段之和远大于总耗时，用户不再信任瀑布。
-- **验收**：构造并行请求，校验 `overlap` 计算；UI 多 lane 展示。
-
-### H-06 残差与未解释时间
-
-- **需求**：显示 `unaccounted`，并在超过 5% 时解释。
-- **隐藏原因**：调度、GC、序列化、时钟粒度都会留下残差。
-- **缺失后果**：分段占比加起来不是 100%，用户认为计算错误。
-- **验收**：残差段独立展示；提供"原始事件"下钻。
-
-### H-07 采样偏差与加权
-
-- **需求**：记录采样概率；聚合时加权；UI 显示采样模式。
-- **隐藏原因**：头采样会随机丢弃；尾采样会偏向慢/错请求。
-- **缺失后果**：成本与延迟统计系统性偏低或偏高。
-- **验收**：给定 10% 采样与已知总量，加权结果误差 ≤ 2%；尾采样单独统计。
-
-### H-08 高基数标签
-
-- **需求**：Metric 标签不含 request_id、user_id、prompt_version；高基数放 Trace。
-- **隐藏原因**：指标后端按标签组合存储，基数爆炸会导致成本与查询失败。
-- **缺失后果**：Prometheus 内存暴涨、账单增加、查询超时。
-- **验收**：指标标签白名单测试；代码审查清单。
-
-### H-09 时钟漂移与跨服务合并
-
-- **需求**：跨服务合并时使用 OTel 时间戳，并标注时钟误差风险。
-- **隐藏原因**：不同机器时钟不同步，Span 父子时间可能倒置。
-- **缺失后果**：分布式瀑布出现负持续时间。
-- **验收**：合并逻辑容错；文档说明；v1 不做自动校正。
+> These requirements usually do not appear in user stories, but when they are missing, the product "looks usable while actually being untrustworthy". Each entry gives the hidden rationale and an acceptance suggestion.
 
 ---
 
-## B. 成本与计费
+## A. Measurement and Statistical Credibility
 
-### H-10 缓存 Token 是输入的子集
+### H-01 Monotonic clock separated from wall clock
 
-- **需求**：`cached_input_tokens` 不额外增加输入总量；计算时从输入中拆分。
-- **隐藏原因**：Provider 的 usage 语义不同，有的把缓存计入 input，有的单列。
-- **缺失后果**：重复计费或漏计。
-- **验收**：多 provider fixture；校验 `non_cached = input - cached`。
+- **Requirement**: all durations use a monotonic clock; displayed times use the wall clock.
+- **Hidden reason**: NTP adjustment, daylight saving time, and manual time changes can make wall-clock differences negative or jump.
+- **Consequence if missing**: negative durations, P95 jitter, and cross-day statistical errors.
+- **Acceptance**: a unit test injects a backwards clock and durations never become negative; JSON records both `monotonic_ns` and UTC time.
 
-### H-11 Reasoning Token 与 Output Token 的重叠语义
+### H-02 Clock granularity and platform differences
 
-- **需求**：按 provider 定义记录，不默认相加；标注是否包含在 output 内。
-- **隐藏原因**：不同模型对 reasoning token 的计费与披露方式不同。
-- **缺失后果**：成本高估或低估。
-- **验收**：价格条目含 `reasoning_included_in_output` 标志；单元测试。
+- **Requirement**: documentation states the timing granularity on different OSes; do not over-promise on microsecond-level differences.
+- **Hidden reason**: the default timer granularity on Windows may be 15.6 ms; Linux is usually better.
+- **Consequence if missing**: segments of short requests show 0 or jitter, and users believe the data is fabricated.
+- **Acceptance**: the benchmark report notes platform and granularity; segments smaller than the granularity are marked `estimated` or merged.
 
-### H-12 阶梯定价的区间累加
+### H-03 Network time cannot be precisely separated from provider processing time
 
-- **需求**：按区间累加，不在边界重复；支持"超过阈值后全部按新价"与"分段累进"两种模式。
-- **隐藏原因**：Provider 的 tier 规则不统一。
-- **缺失后果**：大请求成本错误。
-- **验收**：边界值测试（阈值 -1、阈值、阈值 +1）；模式字段。
+- **Requirement**: `provider_queue` explicitly states that it includes network RTT and is an estimate.
+- **Hidden reason**: the client can only observe "upload complete" and "first byte"; it cannot know when the server started processing.
+- **Consequence if missing**: users misjudge network latency as a slow model and optimize in the wrong direction.
+- **Acceptance**: UI tooltip and documentation; provide `estimated=true`; do not give a "precise provider queue value".
 
-### H-13 价格表版本与历史回放
+### H-04 TTFT definition ambiguity
 
-- **需求**：每个请求记录价格表版本；历史会话按当时版本回放。
-- **隐藏原因**：价格会变，账单需要解释。
-- **缺失后果**：旧数据在新价格下被重算，无法对账。
-- **验收**：切换价格表后，旧会话成本不变；UI 显示版本。
+- **Requirement**: distinguish TTFB, TTFT, and first chunk at the same time; TTFT counts only the first non-empty delta.
+- **Hidden reason**: different providers send role-only chunks, heartbeats, or empty deltas first.
+- **Consequence if missing**: TTFT is too small and the user-experience metric is distorted.
+- **Acceptance**: streaming tests cover empty chunks; report fields `ttfb_us` and `ttft_us` are separate.
 
-### H-14 未知模型不猜测
+### H-05 Parallel segments and overlap
 
-- **需求**：`CostStatus.Unknown`，总成本为 null，不显示 0。
-- **隐藏原因**：猜测会制造"便宜"的假象。
-- **缺失后果**：用户按错误成本做决策。
-- **验收**：未知模型测试；UI 显示 `—` 与原因。
+- **Requirement**: support lanes; display `overlap`; do not simply add parallel time.
+- **Hidden reason**: parallel tool calls, concurrent retrieval, and streaming generation alongside tool calls may overlap.
+- **Consequence if missing**: the sum of segments far exceeds total duration and users no longer trust the waterfall.
+- **Acceptance**: construct parallel requests and validate the `overlap` computation; multi-lane UI display.
 
-### H-15 小数精度与舍入
+### H-06 Residual and unexplained time
 
-- **需求**：`decimal` 计算；存储 6 位；展示 4 位；统一舍入规则。
-- **隐藏原因**：`double` 累积误差；不同舍入导致对账差异。
-- **缺失后果**：与账单差几分钱，用户不信任。
-- **验收**：金额属性测试；舍入规则文档化。
+- **Requirement**: display `unaccounted` and explain it when it exceeds 5%.
+- **Hidden reason**: scheduling, GC, serialization, and clock granularity all leave residual time.
+- **Consequence if missing**: segment percentages do not sum to 100% and users think the calculation is wrong.
+- **Acceptance**: the residual segment is displayed separately; provide drill-down to "raw events".
 
-### H-16 多币种与汇率
+### H-07 Sampling bias and weighting
 
-- **需求**：存储 USD；展示可换算；汇率时间戳；不默认联网。
-- **隐藏原因**：企业账单可能是多币种；汇率每日变化。
-- **缺失后果**：换算错误、隐私泄露（静默联网）。
-- **验收**：汇率可选、离线默认；显示"估算汇率"。
+- **Requirement**: record the sampling probability; weight during aggregation; the UI shows the sampling mode.
+- **Hidden reason**: head sampling drops records randomly; tail sampling biases toward slow/error requests.
+- **Consequence if missing**: cost and latency statistics are systematically low or high.
+- **Acceptance**: given 10% sampling and a known total, the weighted result error is ≤ 2%; tail sampling is counted separately.
 
-### H-17 批量 API 折扣
+### H-08 High-cardinality labels
 
-- **需求**：支持 batch discount；与缓存折扣叠加顺序明确。
-- **隐藏原因**：Batch API 通常 50% 折扣，容易漏算。
-- **缺失后果**：成本高估一倍。
-- **验收**：价格条目含 `batch_discount`；组合测试。
+- **Requirement**: metric labels do not contain request_id, user_id, or prompt_version; high cardinality goes to traces.
+- **Hidden reason**: metric backends store data by label combination; a cardinality explosion causes cost and query failures.
+- **Consequence if missing**: Prometheus memory spikes, higher bills, query timeouts.
+- **Acceptance**: metric label whitelist test; code review checklist.
 
-### H-18 多模态 Token 单位
+### H-09 Clock drift and cross-service merging
 
-- **需求**：图像/音频按 provider 单位（张、秒、token）记录；无法统一时标 unknown。
-- **隐藏原因**：不同 provider 计价单位不同。
-- **缺失后果**：多模态成本错误。
-- **验收**：字段 `image_tokens`、`audio_tokens`、`unit`；未知时 unknown。
-
-### H-19 重试与失败计费
-
-- **需求**：记录 attempt；区分 billed/not_billed/unknown；检测潜在重复计费。
-- **隐藏原因**：429/5xx 可能计费也可能不计费；超时可能已生成。
-- **缺失后果**：账单与请求数对不上。
-- **验收**：重试场景测试；UI 异常区提示。
-
-### H-20 预算告警不阻断请求
-
-- **需求**：超预算只记录事件与提示，不抛异常、不拒绝请求。
-- **隐藏原因**：诊断工具不应改变业务行为。
-- **缺失后果**：生产事故。
-- **验收**：超预算测试，业务返回值不变。
+- **Requirement**: use OTel timestamps when merging across services, and note the clock error risk.
+- **Hidden reason**: clocks on different machines are not synchronized, and parent/child span times may be inverted.
+- **Consequence if missing**: negative durations appear in the distributed waterfall.
+- **Acceptance**: merge logic is fault-tolerant; documented; v1 does not perform automatic correction.
 
 ---
 
-## C. 流式与并发
+## B. Cost and Billing
 
-### H-21 流式包装不预读
+### H-10 Cached tokens are a subset of input
 
-- **需求**：逐 chunk 透传，不缓存整个流。
-- **隐藏原因**：预读会改变延迟、内存与背压。
-- **缺失后果**：TTFT 变差、内存暴涨。
-- **验收**：慢消费者测试；内存上限测试。
+- **Requirement**: `cached_input_tokens` does not add to the input total; split it out of the input during calculation.
+- **Hidden reason**: provider usage semantics differ; some count cache in input, others list it separately.
+- **Consequence if missing**: double billing or under-billing.
+- **Acceptance**: multi-provider fixtures; validate `non_cached = input - cached`.
 
-### H-22 取消与超时分离
+### H-11 Overlap semantics of reasoning tokens and output tokens
 
-- **需求**：`cancelled` 与 `timeout` 分开记录；保留已接收 chunk。
-- **隐藏原因**：两者都表现为 `OperationCanceledException`。
-- **缺失后果**：无法区分用户行为与系统故障。
-- **验收**：取消/超时测试；字段独立。
+- **Requirement**: record according to the provider definition; do not add by default; mark whether they are included in output.
+- **Hidden reason**: models differ in how reasoning tokens are billed and disclosed.
+- **Consequence if missing**: cost overestimated or underestimated.
+- **Acceptance**: price entries include a `reasoning_included_in_output` flag; unit tests.
 
-### H-23 异常传播不变
+### H-12 Cumulative intervals in tiered pricing
 
-- **需求**：记录后原样抛出，不包装异常类型。
-- **隐藏原因**：业务可能依赖特定异常类型做重试。
-- **缺失后果**：重试策略失效。
-- **验收**：异常类型与堆栈测试。
+- **Requirement**: accumulate by interval without duplication at boundaries; support both the "everything above the threshold is charged at the new price" and the "progressive by segment" modes.
+- **Hidden reason**: provider tier rules are inconsistent.
+- **Consequence if missing**: wrong costs for large requests.
+- **Acceptance**: boundary value tests (threshold -1, threshold, threshold +1); mode field.
 
-### H-24 多线程与 AsyncLocal
+### H-13 Price table version and historical replay
 
-- **需求**：标签作用域跨 `await` 传播；并行任务不串扰。
-- **隐藏原因**：`AsyncLocal` 在并行分支中会复制。
-- **缺失后果**：标签错配、成本归因错误。
-- **验收**：`Task.WhenAll` 测试；嵌套作用域测试。
+- **Requirement**: each request records the price table version; historical sessions are replayed with the version in effect at the time.
+- **Hidden reason**: prices change, and bills need to be explainable.
+- **Consequence if missing**: old data is recomputed under new prices and cannot be reconciled.
+- **Acceptance**: after switching the price table, old session costs are unchanged; the UI shows the version.
 
-### H-25 并发写与背压
+### H-14 Do not guess unknown models
 
-- **需求**：单 writer；队列满丢弃最旧；计数。
-- **隐藏原因**：多线程直接写文件会交错。
-- **缺失后果**：JSONL 损坏、请求阻塞。
-- **验收**：并发 1000 请求测试；队列满测试。
+- **Requirement**: `CostStatus.Unknown`, total cost is null, and 0 is not displayed.
+- **Hidden reason**: guessing creates a false impression of "cheap".
+- **Consequence if missing**: users make decisions based on wrong costs.
+- **Acceptance**: unknown model test; the UI shows `—` and the reason.
 
----
+### H-15 Decimal precision and rounding
 
-## D. 隐私与合规
+- **Requirement**: `decimal` arithmetic; store 6 digits; display 4 digits; unified rounding rule.
+- **Hidden reason**: `double` accumulates error; different rounding causes reconciliation differences.
+- **Consequence if missing**: amounts differ from the bill by a few cents and users lose trust.
+- **Acceptance**: property tests on monetary amounts; rounding rules documented.
 
-### H-26 默认无内容
+### H-16 Multi-currency and exchange rates
 
-- **需求**：`ContentCapture.None` 默认；文档显式说明。
-- **隐藏原因**：开发者可能默认认为"诊断工具会记录内容"。
-- **缺失后果**：合规事故。
-- **验收**：默认配置落盘扫描；无 Prompt/Completion 字段。
+- **Requirement**: store USD; display optionally converted values; exchange rate timestamp; no network access by default.
+- **Hidden reason**: enterprise bills may be multi-currency; exchange rates change daily.
+- **Consequence if missing**: conversion errors and privacy leaks (silent network access).
+- **Acceptance**: exchange rate optional and offline by default; show "estimated exchange rate".
 
-### H-27 内容捕获上限与截断
+### H-17 Batch API discounts
 
-- **需求**：`Full` 模式有字节上限；截断标记；不静默丢弃。
-- **隐藏原因**：大 Prompt 可能几十 MB。
-- **缺失后果**：磁盘爆满、UI 卡死。
-- **验收**：超大内容测试；`truncated=true`。
+- **Requirement**: support batch discount; make the stacking order with cache discounts explicit.
+- **Hidden reason**: the Batch API usually offers a 50% discount, which is easy to miss.
+- **Consequence if missing**: cost overestimated by a factor of two.
+- **Acceptance**: price entries include `batch_discount`; combination tests.
 
-### H-28 哈希 salt 与可关联性
+### H-18 Multimodal token units
 
-- **需求**：默认加进程级 salt；文档说明"可关联、非匿名"。
-- **隐藏原因**：无 salt 的哈希可被彩虹表反查。
-- **缺失后果**：假匿名。
-- **验收**：salt 不导出；哈希测试。
+- **Requirement**: record images/audio in provider units (images, seconds, tokens); mark unknown when they cannot be unified.
+- **Hidden reason**: providers use different billing units.
+- **Consequence if missing**: wrong multimodal costs.
+- **Acceptance**: fields `image_tokens`, `audio_tokens`, `unit`; unknown when not determinable.
 
-### H-29 本地 UI 令牌不泄露
+### H-19 Retries and failed billing
 
-- **需求**：URL 令牌不写入 shell history；支持一次性打开。
-- **隐藏原因**：CLI 输出 URL 容易被复制到聊天/日志。
-- **缺失后果**：本地数据被他人访问。
-- **验收**：CLI `open` 直接启动浏览器；文档不鼓励复制 URL。
+- **Requirement**: record attempt; distinguish billed/not_billed/unknown; detect potential double billing.
+- **Hidden reason**: 429/5xx may or may not be billed; a timeout may have already produced output.
+- **Consequence if missing**: the bill does not match the request count.
+- **Acceptance**: retry scenario tests; hints in the UI exception area.
 
-### H-30 DNS Rebinding 与 Host 校验
+### H-20 Budget alerts do not block requests
 
-- **需求**：校验 Host/Origin；关闭 CORS；CSP。
-- **隐藏原因**：恶意网页可解析域名到 127.0.0.1。
-- **缺失后果**：本地数据被读取。
-- **验收**：安全测试；Host 伪造请求返回 400。
-
-### H-31 文件权限与符号链接
-
-- **需求**：0600/0700；拒绝 symlink 写入；路径白名单。
-- **隐藏原因**：多用户机器、共享目录。
-- **缺失后果**：数据泄露或任意文件写。
-- **验收**：权限测试；symlink 测试。
-
-### H-32 导出脱敏
-
-- **需求**：导出前执行 redactor；默认不导出 sensitive。
-- **隐藏原因**：用户可能忘记配置。
-- **缺失后果**：内容泄露到第三方。
-- **验收**：导出 fixture 扫描；sensitive 字段不存在。
-
-### H-33 价格表来源合法性
-
-- **需求**：记录来源 URL、获取时间、校验和；不内置来源不明的数据。
-- **隐藏原因**：价格数据可能有使用条款。
-- **缺失后果**：法律风险。
-- **验收**：价格表元数据完整；NOTICE 说明。
+- **Requirement**: exceeding the budget only records an event and a hint; it does not throw and does not reject the request.
+- **Hidden reason**: a diagnostic tool should not change business behavior.
+- **Consequence if missing**: production incident.
+- **Acceptance**: over-budget test; business return values unchanged.
 
 ---
 
-## E. AOT 与打包
+## C. Streaming and Concurrency
 
-### H-34 JSON 源生成
+### H-21 Streaming wrapper does not read ahead
 
-- **需求**：所有序列化使用 `JsonSerializerContext`。
-- **隐藏原因**：反射序列化在 Trim 后失败。
-- **缺失后果**：AOT 运行时 `NotSupportedException`。
-- **验收**：AOT smoke；IL2026 零警告。
+- **Requirement**: pass through chunk by chunk; do not buffer the whole stream.
+- **Hidden reason**: read-ahead changes latency, memory, and backpressure.
+- **Consequence if missing**: worse TTFT and memory spikes.
+- **Acceptance**: slow consumer test; memory ceiling test.
 
-### H-35 配置源生成绑定
+### H-22 Cancellation separated from timeout
 
-- **需求**：JSON 配置使用 Source-generated binder；主推代码配置。
-- **隐藏原因**：`IConfiguration.Get<T>()` 依赖反射。
-- **缺失后果**：AOT 下配置为空或异常。
-- **验收**：AOT 配置测试。
+- **Requirement**: record `cancelled` and `timeout` separately; keep the chunks already received.
+- **Hidden reason**: both manifest as `OperationCanceledException`.
+- **Consequence if missing**: cannot distinguish user behavior from system failure.
+- **Acceptance**: cancellation/timeout tests; independent fields.
 
-### H-36 SQLite native 依赖
+### H-23 Exception propagation unchanged
 
-- **需求**：库/应用内 SQLite 默认；CLI AOT 默认 JSONL；AOT 必须验证 `e_sqlite3`；失败回退。
-- **隐藏原因**：`Microsoft.Data.Sqlite` 需要 `e_sqlite3`；`dotnet/efcore#36068` 仍 open，AOT 下可能找不到 native 库。
-- **缺失后果**：默认存储不可用，或 AOT 发布缺 native lib。
-- **验收**：库 SQLite smoke；CLI JSONL smoke；SQLite AOT 尝试记录；回退测试；Health 页显示 fallback 原因。
+- **Requirement**: record and then rethrow unchanged; do not wrap the exception type.
+- **Hidden reason**: business code may rely on specific exception types for retries.
+- **Consequence if missing**: retry policy fails.
+- **Acceptance**: exception type and stack trace tests.
 
-### H-37 OTel 双 Span
+### H-24 Multithreading and AsyncLocal
 
-- **需求**：默认不创建额外 Activity；显式模式才创建。
-- **隐藏原因**：MEAI 已内置 `UseOpenTelemetry`，重复会产生两套 Span。
-- **缺失后果**：后端数据翻倍、成本增加。
-- **验收**：同时启用测试；Span 数量断言。
+- **Requirement**: label scope propagates across `await`; parallel tasks do not interfere.
+- **Hidden reason**: `AsyncLocal` is copied across parallel branches.
+- **Consequence if missing**: misattributed labels and wrong cost attribution.
+- **Acceptance**: `Task.WhenAll` test; nested scope test.
 
-### H-38 包体积
+### H-25 Concurrent writes and backpressure
 
-- **需求**：核心库体积预算；可选包分离。
-- **隐藏原因**：AOT 用户对体积敏感。
-- **缺失后果**：用户移除依赖。
-- **验收**：体积基线；CI 记录。
-
-### H-39 目标框架与 MEAI 版本
-
-- **需求**：明确支持矩阵；不为已 EOL 的框架承诺。
-- **隐藏原因**：.NET 8 已于 2026-11 结束支持；多目标会拖慢 CI。
-- **缺失后果**：维护负担、CI 爆炸。
-- **验收**：支持矩阵文档；契约测试。
+- **Requirement**: single writer; drop the oldest when the queue is full; count drops.
+- **Hidden reason**: multiple threads writing directly to a file will interleave.
+- **Consequence if missing**: corrupted JSONL and blocked requests.
+- **Acceptance**: 1000 concurrent request test; queue-full test.
 
 ---
 
-## F. 开发者体验
+## D. Privacy and Compliance
 
-### H-40 空状态可行动
+### H-26 No content by default
 
-- **需求**：空状态给命令、文档链接、下一步。
-- **隐藏原因**：用户第一次打开 Studio 时最容易被劝退。
-- **缺失后果**：卸载。
-- **验收**：空数据 E2E；文案审查。
+- **Requirement**: `ContentCapture.None` by default; documentation states this explicitly.
+- **Hidden reason**: developers may assume by default that "a diagnostic tool records content".
+- **Consequence if missing**: compliance incident.
+- **Acceptance**: scan the default configuration's on-disk output; no Prompt/Completion fields.
 
-### H-41 错误信息可行动
+### H-27 Content capture limit and truncation
 
-- **需求**：错误包含原因、位置、下一步。
-- **隐藏原因**：诊断工具自身出错时，用户无从下手。
-- **缺失后果**：Issue 增加、信任下降。
-- **验收**：错误文案清单；每条有 next step。
+- **Requirement**: `Full` mode has a byte limit; truncation is marked; nothing is silently dropped.
+- **Hidden reason**: a large prompt may be tens of MB.
+- **Consequence if missing**: disk exhaustion and UI freezes.
+- **Acceptance**: oversized content test; `truncated=true`.
 
-### H-42 5 分钟首体验
+### H-28 Hash salt and linkability
 
-- **需求**：安装 → 运行 sample → 看到瀑布 ≤ 5 分钟。
-- **隐藏原因**：竞品平台部署成本高，这是差异化。
-- **缺失后果**：试用转化低。
-- **验收**：计时测试；≥ 80% 完成。
+- **Requirement**: add a process-level salt by default; documentation states "linkable, not anonymous".
+- **Hidden reason**: hashes without a salt can be reversed with rainbow tables.
+- **Consequence if missing**: false anonymity.
+- **Acceptance**: the salt is not exported; hashing tests.
 
-### H-43 键盘与可访问性
+### H-29 Local UI token not leaked
 
-- **需求**：主要路径键盘可达；颜色非唯一编码；对比度。
-- **隐藏原因**：工程用户偏好键盘；色盲用户需要纹理。
-- **缺失后果**：可用性差、口碑差。
-- **验收**：键盘 E2E；axe 扫描。
+- **Requirement**: the URL token is not written to shell history; support one-time opening.
+- **Hidden reason**: a URL printed by the CLI is easily copied into chats or logs.
+- **Consequence if missing**: local data accessed by others.
+- **Acceptance**: CLI `open` launches the browser directly; documentation discourages copying the URL.
 
-### H-44 文档与代码同 PR
+### H-30 DNS rebinding and Host validation
 
-- **需求**：公共 API/行为变更必须更新文档。
-- **隐藏原因**：文档滞后是开源项目常见失败点。
-- **缺失后果**：用户按旧文档接入失败。
-- **验收**：PR 模板检查项；文档链接测试。
+- **Requirement**: validate Host/Origin; disable CORS; CSP.
+- **Hidden reason**: a malicious web page can resolve a domain to 127.0.0.1.
+- **Consequence if missing**: local data is read.
+- **Acceptance**: security tests; fake Host requests return 400.
 
-### H-45 本地一键构建
+### H-31 File permissions and symbolic links
 
-- **需求**：`build.cmd` / `build.sh` 或 `dotnet build` 即可；devcontainer。
-- **隐藏原因**：贡献者首次构建失败会流失。
-- **缺失后果**：外部贡献少。
-- **验收**：干净机器构建；贡献者反馈。
+- **Requirement**: 0600/0700; reject writes through symlinks; path whitelist.
+- **Hidden reason**: multi-user machines and shared directories.
+- **Consequence if missing**: data leak or arbitrary file write.
+- **Acceptance**: permission tests; symlink tests.
 
-### H-46 测试数据不含真实用户数据
+### H-32 Export redaction
 
-- **需求**：fixture 全部合成或脱敏；文档警告。
-- **隐藏原因**：开源仓库会公开测试数据。
-- **缺失后果**：隐私事故。
-- **验收**：仓库扫描；fixture 审查。
+- **Requirement**: run the redactor before export; sensitive data is not exported by default.
+- **Hidden reason**: users may forget to configure it.
+- **Consequence if missing**: content leaks to third parties.
+- **Acceptance**: scan export fixtures; sensitive fields are absent.
 
----
+### H-33 Legitimacy of price table sources
 
-## G. 运维与故障
-
-### H-47 采集器自监控
-
-- **需求**：队列、丢弃、落盘延迟、熔断状态。
-- **隐藏原因**：诊断工具本身也会故障。
-- **缺失后果**：数据缺失但无人知道。
-- **验收**：Health 页；指标测试。
-
-### H-48 崩溃安全
-
-- **需求**：JSONL 半行可忽略；启动可恢复。
-- **隐藏原因**：进程崩溃、容器 kill。
-- **缺失后果**：整个会话不可读。
-- **验收**：崩溃注入测试。
-
-### H-49 磁盘满与保留
-
-- **需求**：双阈值；清理最旧；活跃会话保护。
-- **隐藏原因**：长期运行会写满磁盘。
-- **缺失后果**：业务受影响。
-- **验收**：磁盘满模拟；清理测试。
-
-### H-50 优雅关闭
-
-- **需求**：`FlushAsync`；宿主关闭时等待上限。
-- **隐藏原因**：容器 SIGTERM 后立即退出。
-- **缺失后果**：最后请求丢失。
-- **验收**：关闭测试；flush 超时。
+- **Requirement**: record the source URL, retrieval time, and checksum; do not bundle data of unknown origin.
+- **Hidden reason**: price data may be subject to terms of use.
+- **Consequence if missing**: legal risk.
+- **Acceptance**: complete price table metadata; NOTICE statement.
 
 ---
 
-## H. 生态与标准
+## E. AOT and Packaging
 
-### H-51 GenAI 语义约定演进
+### H-34 JSON source generation
 
-- **需求**：映射表版本化；升级审查；不把 Development 字段当稳定。
-- **隐藏原因**：semconv 仍在快速变化。
-- **缺失后果**：导出字段失效。
-- **验收**：契约测试；变更日志。
+- **Requirement**: all serialization uses `JsonSerializerContext`.
+- **Hidden reason**: reflection-based serialization fails after trimming.
+- **Consequence if missing**: `NotSupportedException` at AOT runtime.
+- **Acceptance**: AOT smoke; zero IL2026 warnings.
 
-### H-52 第三方平台兼容
+### H-35 Configuration source-generated binding
 
-- **需求**：Langfuse/Phoenix 通过 OTLP 验证；不承诺所有平台。
-- **隐藏原因**：平台字段映射差异。
-- **缺失后果**：用户导出后看不到数据。
-- **验收**：本地 collector + 平台兼容测试。
+- **Requirement**: JSON configuration uses a source-generated binder; code configuration is preferred.
+- **Hidden reason**: `IConfiguration.Get<T>()` depends on reflection.
+- **Consequence if missing**: configuration is empty or throws under AOT.
+- **Acceptance**: AOT configuration test.
 
-### H-53 Schema 演进
+### H-36 SQLite native dependency
 
-- **需求**：新增可选字段；主版本破坏需迁移器；未知字段忽略。
-- **隐藏原因**：消费者版本落后。
-- **缺失后果**：旧 CLI 无法读新数据。
-- **验收**：跨版本读取测试。
+- **Requirement**: SQLite by default in the library/application; JSONL by default in CLI AOT; AOT must validate `e_sqlite3`; fall back on failure.
+- **Hidden reason**: `Microsoft.Data.Sqlite` requires `e_sqlite3`; `dotnet/efcore#36068` is still open, and the native library may not be found under AOT.
+- **Consequence if missing**: the default storage is unavailable, or the AOT publish lacks the native library.
+- **Acceptance**: library SQLite smoke; CLI JSONL smoke; record the SQLite AOT attempt; fallback test; the Health page shows the fallback reason.
 
-### H-54 导入旧数据
+### H-37 OTel double Spans
 
-- **需求**：JSONL/OTLP 导入；版本检测；错误行报告。
-- **隐藏原因**：用户可能先采集后分析。
-- **缺失后果**：数据孤岛。
-- **验收**：导入测试；错误统计。
+- **Requirement**: do not create additional Activities by default; create them only in the explicit mode.
+- **Hidden reason**: MEAI already includes `UseOpenTelemetry`; duplication produces two sets of Spans.
+- **Consequence if missing**: backend data doubles and cost increases.
+- **Acceptance**: test with both enabled; Span count assertion.
 
----
+### H-38 Package size
 
-## I. 社区与治理
+- **Requirement**: size budget for the core library; separate optional packages.
+- **Hidden reason**: AOT users are sensitive to size.
+- **Consequence if missing**: users remove the dependency.
+- **Acceptance**: size baseline; CI records it.
 
-### H-55 CLA 可执行且不吓人
+### H-39 Target framework and MEAI version
 
-- **需求**：自动评论、清晰说明、保留贡献者版权。
-- **隐藏原因**：CLA 常被视为"抢版权"。
-- **缺失后果**：贡献者流失。
-- **验收**：CLA 文案审阅；首次贡献者反馈。
-
-### H-56 继任计划
-
-- **需求**：至少 2 名可发布维护者；权利转让条款。
-- **隐藏原因**：个人项目 bus factor = 1。
-- **缺失后果**：项目停滞。
-- **验收**：治理文档；权限检查。
-
-### H-57 商标与 fork 政策
-
-- **需求**：允许事实性使用；禁止混淆；fork 改名。
-- **隐藏原因**：项目变大后会出现冒名/商业fork。
-- **缺失后果**：品牌纠纷。
-- **验收**：TRADEMARK.md。
-
-### H-58 版本支持策略
-
-- **需求**：只支持 LTS + 最新 STS；明确 EOL。
-- **隐藏原因**：无限支持会拖垮个人项目。
-- **缺失后果**：CI 与 Issue 爆炸。
-- **验收**：支持矩阵；EOL 公告。
-
-### H-59 价格表社区维护
-
-- **需求**：Issue 模板、校验脚本、来源要求、审核流程。
-- **隐藏原因**：价格变化频繁，个人维护不过来。
-- **缺失后果**：价格过期。
-- **验收**：价格 PR 流程；校验 CI。
-
-### H-60 多语言文档
-
-- **需求**：英文完整；中文/德语按 `18-localization-scope.md` 的 L1 全译、L2 简版、L3 跳转；UI 三语言完整。
-- **隐藏原因**：目标用户包含中文与德语开发者；全量翻译成本高，但安全/隐私/许可证不能删减。
-- **缺失后果**：非英语用户理解偏差，或关键安全信息缺失。
-- **验收**：L1 三语言可导航；L2 有英文全文链接；L3 有跳转；安全/隐私/许可证 100% 同步。
+- **Requirement**: an explicit support matrix; no commitments for frameworks that are already EOL.
+- **Hidden reason**: .NET 8 support ended in 2026-11; multi-targeting slows CI.
+- **Consequence if missing**: maintenance burden and CI explosion.
+- **Acceptance**: support matrix documentation; contract tests.
 
 ---
 
-## 优先级汇总
+## F. Developer Experience
 
-| 优先级 | 条目 |
+### H-40 Actionable empty state
+
+- **Requirement**: the empty state gives commands, documentation links, and next steps.
+- **Hidden reason**: users are most easily discouraged the first time they open Studio.
+- **Consequence if missing**: uninstall.
+- **Acceptance**: empty-data E2E; copy review.
+
+### H-41 Actionable error messages
+
+- **Requirement**: errors include the reason, location, and next step.
+- **Hidden reason**: when the diagnostic tool itself fails, users have no way forward.
+- **Consequence if missing**: more issues and declining trust.
+- **Acceptance**: error message inventory; every entry has a next step.
+
+### H-42 Five-minute first experience
+
+- **Requirement**: install → run the sample → see the waterfall in ≤ 5 minutes.
+- **Hidden reason**: competitor platforms have high deployment cost; this is the differentiator.
+- **Consequence if missing**: low trial conversion.
+- **Acceptance**: timed test; ≥ 80% completion.
+
+### H-43 Keyboard and accessibility
+
+- **Requirement**: main paths are keyboard accessible; color is not the sole encoding; contrast.
+- **Hidden reason**: engineering users prefer the keyboard; color-blind users need texture.
+- **Consequence if missing**: poor usability and poor reputation.
+- **Acceptance**: keyboard E2E; axe scan.
+
+### H-44 Documentation in the same PR as code
+
+- **Requirement**: public API/behavior changes must update the documentation.
+- **Hidden reason**: stale documentation is a common failure point in open-source projects.
+- **Consequence if missing**: users fail to integrate according to old documentation.
+- **Acceptance**: PR template checklist item; documentation link test.
+
+### H-45 One-command local build
+
+- **Requirement**: `build.cmd` / `build.sh` or just `dotnet build`; devcontainer.
+- **Hidden reason**: contributors are lost when their first build fails.
+- **Consequence if missing**: few external contributions.
+- **Acceptance**: build on a clean machine; contributor feedback.
+
+### H-46 Test data contains no real user data
+
+- **Requirement**: all fixtures are synthetic or redacted; documentation warns about this.
+- **Hidden reason**: an open-source repository publishes its test data.
+- **Consequence if missing**: privacy incident.
+- **Acceptance**: repository scan; fixture review.
+
+---
+
+## G. Operations and Failure
+
+### H-47 Collector self-monitoring
+
+- **Requirement**: queue, drops, disk write latency, circuit breaking state.
+- **Hidden reason**: the diagnostic tool itself can also fail.
+- **Consequence if missing**: data is missing and nobody knows.
+- **Acceptance**: Health page; metrics tests.
+
+### H-48 Crash safety
+
+- **Requirement**: a half-written JSONL line can be ignored; startup can recover.
+- **Hidden reason**: process crashes and container kills.
+- **Consequence if missing**: the entire session is unreadable.
+- **Acceptance**: crash injection test.
+
+### H-49 Disk full and retention
+
+- **Requirement**: dual thresholds; clean up the oldest; protect active sessions.
+- **Hidden reason**: long-running processes fill the disk.
+- **Consequence if missing**: the business is affected.
+- **Acceptance**: disk-full simulation; cleanup test.
+
+### H-50 Graceful shutdown
+
+- **Requirement**: `FlushAsync`; a wait upper bound at host shutdown.
+- **Hidden reason**: containers exit immediately after SIGTERM.
+- **Consequence if missing**: the last requests are lost.
+- **Acceptance**: shutdown test; flush timeout.
+
+---
+
+## H. Ecosystem and Standards
+
+### H-51 Evolution of GenAI semantic conventions
+
+- **Requirement**: version the mapping table; review on upgrade; do not treat Development fields as stable.
+- **Hidden reason**: semconv is still changing rapidly.
+- **Consequence if missing**: exported fields break.
+- **Acceptance**: contract tests; changelog.
+
+### H-52 Third-party platform compatibility
+
+- **Requirement**: Langfuse/Phoenix validated via OTLP; do not promise all platforms.
+- **Hidden reason**: platform field mapping differs.
+- **Consequence if missing**: users export data and then cannot see it.
+- **Acceptance**: local collector + platform compatibility test.
+
+### H-53 Schema evolution
+
+- **Requirement**: add optional fields; major version breaks require a migrator; ignore unknown fields.
+- **Hidden reason**: consumers lag behind.
+- **Consequence if missing**: old CLIs cannot read new data.
+- **Acceptance**: cross-version read test.
+
+### H-54 Importing old data
+
+- **Requirement**: JSONL/OTLP import; version detection; error line reporting.
+- **Hidden reason**: users may collect first and analyze later.
+- **Consequence if missing**: data silos.
+- **Acceptance**: import tests; error statistics.
+
+---
+
+## I. Community and Governance
+
+### H-55 CLA enforceable and not intimidating
+
+- **Requirement**: automated comment, clear explanation, contributor copyright retained.
+- **Hidden reason**: a CLA is often perceived as "taking copyright".
+- **Consequence if missing**: contributors leave.
+- **Acceptance**: CLA text review; first-time contributor feedback.
+
+### H-56 Succession plan
+
+- **Requirement**: at least 2 releasable maintainers; rights transfer clause.
+- **Hidden reason**: a personal project has a bus factor of 1.
+- **Consequence if missing**: the project stalls.
+- **Acceptance**: governance documentation; permission check.
+
+### H-57 Trademark and fork policy
+
+- **Requirement**: allow factual use; prohibit confusion; forks must rename.
+- **Hidden reason**: impersonation and commercial forks appear as the project grows.
+- **Consequence if missing**: brand disputes.
+- **Acceptance**: TRADEMARK.md.
+
+### H-58 Version support policy
+
+- **Requirement**: support only LTS + latest STS; explicit EOL.
+- **Hidden reason**: unlimited support would crush a personal project.
+- **Consequence if missing**: CI and issues explode.
+- **Acceptance**: support matrix; EOL announcement.
+
+### H-59 Community maintenance of the price table
+
+- **Requirement**: issue template, validation script, source requirements, review process.
+- **Hidden reason**: prices change frequently and one person cannot keep up.
+- **Consequence if missing**: stale prices.
+- **Acceptance**: price PR process; validation CI.
+
+### H-60 Multilingual documentation
+
+- **Requirement**: English is complete; Chinese/German follow the L1 full translation, L2 condensed version, and L3 redirect defined in `18-localization-scope.md`; the UI is complete in all three languages.
+- **Hidden reason**: the target users include Chinese and German developers; full translation is costly, but security/privacy/license content cannot be cut.
+- **Consequence if missing**: non-English users misread the product, or critical security information is missing.
+- **Acceptance**: L1 is navigable in all three languages; L2 links to the full English text; L3 has a redirect; security/privacy/license content is 100% synchronized.
+
+---
+
+## Priority Summary
+
+| Priority | Items |
 | --- | --- |
-| P0（M1 前必须） | H-01、H-04、H-07、H-10、H-14、H-21、H-23、H-26、H-34、H-35、H-36、H-37、H-40、H-47、H-48 |
-| P1（M2 前必须） | H-03、H-05、H-06、H-11、H-12、H-13、H-15、H-19、H-22、H-25、H-27、H-28、H-30、H-31、H-32、H-41、H-42、H-49、H-50 |
-| P2（1.0 前） | H-02、H-08、H-09、H-16、H-17、H-18、H-20、H-24、H-29、H-33、H-38、H-39、H-43、H-44、H-45、H-46、H-51、H-52、H-53、H-54、H-55、H-56、H-57、H-58、H-59、H-60 |
+| P0 (required before M1) | H-01, H-04, H-07, H-10, H-14, H-21, H-23, H-26, H-34, H-35, H-36, H-37, H-40, H-47, H-48 |
+| P1 (required before M2) | H-03, H-05, H-06, H-11, H-12, H-13, H-15, H-19, H-22, H-25, H-27, H-28, H-30, H-31, H-32, H-41, H-42, H-49, H-50 |
+| P2 (before 1.0) | H-02, H-08, H-09, H-16, H-17, H-18, H-20, H-24, H-29, H-33, H-38, H-39, H-43, H-44, H-45, H-46, H-51, H-52, H-53, H-54, H-55, H-56, H-57, H-58, H-59, H-60 |
 
 ---
 
-## 决议状态
+## Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本清单直接相关：
+D-01–D-25 are all decided; see `15-decision-log.md`. Directly relevant to this checklist:
 
-- D-07：库 SQLite 默认；CLI AOT 默认 JSONL；失败回退（H-36 提升 P0）。
-- D-08：内置价格表 + 用户覆盖；decimal + ToEven；USD。
-- D-09：默认 `None`。
-- D-13：默认不创建额外 Activity。
-- D-14：本地 100%，生产建议 10%。
-- D-15：Windows/Linux。
-- D-16：英文/中文/德语。
-- D-17：`net10.0`；MEAI 10.x/11.x。
-- D-18：AOT 专项范围。
+- D-07: SQLite by default in the library; JSONL by default in CLI AOT; fallback on failure (H-36 promoted to P0).
+- D-08: built-in price table + user overrides; decimal + ToEven; USD.
+- D-09: `None` by default.
+- D-13: do not create additional Activities by default.
+- D-14: 100% locally, 10% recommended in production.
+- D-15: Windows/Linux.
+- D-16: English/Chinese/German.
+- D-17: `net10.0`; MEAI 10.x/11.x.
+- D-18: AOT-specific scope.

@@ -1,299 +1,299 @@
-# 问题与用户画像
+# Problem and Personas
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 产品、设计、工程 |
-| 关联文档 | `00-project-charter.md`、`01-market-research.md`、`03-prd.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Product, design, engineering |
+| Related documents | `00-project-charter.md`, `01-market-research.md`, `03-prd.md` |
 
 ---
 
-## 1. 问题定义
+## 1. Problem Definition
 
-AI 应用的性能问题与成本问题，和传统 Web 应用有本质差异：
+Performance and cost problems in AI applications differ fundamentally from those in traditional web applications:
 
-- 延迟由**外部模型服务**主导，应用侧只能影响一部分。
-- 成本由**Token 计量**决定，而不是 CPU / 内存 / 请求数。
-- 一次请求内部有**多个异构阶段**：Embedding、向量检索、工具调用、LLM 推理、流式传输、序列化。
-- 失败与重试可能**重复计费**，也可能**不完整计费**。
-- Prompt 与 Completion 可能包含**敏感数据**，不能默认上传。
+- Latency is dominated by **external model services**; the application side can influence only part of it.
+- Cost is determined by **token metering**, not by CPU / memory / request count.
+- A single request contains **multiple heterogeneous phases**: Embedding, vector retrieval, tool calls, LLM inference, streaming transfer, and serialization.
+- Failures and retries may cause **duplicate billing** and may also cause **incomplete billing**.
+- Prompt and Completion may contain **sensitive data** and must not be uploaded by default.
 
-因此，通用的进程级 Profiler 和通用 APM 都无法直接回答开发者最关心的问题。下面用两个具体场景说明。
+Therefore, neither general process-level profilers nor general APM can directly answer the questions developers care about most. Two specific scenarios illustrate this below.
 
 ---
 
-## 2. 场景一：一次 8.4 秒的 RAG 请求
+## 2. Scenario 1: A Single 8.4-Second RAG Request
 
-某客服知识库应用，P95 延迟从 3.2 秒涨到 8.4 秒。现有监控只有一个 `POST /chat` 的 Span，显示 8.4 秒；`dotnet-counters` 显示 CPU 正常、GC 正常。团队无法判断是模型变慢、网络抖动，还是代码里新增了一次串行检索。
+A customer service knowledge base application's P95 latency rose from 3.2 seconds to 8.4 seconds. The existing monitoring has only one Span for `POST /chat`, showing 8.4 seconds; `dotnet-counters` shows CPU normal and GC normal. The team cannot determine whether the model got slower, the network jittered, or a serial retrieval was newly added in the code.
 
-Runesvaner 期望输出的瀑布（示例数据，非真实测量）：
+The waterfall Runesvaner is expected to output (sample data, not real measurements):
 
-| 分段 | 耗时 | 占比 | 测量方式 |
+| Segment | Duration | Share | Measurement Method |
 | --- | ---: | ---: | --- |
-| 应用内排队 | 0.12 s | 1.4% | 中间件进入 → 开始执行 |
-| 认证 / Token 获取 | 0.03 s | 0.4% | 本地计时 |
-| DNS / TCP 连接 | 0.08 s | 1.0% | `HttpClient` 诊断事件 |
-| TLS 握手 | 0.15 s | 1.8% | `HttpClient` 诊断事件 |
-| 请求上传 | 0.22 s | 2.6% | 请求体写入完成 |
-| Provider 排队 | 1.90 s | 22.6% | 首字节前等待（估算） |
-| 首 Token（TTFT） | 2.40 s | 28.6% | 首个非空 delta |
-| 生成 | 3.10 s | 36.9% | 首 Token → 最后 Token |
-| 工具调用 | 0.40 s | 4.8% | 工具 Span |
-| 序列化 / 应用处理 | 0.20 s | 2.4% | 本地计时 |
-| **未解释** | **-0.20 s** | — | 并行分段重叠，需标记 |
+| In-app queueing | 0.12 s | 1.4% | Middleware entry → start of execution |
+| Authentication / token acquisition | 0.03 s | 0.4% | Local timing |
+| DNS / TCP connection | 0.08 s | 1.0% | `HttpClient` diagnostic events |
+| TLS handshake | 0.15 s | 1.8% | `HttpClient` diagnostic events |
+| Request upload | 0.22 s | 2.6% | Request body write complete |
+| Provider queueing | 1.90 s | 22.6% | Wait before first byte (estimated) |
+| First token (TTFT) | 2.40 s | 28.6% | First non-empty delta |
+| Generation | 3.10 s | 36.9% | First token → last token |
+| Tool call | 0.40 s | 4.8% | Tool Span |
+| Serialization / application processing | 0.20 s | 2.4% | Local timing |
+| **Unaccounted** | **-0.20 s** | — | Parallel segment overlap, must be marked |
 
-> 分段之和不必等于总耗时：并行工具调用、流式重叠、时钟粒度都会造成差异。Runesvaner 必须显式展示 `unaccounted` 与 `overlap`，而不是强行归一化。
+> The sum of segments need not equal the total duration: parallel tool calls, streaming overlap, and clock granularity all cause differences. Runesvaner must explicitly show `unaccounted` and `overlap`, rather than forcing normalization.
 
-### 2.1 关键洞察
+### 2.1 Key Insights
 
-- 最大头是**生成**（3.1 s）与**首 Token**（2.4 s），不是网络。
-- Provider 排队 1.9 s 是"看不见的时间"，只有把请求上传完成与首字节分开才能发现。
-- 如果没有分段，团队很可能误判为"网络慢"，从而优化错方向。
+- The largest contributors are **generation** (3.1 s) and **first token** (2.4 s), not the network.
+- The 1.9 s of provider queueing is "invisible time"; it can be found only by separating the completion of request upload from the first byte.
+- Without segmentation, the team would likely misjudge it as "the network is slow" and optimize in the wrong direction.
 
 ---
 
-## 3. 场景二：账单涨了 3 倍
+## 3. Scenario 2: The Bill Tripled
 
-某 SaaS 的月度 LLM 成本从 $1,200 涨到 $3,600。账单只按模型汇总，无法回答：
+A SaaS's monthly LLM cost rose from $1,200 to $3,600. The bill is aggregated only by model and cannot answer:
 
-- 是哪个功能？是新增的"文档摘要"还是"客服问答"？
-- 是哪个租户？是免费用户滥用还是大客户增长？
-- 是哪个 Prompt 版本？新版本是否让输出变长？
-- 是重试造成的重复计费，还是缓存失效？
-- 是模型升级导致单价变化，还是用量增长？
+- Which feature? Is it the newly added "document summary" or "customer service Q&A"?
+- Which tenant? Is it abuse by free users or growth from large customers?
+- Which Prompt version? Did the new version make the output longer?
+- Is it duplicate billing caused by retries, or cache misses?
+- Is it a unit price change caused by a model upgrade, or usage growth?
 
-Runesvaner 期望输出的成本账本（示例价格，仅用于说明）：
+The cost ledger Runesvaner is expected to output (sample prices, for illustration only):
 
-| 项目 | Token | 单价（USD / 1M） | 成本 |
+| Item | Token | Unit Price (USD / 1M) | Cost |
 | --- | ---: | ---: | ---: |
-| 非缓存输入 | 4,400 | 1.25 | $0.00550 |
-| 缓存输入 | 8,000 | 0.125 | $0.00100 |
-| 输出 | 900 | 10.00 | $0.00900 |
-| 推理 Token | 600 | 10.00 | $0.00600 |
-| **单次合计** | — | — | **$0.02150** |
+| Non-cached input | 4,400 | 1.25 | $0.00550 |
+| Cached input | 8,000 | 0.125 | $0.00100 |
+| Output | 900 | 10.00 | $0.00900 |
+| Reasoning tokens | 600 | 10.00 | $0.00600 |
+| **Single-request total** | — | — | **$0.02150** |
 
-归因维度：
+Attribution dimensions:
 
-| 维度 | 值 |
+| Dimension | Value |
 | --- | --- |
 | Feature | `support.answer` |
-| Tenant | `tenant_7f3a`（哈希） |
+| Tenant | `tenant_7f3a` (hash) |
 | Prompt version | `support-v12` |
-| Model | `gpt-5`（请求） / `gpt-5-2026-08`（响应） |
-| Attempt | 2（首次 429，未计费） |
+| Model | `gpt-5` (request) / `gpt-5-2026-08` (response) |
+| Attempt | 2 (first attempt 429, not billed) |
 | Price table | `2026-11-01` |
-| Cache | 命中 8,000 / 可缓存 12,400（64.5%） |
+| Cache | Hit 8,000 / cacheable 12,400 (64.5%) |
 
-### 3.1 关键洞察
+### 3.1 Key Insights
 
-- 成本问题不是"总共多少钱"，而是"哪一项在增长、为什么"。
-- 重试与缓存是两座"隐形金矿"：一个可能重复计费，一个可能被忽略节省。
-- 价格表必须版本化，否则历史账单无法解释。
+- The cost problem is not "how much in total", but "which item is growing and why".
+- Retries and caching are two "hidden gold mines": one may cause duplicate billing, and the other may be an overlooked saving.
+- The price table must be versioned; otherwise historical bills cannot be explained.
 
 ---
 
-## 4. 用户画像
+## 4. Personas
 
-### 4.1 李维：.NET 后端工程师（P0）
+### 4.1 Li Wei: .NET Backend Engineer (P0)
 
-| 维度 | 描述 |
+| Dimension | Description |
 | --- | --- |
-| 背景 | 30 岁，5 年 .NET，负责客服 RAG 服务；熟悉 ASP.NET Core、EF Core、Redis，不熟悉 Profiler 底层 |
-| 目标 | 把 P95 从 8 秒降到 4 秒；避免被 on-call 叫醒 |
-| 现状 | 用 Application Insights + 自建 Stopwatch 日志；只能看到总耗时 |
-| 痛点 | 不知道慢在哪；改一个参数要跑一轮压测；日志字段不统一 |
-| 成功标准 | 5 分钟内定位到具体阶段；改动后有前后对比 |
-| 关键语句 | "我不需要另一个大盘，我需要知道这次请求到底卡在哪。" |
-| 使用场景 | 本地开发、预发环境、偶发线上问题 |
-| 抗拒点 | 接入复杂、依赖多、影响性能、要改很多代码 |
+| Background | 30 years old, 5 years of .NET, responsible for a customer service RAG service; familiar with ASP.NET Core, EF Core, and Redis, unfamiliar with Profiler internals |
+| Goal | Reduce P95 from 8 seconds to 4 seconds; avoid being woken up by on-call |
+| Current state | Uses Application Insights + self-built Stopwatch logs; can only see total duration |
+| Pain points | Doesn't know where it is slow; changing a parameter requires a round of load testing; log fields are inconsistent |
+| Success criteria | Locate the specific phase within 5 minutes; before/after comparison after changes |
+| Key quote | "I don't need another dashboard; I need to know exactly where this request is stuck." |
+| Usage scenarios | Local development, staging environment, occasional production issues |
+| Resistance points | Complex integration, many dependencies, performance impact, many code changes |
 
-### 4.2 陈可：AI 平台负责人（P0）
+### 4.2 Chen Ke: AI Platform Lead (P0)
 
-| 维度 | 描述 |
+| Dimension | Description |
 | --- | --- |
-| 背景 | 35 岁，平台团队负责人，服务 20 个业务团队；关注标准化、成本、合规 |
-| 目标 | 统一接入方式；把延迟与成本下放到业务团队；保证 AOT 服务也能用 |
-| 现状 | 各团队自行接 OTel/Langfuse，字段不一致；平台侧只能做粗粒度汇总 |
-| 痛点 | 接入碎片化；数据出机器有合规阻力；AOT 服务接入 OTel 体积变大 |
-| 成功标准 | 一个 NuGet 包 + 一组配置；OTLP 可选；AOT 构建不回归 |
-| 关键语句 | "我可以接受功能少，但不能接受接入不可控、数据不可控。" |
-| 使用场景 | 平台 SDK、构建流水线、合规评审 |
-| 抗拒点 | 厂商锁定、隐式上传、公共 API 不稳定 |
+| Background | 35 years old, platform team lead serving 20 business teams; focused on standardization, cost, and compliance |
+| Goal | Unified integration method; delegate latency and cost to business teams; ensure AOT services can also use it |
+| Current state | Teams integrate OTel/Langfuse themselves with inconsistent fields; the platform side can only do coarse-grained aggregation |
+| Pain points | Fragmented integration; compliance resistance to data leaving the machine; AOT services grow in size when integrating OTel |
+| Success criteria | One NuGet package + one set of configuration; OTLP optional; no AOT build regression |
+| Key quote | "I can accept fewer features, but not uncontrollable integration or uncontrollable data." |
+| Usage scenarios | Platform SDK, build pipelines, compliance review |
+| Resistance points | Vendor lock-in, implicit upload, unstable public API |
 
-### 4.3 周原：独立开发者（P1）
+### 4.3 Zhou Yuan: Independent Developer (P1)
 
-| 维度 | 描述 |
+| Dimension | Description |
 | --- | --- |
-| 背景 | 27 岁，独立开发 AI SaaS，前端 + 后端一人；对成本极度敏感 |
-| 目标 | 控制每月 API 成本；快速定位慢请求；不增加运维负担 |
-| 现状 | 用托管 APM 的免费额度；账单超支后才发现 |
-| 痛点 | SaaS 可观测工具按量收费；本地调试看不到真实调用链 |
-| 成功标准 | 零配置本地看到瀑布与成本；不用部署服务 |
-| 关键语句 | "我不想为了看一个请求，先部署一套平台。" |
-| 使用场景 | 本地开发、单机部署、VPS |
-| 抗拒点 | 复杂配置、Docker、云账号、按量计费 |
+| Background | 27 years old, independently developing an AI SaaS, one person for frontend + backend; extremely cost-sensitive |
+| Goal | Control monthly API cost; quickly locate slow requests; no added operational burden |
+| Current state | Uses the free tier of a hosted APM; discovers overspending only after the bill arrives |
+| Pain points | SaaS observability tools charge by usage; local debugging cannot show the real call chain |
+| Success criteria | Zero-configuration local view of waterfall and cost; no service deployment |
+| Key quote | "I don't want to deploy a whole platform just to look at one request." |
+| Usage scenarios | Local development, single-machine deployment, VPS |
+| Resistance points | Complex configuration, Docker, cloud accounts, usage-based billing |
 
-### 4.4 王岚：SRE / FinOps（P1）
+### 4.4 Wang Lan: SRE / FinOps (P1)
 
-| 维度 | 描述 |
+| Dimension | Description |
 | --- | --- |
-| 背景 | 38 岁，SRE 转 FinOps；关注预算、异常、归因 |
-| 目标 | 提前发现成本异常；按团队/功能分摊；识别重试浪费 |
-| 现状 | 用云厂商账单 + 自建 Excel；粒度粗、滞后 |
-| 痛点 | 账单只有模型维度；无法解释异常；重试成本不可见 |
-| 成功标准 | 按 tenant/feature/model 归因；预算告警；异常请求可下钻 |
-| 关键语句 | "我不要月底才知道超支，我要在请求发生时就知道。" |
-| 使用场景 | 周报、预算评审、异常排查 |
-| 抗拒点 | 数据不准、口径不统一、需要人工维护价格表 |
+| Background | 38 years old, SRE turned FinOps; focused on budgets, anomalies, and attribution |
+| Goal | Detect cost anomalies early; allocate by team/feature; identify retry waste |
+| Current state | Uses cloud vendor bills + self-built Excel; coarse granularity, lagging |
+| Pain points | Bills are only by model dimension; anomalies cannot be explained; retry costs are invisible |
+| Success criteria | Attribution by tenant/feature/model; budget alerts; drill-down into anomalous requests |
+| Key quote | "I don't want to learn about overspending at month-end; I want to know when the request happens." |
+| Usage scenarios | Weekly reports, budget reviews, anomaly investigation |
+| Resistance points | Inaccurate data, inconsistent definitions, manual price table maintenance |
 
 ---
 
 ## 5. Jobs-to-be-Done
 
-### 5.1 功能性任务
+### 5.1 Functional Jobs
 
-| JTBD | 触发场景 | 期望结果 |
+| JTBD | Trigger Scenario | Expected Outcome |
 | --- | --- | --- |
-| 当 RAG 请求变慢时，我想快速定位到具体阶段 | P95 报警、用户投诉 | 5 分钟内给出可行动的结论 |
-| 当账单异常时，我想按维度归因 | 月度账单、预算告警 | 找到增长来源与异常请求 |
-| 当我要上 AOT 时，我想确认诊断不会破坏构建 | 发布流水线 | AOT/Trim 无新增警告，体积可控 |
-| 当我要换模型时，我想比较延迟与成本 | 模型选型 | 同一批请求的前后对比 |
-| 当我在本地开发时，我想看到真实调用链 | 调试 | 不依赖远端平台 |
+| When a RAG request becomes slow, I want to quickly locate the specific phase | P95 alerts, user complaints | An actionable conclusion within 5 minutes |
+| When the bill is anomalous, I want to attribute it by dimension | Monthly bills, budget alerts | Find the growth source and anomalous requests |
+| When I move to AOT, I want to confirm diagnostics won't break the build | Release pipeline | No new AOT/Trim warnings, controlled size |
+| When I change models, I want to compare latency and cost | Model selection | Before/after comparison on the same batch of requests |
+| When I develop locally, I want to see the real call chain | Debugging | No dependency on a remote platform |
 
-### 5.2 情感性任务
+### 5.2 Emotional Jobs
 
-| JTBD | 期望感受 |
+| JTBD | Desired Feeling |
 | --- | --- |
-| 面对陌生 AI 调用栈时，我想"看得懂" | 掌控感、可解释 |
-| 面对账单时，我想"能说清楚" | 可信、可辩护 |
-| 面对合规评审时，我想"能证明数据没出去" | 安全感 |
+| When facing an unfamiliar AI call stack, I want to "understand it" | Sense of control, explainability |
+| When facing the bill, I want to "explain it clearly" | Trustworthy, defensible |
+| When facing compliance review, I want to "prove data didn't leave" | Sense of security |
 
-### 5.3 社会性任务
+### 5.3 Social Jobs
 
-| JTBD | 期望形象 |
+| JTBD | Desired Image |
 | --- | --- |
-| 在团队内推动可观测规范 | 专业、有方法论 |
-| 在成本评审中解释增长 | 数据驱动、可靠 |
+| Driving observability standards within the team | Professional, methodical |
+| Explaining growth in cost reviews | Data-driven, reliable |
 
 ---
 
-## 6. 用户旅程
+## 6. User Journey
 
-| 阶段 | 用户动作 | 关键触点 | 成功标准 | 失败模式 |
+| Stage | User Action | Key Touchpoint | Success Criterion | Failure Mode |
 | --- | --- | --- | --- | --- |
-| 发现 | 搜索 "dotnet llm latency"、看 GitHub、同事推荐 | README、demo 图、博客 | 30 秒内理解价值 | 看起来像"又一个平台" |
-| 接入 | 安装 NuGet、加 3 行代码 | 快速开始、示例 | 10 分钟内跑通 | 配置复杂、依赖冲突 |
-| 首次运行 | 跑 sample、打开 Studio | CLI 输出、UI 首屏 | 看到一次真实请求 | 空白页、无数据 |
-| 诊断 | 看瀑布、筛选慢请求、下钻 | 瀑布图、详情面板 | 找到根因 | 分段不准、标签缺失 |
-| 优化 | 改代码/换模型/加缓存 | 建议、对比 | 指标改善 | 不知道下一步 |
-| 验证 | 前后对比、导出报告 | Compare、导出 | 可复现、可分享 | 数据口径不一致 |
+| Discovery | Search "dotnet llm latency", browse GitHub, colleague recommendation | README, demo images, blog | Understand the value within 30 seconds | Looks like "yet another platform" |
+| Integration | Install NuGet, add 3 lines of code | Quick start, examples | Working within 10 minutes | Complex configuration, dependency conflicts |
+| First run | Run sample, open Studio | CLI output, UI first screen | See one real request | Blank page, no data |
+| Diagnosis | View waterfall, filter slow requests, drill down | Waterfall, detail panel | Find the root cause | Inaccurate segmentation, missing tags |
+| Optimization | Change code/switch model/add cache | Suggestions, comparison | Metrics improve | Don't know the next step |
+| Validation | Before/after comparison, export report | Compare, export | Reproducible, shareable | Inconsistent data definitions |
 
-### 6.1 关键时刻（Moment of Truth）
+### 6.1 Moments of Truth
 
-1. **第一次打开 Studio**：必须在一屏内看到"总耗时 + 分段 + 成本"，否则会被判定为"又一个 Span 树"。
-2. **第一次发现异常**：必须能区分 `estimated` 与精确值，否则信任崩塌。
-3. **第一次成本核对**：必须能和 provider 账单对上，否则不再使用。
-4. **第一次 AOT 发布**：必须无警告通过，否则被移除。
+1. **First time opening Studio**: must show "total duration + segments + cost" within one screen, otherwise it will be judged as "yet another Span tree".
+2. **First time finding an anomaly**: must distinguish `estimated` from exact values, otherwise trust collapses.
+3. **First cost reconciliation**: must reconcile with the provider bill, otherwise it won't be used again.
+4. **First AOT publish**: must pass without warnings, otherwise it will be removed.
 
 ---
 
-## 7. 现有替代方案与不满
+## 7. Existing Alternatives and Dissatisfaction
 
-| 方案 | 优点 | 不满 | Runesvaner 的差异 |
+| Alternative | Advantages | Dissatisfaction | Runesvaner Difference |
 | --- | --- | --- | --- |
-| OpenTelemetry + Jaeger/Grafana | 标准、灵活、生态大 | 配置重；无成本；Span 树不直观 | 零配置本地瀑布 + 成本；可导出 OTLP |
-| Langfuse 自托管 | 功能全、社区大 | 需部署；数据出机器；.NET 接入非原生 | 进程内、本地、.NET 原生 |
-| Application Insights | 与 Azure 集成好 | 成本高；AI 语义弱；AOT 支持有限 | 轻量、AOT、AI 专用 |
-| 自建日志 + Stopwatch | 灵活、可控 | 字段不统一；无标准；维护成本高 | 标准化模型 + 自动分段 |
-| 商业 APM（Datadog 等） | 全栈、成熟 | 贵；AI Token/成本模型弱 | 专注 AI 请求级剖析 |
-| 手工看 provider 账单 | 权威 | 滞后、粒度粗 | 请求级归因与实时预算 |
+| OpenTelemetry + Jaeger/Grafana | Standard, flexible, large ecosystem | Heavy configuration; no cost; Span tree not intuitive | Zero-configuration local waterfall + cost; OTLP export |
+| Self-hosted Langfuse | Full-featured, large community | Requires deployment; data leaves the machine; .NET integration not native | In-process, local, .NET native |
+| Application Insights | Good Azure integration | High cost; weak AI semantics; limited AOT support | Lightweight, AOT, AI-specific |
+| Self-built logs + Stopwatch | Flexible, controllable | Inconsistent fields; no standard; high maintenance cost | Standardized model + automatic segmentation |
+| Commercial APM (Datadog, etc.) | Full-stack, mature | Expensive; weak AI Token/cost model | Focus on AI request-level profiling |
+| Manual review of provider bills | Authoritative | Lagging, coarse granularity | Request-level attribution and real-time budget |
 
 ---
 
-## 8. Kano 需求分类
+## 8. Kano Requirement Classification
 
-| 类型 | 需求 | 说明 |
+| Type | Requirement | Notes |
 | --- | --- | --- |
-| 基本型（Must-be） | 延迟瀑布、成本可见、默认隐私、低开销 | 缺失会导致直接弃用 |
-| 期望型（Performance） | 流式指标、重试检测、缓存归因、多维度筛选 | 越好越满意 |
-| 兴奋型（Delighter） | 本地 Studio、AOT 安全、价格表自动更新、前后对比 | 形成口碑 |
-| 无差异型 | 自定义主题、复杂权限 | 不做 |
-| 反向型 | 强制云端、强制内容捕获、复杂部署 | 明确避免 |
+| Must-be | Latency waterfall, cost visibility, privacy by default, low overhead | Absence leads to immediate abandonment |
+| Performance | Streaming metrics, retry detection, cache attribution, multi-dimensional filtering | The better, the more satisfied |
+| Delighter | Local Studio, AOT safety, automatic price table updates, before/after comparison | Builds word of mouth |
+| Indifferent | Custom themes, complex permissions | Not done |
+| Reverse | Mandatory cloud, mandatory content capture, complex deployment | Explicitly avoided |
 
 ---
 
-## 9. 异议处理
+## 9. Objection Handling
 
-### 9.1 "OTel 已经够了"
+### 9.1 "OTel Is Already Enough"
 
-- OTel 是**传输标准**，不是**诊断结论**。它告诉你 Span 的开始与结束，不告诉你 8.4 秒里 1.9 秒花在 Provider 排队。
-- Runesvaner 不替代 OTel，而是生成更细的语义，并通过 OTLP 导出到现有后端。
+- OTel is a **transport standard**, not a **diagnostic conclusion**. It tells you when a Span starts and ends; it does not tell you that 1.9 of the 8.4 seconds was spent in provider queueing.
+- Runesvaner does not replace OTel; it generates finer semantics and exports them to existing backends via OTLP.
 
-### 9.2 "Langfuse 自托管就行"
+### 9.2 "Self-Hosted Langfuse Is Fine"
 
-- 对平台团队可行，对单个开发者成本过高。
-- Runesvaner 的本地首体验是 5 分钟；Langfuse 需要数据库、对象存储、部署。
-- 两者可以共存：Runesvaner 采集与剖析，Langfuse 聚合与评估。
+- Feasible for platform teams, but too costly for an individual developer.
+- Runesvaner's local first experience is 5 minutes; Langfuse requires a database, object storage, and deployment.
+- The two can coexist: Runesvaner collects and profiles, Langfuse aggregates and evaluates.
 
-### 9.3 "成本算不准"
+### 9.3 "Cost Calculation Is Inaccurate"
 
-- 不猜测未知模型；标记 `unknown`。
-- 价格表带版本、来源、生效时间。
-- 支持用户覆盖；历史会话按当时价格表回放。
-- 在 UI 中显示"估算"与"已核对"两种状态。
+- Do not guess unknown models; mark them as `unknown`.
+- The price table carries version, source, and effective time.
+- Support user overrides; replay historical sessions with the price table in effect at the time.
+- Show both "estimated" and "verified" states in the UI.
 
-### 9.4 "会不会拖慢我的服务"
+### 9.4 "Will It Slow Down My Service"
 
-- 目标 P95 增量 ≤ 1 ms，CPU ≤ 1%。
-- 默认采样与环形缓冲；落盘异步。
-- 采集链路熔断；失败不影响业务。
-- 基准公开，CI 回归门槛。
+- Target P95 increment ≤ 1 ms, CPU ≤ 1%.
+- Sampling and ring buffers by default; asynchronous persistence.
+- The collection pipeline has circuit breaking; failures do not affect business.
+- Benchmarks are public, with CI regression thresholds.
 
-### 9.5 "AOT 用户很少，为什么要支持"
+### 9.5 "AOT Users Are Few, Why Support It"
 
-- AOT 是**约束**，不是唯一卖点。支持 AOT 意味着核心库没有反射黑魔法，这对所有用户都意味着更小、更快、更可预测。
-- 对使用 AOT 的 AI 服务，Runesvaner 是少数仍可用的诊断方案。
+- AOT is a **constraint**, not the only selling point. Supporting AOT means the core library has no reflection black magic, which for all users means smaller, faster, and more predictable.
+- For AI services using AOT, Runesvaner is one of the few diagnostics solutions still available.
 
 ---
 
-## 10. 假设与验证计划
+## 10. Assumptions and Validation Plan
 
-| 假设 | 验证方法 | 通过标准 |
+| Assumption | Validation Method | Pass Criterion |
 | --- | --- | --- |
-| 开发者更想要"结论"而非"原始 Span" | 5 个用户可用性测试 | ≥ 4 人能在一分钟内说出慢在哪 |
-| 成本归因是 P0 | 访谈 + 试用 | ≥ 60% 用户主动配置价格表 |
-| 本地优先是差异化 | 试用转化 | ≥ 30% 用户选择纯本地模式 |
-| AOT 兼容影响选型 | 问卷 | ≥ 20% 用户表示"没有 AOT 就不会用" |
-| 5 分钟首体验可行 | 计时测试 | ≥ 80% 用户在 5 分钟内看到瀑布 |
+| Developers prefer "conclusions" over "raw Spans" | Usability testing with 5 users | ≥ 4 people can state where it is slow within one minute |
+| Cost attribution is P0 | Interviews + trial | ≥ 60% of users proactively configure a price table |
+| Local-first is a differentiator | Trial conversion | ≥ 30% of users choose pure local mode |
+| AOT compatibility affects selection | Questionnaire | ≥ 20% of users say "I wouldn't use it without AOT" |
+| A 5-minute first experience is feasible | Timed test | ≥ 80% of users see the waterfall within 5 minutes |
 
 ---
 
-## 11. 隐形需求（摘要）
+## 11. Hidden Requirements (Summary)
 
-完整清单见 `14-hidden-requirements.md`。与用户直接相关的：
+See `14-hidden-requirements.md` for the full list. Directly related to users:
 
-- 成本可信度与可追溯性。
-- 时间测量的单调时钟与估算标记。
-- 流式语义（TTFT 定义、取消、部分响应）。
-- 多租户与 PII。
-- 采样导致的统计偏差。
-- 高基数标签导致的指标爆炸。
-- 采集工具自身的故障隔离。
-- AOT 下的 JSON 与配置绑定。
-- 本地 UI 的安全边界（DNS rebinding、令牌）。
-- 贡献者体验（一键构建、测试数据）。
+- Cost credibility and traceability.
+- Monotonic clocks for time measurement and estimation markers.
+- Streaming semantics (TTFT definition, cancellation, partial responses).
+- Multi-tenancy and PII.
+- Statistical bias caused by sampling.
+- Metric explosion caused by high-cardinality labels.
+- Fault isolation of the collection tool itself.
+- JSON and configuration binding under AOT.
+- Security boundaries of the local UI (DNS rebinding, tokens).
+- Contributor experience (one-command build, test data).
 
 ---
 
-## 12. 决议状态
+## 12. Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本文件直接相关：
+D-01–D-25 are all resolved; see `15-decision-log.md`. Directly related to this document:
 
-- D-01：AI 负载诊断首发。
-- D-02：项目名 Runesvaner。
-- D-09：默认内容捕获 `None`。
-- D-10：暂不商业化，接受无捆绑赞助。
-- D-14：本地采样 100%，生产建议 10%。
-- D-16：UI 支持英文、简体中文、标准德语。
+- D-01: AI workload diagnostics launched first.
+- D-02: Project name Runesvaner.
+- D-09: Default content capture `None`.
+- D-10: No commercialization for now, accepting non-bundled sponsorship.
+- D-14: Local sampling 100%, recommended 10% in production.
+- D-16: UI supports English, Simplified Chinese, and Standard German.

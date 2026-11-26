@@ -1,29 +1,29 @@
-# 遥测数据模型与语义约定
+# Telemetry Data Model and Semantic Conventions
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 工程、数据、互操作 |
-| 关联文档 | `05-technical-design.md`、`07-api-design.md` |
-| 标准参考 | OpenTelemetry GenAI Semantic Conventions（Development） |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Engineering, data, interoperability |
+| Related documents | `05-technical-design.md`, `07-api-design.md` |
+| Standards reference | OpenTelemetry GenAI Semantic Conventions (Development) |
 
 ---
 
-## 1. 设计原则
+## 1. Design Principles
 
-1. **对齐标准**：能映射到 `gen_ai.*` 的字段优先使用标准名。
-2. **扩展隔离**：Runesvaner 特有字段统一使用 `runesvaner.*` 前缀，不污染标准命名空间。
-3. **指标低基数**：Metric labels 不包含 request_id、user_id、prompt_version 等高基数值。
-4. **Trace 高基数**：高维信息放在 Span attributes / events 中，通过 trace_id 关联。
-5. **不猜测**：缺失的用量、价格、时间一律标记 `unknown` 或 `estimated`。
-6. **Schema 版本化**：每个事件带 `schema` 字段；破坏性变更升主版本。
-7. **隐私分级**：字段标注 `public` / `internal` / `sensitive`，导出前可按级别过滤。
+1. **Align with standards**: fields that can be mapped to `gen_ai.*` use the standard name first.
+2. **Extension isolation**: Runesvaner-specific fields uniformly use the `runesvaner.*` prefix and do not pollute the standard namespace.
+3. **Low-cardinality metrics**: metric labels do not include high-cardinality values such as request_id, user_id, or prompt_version.
+4. **High-cardinality traces**: high-dimensional information lives in span attributes / events and is correlated via trace_id.
+5. **Do not guess**: missing usage, price, or time is always marked `unknown` or `estimated`.
+6. **Schema versioning**: every event carries a `schema` field; breaking changes bump the major version.
+7. **Privacy classification**: fields are labeled `public` / `internal` / `sensitive` and can be filtered by level before export.
 
 ---
 
-## 2. 实体模型
+## 2. Entity Model
 
     RunesvanerSession
       ├── RunesvanerRequest (1..N)
@@ -35,149 +35,149 @@
       │     └── RunesvanerError (0..N)
       └── SelfMonitorSample (0..N)
 
-| 实体 | 说明 |
+| Entity | Description |
 | --- | --- |
-| Session | 一次进程运行或一次诊断采集 |
-| Request | 一次逻辑 AI 操作（chat / embeddings / tool / vector） |
-| Segment | 请求内部的一段时间区间 |
-| Usage | Token 与多模态用量 |
-| Cost | 分项与总成本 |
-| Stream | 流式行为指标 |
-| Retry | 一次尝试 |
-| Error | 异常或 provider 错误 |
+| Session | One process run or one diagnostic session |
+| Request | One logical AI operation (chat / embeddings / tool / vector) |
+| Segment | A time interval within a request |
+| Usage | Token and multimodal usage |
+| Cost | Itemized and total cost |
+| Stream | Streaming behavior metrics |
+| Retry | One attempt |
+| Error | Exception or provider error |
 
 ---
 
-## 3. 标识与关联
+## 3. Identifiers and Correlation
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 | --- | --- | --- |
-| `runesvaner.session_id` | string (ULID) | 会话标识 |
-| `runesvaner.request_id` | string (ULID) | 请求标识 |
-| `trace_id` | string (W3C 32 hex) | 与 OTel 对齐 |
-| `span_id` | string (W3C 16 hex) | 与 OTel 对齐 |
-| `runesvaner.parent_request_id` | string | Agent/工具嵌套 |
-| `runesvaner.attempt` | int | 从 1 开始 |
-| `runesvaner.schema` | string | 例如 `runesvaner.event.v1` |
+| `runesvaner.session_id` | string (ULID) | Session identifier |
+| `runesvaner.request_id` | string (ULID) | Request identifier |
+| `trace_id` | string (W3C 32 hex) | Aligned with OTel |
+| `span_id` | string (W3C 16 hex) | Aligned with OTel |
+| `runesvaner.parent_request_id` | string | Agent/tool nesting |
+| `runesvaner.attempt` | int | Starts at 1 |
+| `runesvaner.schema` | string | For example `runesvaner.event.v1` |
 
-ULID 选择理由：可按时间排序、字符串安全、无需数据库序列。
+Rationale for ULID: time-sortable, string-safe, and requires no database sequence.
 
 ---
 
-## 4. Span 类型
+## 4. Span Types
 
-| `runesvaner.span.kind` | 对应 OTel 操作 | 说明 |
+| `runesvaner.span.kind` | Corresponding OTel operation | Description |
 | --- | --- | --- |
-| `request` | — | Runesvaner 请求根 |
-| `chat` | `gen_ai.operation.name=chat` | Chat 推理 |
+| `request` | — | Runesvaner request root |
+| `chat` | `gen_ai.operation.name=chat` | Chat inference |
 | `embeddings` | `embeddings` | Embedding |
-| `tool` | `execute_tool` | 工具/函数调用 |
-| `vector_search` | `retrieval` | 向量检索 |
-| `rerank` | `retrieval` | 重排 |
-| `serialize` | — | 序列化 |
-| `queue` | — | 应用内排队 |
-| `retry` | — | 重试等待 |
-| `cache` | — | 缓存查找/写入 |
+| `tool` | `execute_tool` | Tool/function call |
+| `vector_search` | `retrieval` | Vector search |
+| `rerank` | `retrieval` | Reranking |
+| `serialize` | — | Serialization |
+| `queue` | — | In-app queueing |
+| `retry` | — | Retry wait |
+| `cache` | — | Cache lookup/write |
 
-> OTel GenAI 的 Span 命名与操作名仍在 Development；M1 冻结映射表，见第 10 节。
+> OTel GenAI span naming and operation names are still in Development; M1 freezes the mapping table, see Section 10.
 
 ---
 
-## 5. 延迟分段模型
+## 5. Latency Segmentation Model
 
-### 5.1 分段字段
+### 5.1 Segment Fields
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `kind` | enum | 是 | 见第 5.2 节 |
-| `start_offset_us` | int64 | 是 | 相对请求开始 |
-| `duration_us` | int64 | 是 | 持续时间 |
-| `estimated` | bool | 是 | 是否为估算 |
-| `measurement` | enum | 是 | `stopwatch` / `http_diagnostic` / `derived` / `residual` |
-| `lane` | int | 否 | 并行分组，默认 0 |
-| `status` | enum | 否 | `ok` / `error` / `cancelled` |
-| `attributes` | map | 否 | 低基数补充信息 |
+| `kind` | enum | Yes | See Section 5.2 |
+| `start_offset_us` | int64 | Yes | Relative to request start |
+| `duration_us` | int64 | Yes | Duration |
+| `estimated` | bool | Yes | Whether it is an estimate |
+| `measurement` | enum | Yes | `stopwatch` / `http_diagnostic` / `derived` / `residual` |
+| `lane` | int | No | Parallel grouping, default 0 |
+| `status` | enum | No | `ok` / `error` / `cancelled` |
+| `attributes` | map | No | Low-cardinality supplementary information |
 
-### 5.2 分段类型
+### 5.2 Segment Kinds
 
-| `kind` | 起点 | 终点 | 默认测量 |
+| `kind` | Start | End | Default measurement |
 | --- | --- | --- | --- |
-| `queue` | 中间件进入 | 开始调用 inner | stopwatch |
-| `auth` | 认证开始 | 认证结束 | stopwatch |
-| `connect` | 连接开始 | 连接建立 | http_diagnostic |
-| `tls` | TLS 开始 | TLS 完成 | http_diagnostic |
-| `upload` | 请求写入开始 | 请求写入完成 | stopwatch |
-| `provider_queue` | 上传完成 | 首字节 | derived（estimated） |
-| `ttft` | 请求开始 | 首个非空 delta | stopwatch |
-| `generation` | 首个 delta | 最后 delta | stopwatch |
-| `tool` | 工具开始 | 工具结束 | stopwatch |
-| `vector_search` | 检索开始 | 检索结束 | stopwatch |
-| `serialize` | 序列化开始 | 序列化结束 | stopwatch |
-| `retry_wait` | 失败 | 下一次尝试 | stopwatch |
-| `cache_lookup` | 缓存查询开始 | 返回 | stopwatch |
-| `unaccounted` | 残差 | — | residual |
-| `overlap` | 并行重叠 | — | residual |
+| `queue` | Middleware entry | Start of inner call | stopwatch |
+| `auth` | Auth start | Auth end | stopwatch |
+| `connect` | Connection start | Connection established | http_diagnostic |
+| `tls` | TLS start | TLS complete | http_diagnostic |
+| `upload` | Request write start | Request write complete | stopwatch |
+| `provider_queue` | Upload complete | First byte | derived (estimated) |
+| `ttft` | Request start | First non-empty delta | stopwatch |
+| `generation` | First delta | Last delta | stopwatch |
+| `tool` | Tool start | Tool end | stopwatch |
+| `vector_search` | Retrieval start | Retrieval end | stopwatch |
+| `serialize` | Serialization start | Serialization end | stopwatch |
+| `retry_wait` | Failure | Next attempt | stopwatch |
+| `cache_lookup` | Cache query start | Return | stopwatch |
+| `unaccounted` | Residual | — | residual |
+| `overlap` | Parallel overlap | — | residual |
 
-### 5.3 公式
+### 5.3 Formulas
 
 - `ttfb = first_byte_ts - request_start_ts`
 - `ttft = first_non_empty_delta_ts - request_start_ts`
 - `generation = last_delta_ts - first_non_empty_delta_ts`
-- `provider_queue = ttfb - upload_complete_ts`（包含网络 RTT，estimated）
+- `provider_queue = ttfb - upload_complete_ts` (includes network RTT, estimated)
 - `itl_i = delta_ts_i - delta_ts_{i-1}`
 - `tps = output_tokens / generation_seconds`
 - `overlap = sum(parallel durations) - union(parallel intervals)`
 - `unaccounted = total_duration - union(all non-residual intervals)`
 
-### 5.4 展示规则
+### 5.4 Display Rules
 
-- 分段之和 ≠ 总耗时是正常现象。
-- 若 `abs(unaccounted) > 5%`，UI 显示差异并解释。
-- `estimated` 段使用斜纹 + 虚线；Tooltip 说明测量方法。
-- 并行分段使用 lane；不把并行时间简单相加。
+- The sum of segments ≠ total elapsed time is normal.
+- If `abs(unaccounted) > 5%`, the UI shows and explains the discrepancy.
+- `estimated` segments use diagonal hatching + dashed lines; the tooltip explains the measurement method.
+- Parallel segments use lanes; do not simply add parallel time together.
 
 ---
 
-## 6. 用量模型
+## 6. Usage Model
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 | --- | --- | --- |
-| `gen_ai.usage.input_tokens` | int | 输入 Token |
-| `gen_ai.usage.output_tokens` | int | 输出 Token |
-| `runesvaner.usage.cached_input_tokens` | int | 缓存命中输入 |
-| `runesvaner.usage.reasoning_tokens` | int | 推理 Token（若与输出重叠，需标注） |
-| `runesvaner.usage.image_tokens` | int | 图像 Token |
-| `runesvaner.usage.audio_tokens` | int | 音频 Token |
+| `gen_ai.usage.input_tokens` | int | Input tokens |
+| `gen_ai.usage.output_tokens` | int | Output tokens |
+| `runesvaner.usage.cached_input_tokens` | int | Cached input |
+| `runesvaner.usage.reasoning_tokens` | int | Reasoning tokens (must be labeled if overlapping with output) |
+| `runesvaner.usage.image_tokens` | int | Image tokens |
+| `runesvaner.usage.audio_tokens` | int | Audio tokens |
 | `runesvaner.usage.source` | enum | `provider` / `estimated` / `mixed` |
-| `runesvaner.usage.estimated` | bool | 是否有估算成分 |
+| `runesvaner.usage.estimated` | bool | Whether any part is estimated |
 
-规则：
+Rules:
 
-- 优先使用 provider 返回的 usage。
-- 缺失时，若启用本地 Token 估算，标 `estimated=true` 与 `estimator` 版本。
-- 不把 `reasoning_tokens` 与 `output_tokens` 重复相加；按 provider 语义记录。
-- 缓存 Token 是输入的子集，不额外增加输入总量。
+- Prefer usage returned by the provider.
+- When missing, if local token estimation is enabled, mark `estimated=true` and the `estimator` version.
+- Do not add `reasoning_tokens` and `output_tokens` together; record them according to provider semantics.
+- Cached tokens are a subset of input and do not additionally increase total input.
 
 ---
 
-## 7. 成本模型
+## 7. Cost Model
 
-### 7.1 字段
+### 7.1 Fields
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 | --- | --- | --- |
-| `runesvaner.cost.currency` | string | 默认 `USD` |
-| `runesvaner.cost.input` | decimal | 非缓存输入成本 |
-| `runesvaner.cost.cached_input` | decimal | 缓存输入成本 |
-| `runesvaner.cost.output` | decimal | 输出成本 |
-| `runesvaner.cost.reasoning` | decimal | 推理成本 |
-| `runesvaner.cost.total` | decimal | 总计 |
+| `runesvaner.cost.currency` | string | Default `USD` |
+| `runesvaner.cost.input` | decimal | Non-cached input cost |
+| `runesvaner.cost.cached_input` | decimal | Cached input cost |
+| `runesvaner.cost.output` | decimal | Output cost |
+| `runesvaner.cost.reasoning` | decimal | Reasoning cost |
+| `runesvaner.cost.total` | decimal | Total |
 | `runesvaner.cost.status` | enum | `known` / `partial` / `unknown` |
-| `runesvaner.cost.price_table_version` | string | 价格表版本 |
-| `runesvaner.cost.price_entry_id` | string | 命中的价格条目 |
-| `runesvaner.cost.discounts` | map | 批量/缓存/其他折扣 |
+| `runesvaner.cost.price_table_version` | string | Price table version |
+| `runesvaner.cost.price_entry_id` | string | Matched price entry |
+| `runesvaner.cost.discounts` | map | Batch/cache/other discounts |
 
-### 7.2 计算
+### 7.2 Calculation
 
     non_cached_input = max(0, input_tokens - cached_input_tokens)
     input_cost = non_cached_input * input_price / 1_000_000
@@ -186,52 +186,52 @@ ULID 选择理由：可按时间排序、字符串安全、无需数据库序列
     reasoning_cost = reasoning_tokens * reasoning_price / 1_000_000
     total = input_cost + cached_cost + output_cost + reasoning_cost
 
-- 阶梯计价：按区间累加，不在区间边界重复。
-- 批量折扣：在分项之后应用。
-- 精度：`decimal`，存储 6 位小数；展示 4 位。
-- 舍入：`MidpointRounding.ToEven`（待 D-08 确认）。
-- 未知：`total = null`，`status=unknown`，不显示 0。
+- Tiered pricing: accumulate by interval; do not repeat at interval boundaries.
+- Batch discount: applied after itemization.
+- Precision: `decimal`, stored with 6 decimal places; displayed with 4.
+- Rounding: `MidpointRounding.ToEven` (pending confirmation in D-08).
+- Unknown: `total = null`, `status=unknown`; do not display 0.
 
-### 7.3 状态矩阵
+### 7.3 Status Matrix
 
-| 情况 | status | total |
+| Situation | status | total |
 | --- | --- | --- |
-| 模型已知、用量完整 | known | 数值 |
-| 模型已知、部分用量缺失 | partial | 数值（缺失项标 null） |
-| 模型未知 | unknown | null |
-| 价格表缺失 | unknown | null |
-| 重试计费不明 | known/partial + `billing.status=unknown` | 数值 + 警告 |
+| Model known, usage complete | known | numeric |
+| Model known, some usage missing | partial | numeric (missing items marked null) |
+| Model unknown | unknown | null |
+| Price table missing | unknown | null |
+| Retry billing unclear | known/partial + `billing.status=unknown` | numeric + warning |
 
 ---
 
-## 8. 流式模型
+## 8. Streaming Model
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 | --- | --- | --- |
-| `runesvaner.stream.ttft_us` | int64 | 首 Token |
-| `runesvaner.stream.ttfb_us` | int64 | 首字节（若可得） |
-| `runesvaner.stream.chunk_count` | int | chunk 数 |
-| `runesvaner.stream.itl_p50_us` | int64 | Token 间延迟 P50 |
-| `runesvaner.stream.itl_p95_us` | int64 | Token 间延迟 P95 |
-| `runesvaner.stream.tokens_per_second` | double | 输出速率 |
-| `runesvaner.stream.cancelled` | bool | 是否取消 |
-| `runesvaner.stream.interrupted` | bool | 是否异常中断 |
-| `runesvaner.stream.finish_reason` | string | provider 结束原因 |
+| `runesvaner.stream.ttft_us` | int64 | First token |
+| `runesvaner.stream.ttfb_us` | int64 | First byte (if available) |
+| `runesvaner.stream.chunk_count` | int | Number of chunks |
+| `runesvaner.stream.itl_p50_us` | int64 | Inter-token latency P50 |
+| `runesvaner.stream.itl_p95_us` | int64 | Inter-token latency P95 |
+| `runesvaner.stream.tokens_per_second` | double | Output rate |
+| `runesvaner.stream.cancelled` | bool | Whether cancelled |
+| `runesvaner.stream.interrupted` | bool | Whether abnormally interrupted |
+| `runesvaner.stream.finish_reason` | string | Provider finish reason |
 
-规则：
+Rules:
 
-- TTFT 只认首个**非空** delta。
-- 空 delta（role-only、心跳）不计入。
-- 若 provider 不提供逐 Token，只有 chunk，则 `tps` 按 chunk 估算并标 `estimated`。
-- 取消与超时分开：`cancelled=true` + `error.type=timeout` 可同时存在。
+- TTFT only counts the first **non-empty** delta.
+- Empty deltas (role-only, heartbeat) do not count.
+- If the provider does not supply per-token output and only chunks, `tps` is estimated by chunk and marked `estimated`.
+- Cancellation and timeout are separate: `cancelled=true` + `error.type=timeout` can coexist.
 
 ---
 
-## 9. 指标
+## 9. Metrics
 
-Meter：`Runesvaner.AI`
+Meter: `Runesvaner.AI`
 
-| 指标 | 类型 | 单位 | 标签 |
+| Metric | Type | Unit | Labels |
 | --- | --- | --- | --- |
 | `runesvaner.ai.requests` | Counter | `{request}` | operation, provider, model, status |
 | `runesvaner.ai.request.duration` | Histogram | `s` | operation, provider, model |
@@ -246,51 +246,51 @@ Meter：`Runesvaner.AI`
 | `runesvaner.collector.dropped` | Counter | `{event}` | reason |
 | `runesvaner.collector.flush.duration` | Histogram | `s` | store |
 
-### 9.1 桶
+### 9.1 Buckets
 
-请求耗时：`[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]`（与 GenAI 建议一致）。
+Request duration: `[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60]` (consistent with GenAI recommendations).
 
-TTFT：`[0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]`。
+TTFT: `[0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]`.
 
-### 9.2 高基数规则
+### 9.2 High-Cardinality Rules
 
-禁止作为 Metric 标签：
+Prohibited as metric labels:
 
-- `request_id`、`trace_id`、`session_id`
-- `user_id`、`tenant_id`（原文）
+- `request_id`, `trace_id`, `session_id`
+- `user_id`, `tenant_id` (raw values)
 - `prompt_version`
 - `error.message`
-- 原始 URL、Prompt 文本
+- Raw URLs, prompt text
 
-允许：`provider`、`model`、`operation`、`status`、`error.type`、`token.type`、`tool.name`（若基数可控）。
+Allowed: `provider`, `model`, `operation`, `status`, `error.type`, `token.type`, `tool.name` (if cardinality is controllable).
 
 ---
 
-## 10. 与 OTel GenAI 的映射
+## 10. Mapping to OTel GenAI
 
-| Runesvaner | OTel GenAI（Development） | 备注 |
+| Runesvaner | OTel GenAI (Development) | Notes |
 | --- | --- | --- |
-| `runesvaner.span.kind=chat` | `gen_ai.operation.name=chat` | Span 名称待 semconv 冻结 |
-| `provider` | `gen_ai.provider.name` | 使用标准枚举 |
-| `request_model` | `gen_ai.request.model` | 精确请求名 |
-| `response_model` | `gen_ai.response.model` | 响应名 |
+| `runesvaner.span.kind=chat` | `gen_ai.operation.name=chat` | Span name pending semconv freeze |
+| `provider` | `gen_ai.provider.name` | Use standard enums |
+| `request_model` | `gen_ai.request.model` | Exact request name |
+| `response_model` | `gen_ai.response.model` | Response name |
 | `input_tokens` | `gen_ai.usage.input_tokens` | |
 | `output_tokens` | `gen_ai.usage.output_tokens` | |
-| `finish_reason` | `gen_ai.response.finish_reasons` | 数组 |
-| `error.type` | `error.type` | 低基数 |
-| `server.address` | `server.address` | 若可得 |
-| `server.port` | `server.port` | 若可得 |
-| `runesvaner.*` | 自定义 attributes | 不映射到标准名 |
+| `finish_reason` | `gen_ai.response.finish_reasons` | Array |
+| `error.type` | `error.type` | Low cardinality |
+| `server.address` | `server.address` | If available |
+| `server.port` | `server.port` | If available |
+| `runesvaner.*` | Custom attributes | Not mapped to standard names |
 
-风险：
+Risks:
 
-- GenAI semconv 仍是 Development，字段可能改名。
-- 映射表在 M1 冻结；每次升级 semconv 需兼容性审查。
-- 不把 Runesvaner 扩展字段伪装成标准字段。
+- GenAI semconv is still Development; fields may be renamed.
+- The mapping table is frozen at M1; every semconv upgrade requires a compatibility review.
+- Do not disguise Runesvaner extension fields as standard fields.
 
 ---
 
-## 11. 事件格式
+## 11. Event Format
 
 ### 11.1 Envelope
 
@@ -304,25 +304,25 @@ TTFT：`[0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]`。
       "payload": { }
     }
 
-### 11.2 事件类型
+### 11.2 Event Types
 
-| `type` | 触发 | 关键 payload |
+| `type` | Trigger | Key payload |
 | --- | --- | --- |
-| `session.start` | 会话开始 | app, environment, version, os |
-| `request.start` | 请求开始 | operation, provider, model, tags |
-| `segment` | 分段完成 | kind, offset, duration, estimated |
-| `stream.first_byte` | 首字节 | offset |
-| `stream.first_token` | 首 Token | offset, chunk_index |
-| `stream.chunk` | 每 chunk | offset, length, index |
-| `usage` | 用量确定 | input, output, cached, reasoning |
-| `cost` | 成本计算 | breakdown, status, price_version |
-| `retry` | 重试 | attempt, error, backoff |
-| `error` | 错误 | type, message_hash, stack_hash |
-| `request.end` | 请求结束 | status, total_duration, links |
-| `self.monitor` | 周期采样 | queue, dropped, flush |
-| `session.end` | 会话结束 | request_count, size |
+| `session.start` | Session start | app, environment, version, os |
+| `request.start` | Request start | operation, provider, model, tags |
+| `segment` | Segment complete | kind, offset, duration, estimated |
+| `stream.first_byte` | First byte | offset |
+| `stream.first_token` | First token | offset, chunk_index |
+| `stream.chunk` | Each chunk | offset, length, index |
+| `usage` | Usage determined | input, output, cached, reasoning |
+| `cost` | Cost calculated | breakdown, status, price_version |
+| `retry` | Retry | attempt, error, backoff |
+| `error` | Error | type, message_hash, stack_hash |
+| `request.end` | Request end | status, total_duration, links |
+| `self.monitor` | Periodic sampling | queue, dropped, flush |
+| `session.end` | Session end | request_count, size |
 
-### 11.3 完整示例（request.end）
+### 11.3 Full Example (request.end)
 
     {
       "schema": "runesvaner.event.v1",
@@ -379,47 +379,47 @@ TTFT：`[0.01, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]`。
       }
     }
 
-> 示例中的金额为示意，不代表真实价格。
+> Amounts in the example are illustrative and do not represent real prices.
 
 ---
 
-## 12. 隐私分级
+## 12. Privacy Classification
 
-| 级别 | 字段示例 | 默认导出 |
+| Level | Example fields | Exported by default |
 | --- | --- | --- |
-| `public` | model、provider、duration、token 数 | 是 |
-| `internal` | feature、tenant_hash、prompt_version | 是（哈希） |
-| `sensitive` | prompt、completion、user_id、原始 URL | 否 |
-| `secret` | Authorization、api-key、cookie | 永不采集 |
+| `public` | model, provider, duration, token count | Yes |
+| `internal` | feature, tenant_hash, prompt_version | Yes (hashed) |
+| `sensitive` | prompt, completion, user_id, raw URL | No |
+| `secret` | Authorization, api-key, cookie | Never collected |
 
-规则：
+Rules:
 
-- `sensitive` 字段仅 `ContentCapture.Full` 时记录。
-- 导出前执行 `IContentRedactor`。
-- 日志、异常消息、HTTP header 均不得包含 `secret`。
+- `sensitive` fields are recorded only when `ContentCapture.Full`.
+- Run `IContentRedactor` before export.
+- Logs, exception messages, and HTTP headers must never contain `secret`.
 
 ---
 
-## 13. Schema 演进
+## 13. Schema Evolution
 
-| 变更 | 版本策略 |
+| Change | Version policy |
 | --- | --- |
-| 新增可选字段 | 次版本（1.1） |
-| 新增枚举值 | 次版本；消费者需容错 |
-| 字段改名/删除 | 主版本（2.0）；提供迁移器 |
-| 语义变更 | 主版本 + 文档 |
-| 指标改名 | 主版本；双写一个周期 |
+| Adding an optional field | Minor version (1.1) |
+| Adding an enum value | Minor version; consumers must tolerate it |
+| Renaming/deleting a field | Major version (2.0); provide a migrator |
+| Semantic change | Major version + documentation |
+| Renaming a metric | Major version; dual-write for one cycle |
 
-消费者规则：忽略未知字段；未知枚举值降级为 `unknown`。
+Consumer rule: ignore unknown fields; degrade unknown enum values to `unknown`.
 
 ---
 
-## 14. 决议状态
+## 14. Decision Status
 
-D-01–D-25 已全部决议，见 `15-decision-log.md`。与本模型直接相关：
+D-01–D-25 are all resolved; see `15-decision-log.md`. Directly related to this model:
 
-- D-07：库/应用内 SQLite 默认；CLI AOT 默认 JSONL。
-- D-08：内置价格表 + 用户覆盖；decimal + ToEven；USD。
-- D-13：OTel 为映射与可选导出，默认不创建额外 Activity。
-- D-14：本地 100%，生产建议 10%；尾采样 M3。
-- D-20：不承诺第三方语义兼容；OTel GenAI 为主。
+- D-07: SQLite default for libraries/in-app; JSONL default for CLI AOT.
+- D-08: built-in price table + user overrides; decimal + ToEven; USD.
+- D-13: OTel is for mapping and optional export; no additional Activities are created by default.
+- D-14: 100% locally, 10% recommended in production; tail sampling in M3.
+- D-20: no commitment to third-party semantic compatibility; OTel GenAI is primary.

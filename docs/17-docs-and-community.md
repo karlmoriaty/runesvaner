@@ -1,42 +1,42 @@
-# 文档与社区运营
+# Documentation and Community Operations
 
-| 字段 | 值 |
+| Field | Value |
 | --- | --- |
-| 文档状态 | Draft |
-| 版本 | 0.1 |
-| 日期 | 2026-11-25 |
-| 受众 | 发起人、维护者、文档贡献者 |
-| 关联文档 | `10-open-source-governance.md`、`11-roadmap.md`、`15-decision-log.md` |
+| Document status | Draft |
+| Version | 0.1 |
+| Date | 2026-11-25 |
+| Audience | Initiator, maintainers, documentation contributors |
+| Related documents | `10-open-source-governance.md`, `11-roadmap.md`, `15-decision-log.md` |
 
 ---
 
-## 1. 目标
+## 1. Goals
 
-1. 让新用户在 **5 分钟**内看到第一条诊断会话。
-2. 让工程师在 **30 分钟**内理解数据模型与接入方式。
-3. 让贡献者在 **1 小时**内完成本地构建与第一个 PR。
-4. 让文档与代码**同源、同版本、可验证**。
+1. Enable new users to see their first diagnostic session within **5 minutes**.
+2. Enable engineers to understand the data model and integration approach within **30 minutes**.
+3. Enable contributors to complete a local build and their first PR within **1 hour**.
+4. Keep documentation and code **same-source, same-version, verifiable**.
 
 ---
 
-## 2. 文档站技术选型
+## 2. Documentation site technology selection
 
-| 选项 | 优点 | 缺点 | 推荐 |
+| Option | Pros | Cons | Recommendation |
 | --- | --- | --- | --- |
-| Astro Starlight | 轻、Markdown 优先、可定制、构建快 | 生态较新 | **推荐** |
-| VitePress | Vue 生态、快 | 与 React UI 分离 | 备选 |
-| Docusaurus | 成熟、插件多 | 重、React 版本耦合 | 备选 |
-| DocFX | .NET 原生、API 参考强 | 视觉老旧、定制难 | 仅 API 参考 |
+| Astro Starlight | Lightweight, Markdown-first, customizable, fast build | Relatively new ecosystem | **Recommended** |
+| VitePress | Vue ecosystem, fast | Separated from the React UI | Alternative |
+| Docusaurus | Mature, many plugins | Heavy, coupled to React version | Alternative |
+| DocFX | .NET-native, strong API reference | Dated visuals, hard to customize | API reference only |
 
-已决议（D-21）：**Astro Starlight** 作为文档站；API 参考用 DocFX 生成后嵌入，或直接用 XML 文档 + 手写摘要。
+Resolved (D-21): **Astro Starlight** as the documentation site; API reference generated with DocFX and embedded, or use XML documentation directly with hand-written summaries.
 
-已决议（D-23）：托管使用 **GitHub Pages**；M1 暂不购买自定义域名；默认 URL `https://karlmoriaty.github.io/runesvaner/`。
+Resolved (D-23): hosting uses **GitHub Pages**; M1 does not buy a custom domain; default URL `https://karlmoriaty.github.io/runesvaner/`.
 
-> 决策 D-21 / D-23。
+> Decisions D-21 / D-23.
 
 ---
 
-## 3. 信息架构
+## 3. Information architecture
 
     docs site
     ├── Getting Started
@@ -80,265 +80,265 @@
 
 ---
 
-## 4. 页面清单与要求
+## 4. Page inventory and requirements
 
 ### 4.1 Getting Started
 
-| 页面 | 必须包含 | 验收 |
+| Page | Must include | Acceptance |
 | --- | --- | --- |
-| 5-minute quickstart | 安装、sample、`runesvaner open`、截图/GIF | 干净机器 5 分钟完成 |
-| Install | TFM、包列表、AOT 说明 | 版本矩阵链接 |
-| First diagnosis | 一次请求的瀑布解读 | 读者能说出"慢在哪" |
+| 5-minute quickstart | Install, sample, `runesvaner open`, screenshot/GIF | Completed within 5 minutes on a clean machine |
+| Install | TFM, package list, AOT notes | Link to version matrix |
+| First diagnosis | Waterfall interpretation of a single request | Readers can state "where it is slow" |
 
 ### 4.2 Concepts
 
-| 页面 | 必须包含 |
+| Page | Must include |
 | --- | --- |
-| Diagnostic session | 会话、请求、事件的关系 |
-| Request & segments | 分段类型、estimated、overlap、unaccounted |
-| Cost ledger | 价格表、缓存、推理、重试、未知 |
-| Sampling | 头/尾采样、加权、偏差 |
-| Privacy model | 内容级别、哈希、导出、保留 |
+| Diagnostic session | Relationships among session, request, and event |
+| Request & segments | Segment types, estimated, overlap, unaccounted |
+| Cost ledger | Price table, cache, reasoning, retry, unknown |
+| Sampling | Head/tail sampling, weighting, bias |
+| Privacy model | Content levels, hashing, export, retention |
 
 ### 4.3 Guides
 
-每个 Guide 必须：
+Each Guide must:
 
-1. 有可运行的最小示例。
-2. 说明前置条件与版本。
-3. 有"验证成功"的步骤。
-4. 有"常见错误"。
-5. 代码片段可编译（CI 检查）。
+1. Have a runnable minimal example.
+2. State prerequisites and versions.
+3. Have a "verify success" step.
+4. Have "common errors".
+5. Contain code snippets that compile (CI check).
 
 ### 4.4 Reference
 
-| 页面 | 来源 |
+| Page | Source |
 | --- | --- |
-| Configuration | `RunesvanerOptions` + 默认值表 |
-| Public API | XML 文档 + DocFX |
+| Configuration | `RunesvanerOptions` + default value table |
+| Public API | XML documentation + DocFX |
 | Event schema | `06-observability-model.md` + JSON Schema |
-| Metrics | 指标表 + 桶 |
-| CLI | 命令、参数、退出码 |
+| Metrics | Metric table + buckets |
+| CLI | Commands, parameters, exit codes |
 
 ### 4.5 Operations
 
-| 页面 | 内容 |
+| Page | Content |
 | --- | --- |
-| Storage & retention | 目录、权限、清理、磁盘满 |
-| Troubleshooting | 症状 → 原因 → 解决 |
-| Security | 威胁模型、漏洞披露、Studio 安全 |
-| Upgrade guide | 版本差异、破坏性变更、迁移 |
+| Storage & retention | Directory, permissions, cleanup, disk full |
+| Troubleshooting | Symptom → cause → resolution |
+| Security | Threat model, vulnerability disclosure, Studio security |
+| Upgrade guide | Version differences, breaking changes, migration |
 
 ---
 
-## 5. 写作规范
+## 5. Writing guidelines
 
-### 5.1 原则
+### 5.1 Principles
 
-- **可执行**：每个步骤都能照做。
-- **可验证**：每篇有"你应该看到什么"。
-- **版本化**：标注适用版本；过时页面归档。
-- **不夸张**：不写"极致性能""革命性"。
-- **不 AI 腔**：避免"让我们深入探索""在当今快速发展的时代"。
-- **语言策略（D-16）**：英文完整；简体中文与标准德语按 `18-localization-scope.md` 分级（L1 全译、L2 简版、L3 跳转）；UI 三语言完整。
+- **Executable**: Every step can be followed.
+- **Verifiable**: Every page has "what you should see".
+- **Versioned**: Mark applicable versions; archive outdated pages.
+- **Not exaggerated**: Do not write "ultimate performance" or "revolutionary".
+- **No AI tone**: Avoid "let us dive deep" or "in today's fast-moving era".
+- **Language strategy (D-16)**: English full; Simplified Chinese and Standard German tiered per `18-localization-scope.md` (L1 full translation, L2 condensed, L3 redirect); UI complete in three languages.
 
-### 5.2 代码片段
+### 5.2 Code snippets
 
-- 使用真实可编译代码，不用伪代码。
-- 标注文件名与上下文。
-- 依赖版本固定。
-- 避免 `...` 省略关键逻辑。
-- CI 用 `dotnet build` + snippet 提取验证。
+- Use real compilable code, not pseudocode.
+- Mark file names and context.
+- Pin dependency versions.
+- Avoid `...` omitting key logic.
+- CI uses `dotnet build` + snippet extraction for verification.
 
-### 5.3 截图与 GIF
+### 5.3 Screenshots and GIFs
 
-- 使用真实数据（合成），不用 mock 假图。
-- 深色主题，1280×800 或 1440×900。
-- 标注版本与日期。
-- GIF ≤ 5 MB，附文字步骤。
+- Use real data (synthetic), not mock fake images.
+- Dark theme, 1280×800 or 1440×900.
+- Mark version and date.
+- GIF ≤ 5 MB, with textual steps.
 
-### 5.4 术语表
+### 5.4 Glossary
 
-| 术语 | 定义 |
+| Term | Definition |
 | --- | --- |
-| Diagnostic Session | 一次采集会话 |
-| Request | 一次逻辑 AI 操作 |
-| Segment | 请求内的时间区间 |
-| TTFT | 首个非空输出 Token 的时间 |
-| TTFB | 首字节时间 |
-| Unaccounted | 未被分段覆盖的时间 |
-| Estimated | 由推导而非直接测量得到 |
-| Price Table | 版本化价格表 |
+| Diagnostic Session | A single collection session |
+| Request | A single logical AI operation |
+| Segment | A time interval within a request |
+| TTFT | Time to the first non-empty output token |
+| TTFB | Time to first byte |
+| Unaccounted | Time not covered by segments |
+| Estimated | Derived rather than directly measured |
+| Price Table | Versioned price table |
 
-术语表需中英对照，避免同一概念多种译法。
+The glossary must be Chinese-English aligned to avoid multiple translations of the same concept.
 
 ---
 
-## 6. 文档质量指标
+## 6. Documentation quality metrics
 
-| 指标 | 目标 | 采集方式 |
+| Metric | Target | Collection method |
 | --- | --- | --- |
-| 快速开始完成率 | ≥ 80% | 试用问卷 |
-| 文档搜索失败率 | ≤ 10% | 站点分析（隐私友好） |
-| "文档"标签 Issue 比例 | ≤ 5% | GitHub 标签 |
-| 断链数 | 0 | CI link checker |
-| 代码片段编译失败 | 0 | CI |
-| 过时页面（> 2 个版本） | 0 | 季度审查 |
-| L1 三语言同步率 | 100% | 发布检查 |
+| Quickstart completion rate | ≥ 80% | Trial questionnaire |
+| Documentation search failure rate | ≤ 10% | Site analytics (privacy-friendly) |
+| Proportion of issues labeled "documentation" | ≤ 5% | GitHub labels |
+| Broken links | 0 | CI link checker |
+| Code snippet build failures | 0 | CI |
+| Outdated pages (> 2 versions) | 0 | Quarterly review |
+| L1 three-language sync rate | 100% | Release check |
 
 ---
 
-## 7. 社区渠道
+## 7. Community channels
 
-| 渠道 | 用途 | 是否启用 |
+| Channel | Purpose | Enabled |
 | --- | --- | --- |
-| GitHub Issues | Bug、功能请求 | 是 |
-| GitHub Discussions | 问答、用例、RFC 讨论 | 是 |
-| GitHub Security Advisories | 漏洞 | 是 |
-| Discord / Slack | 即时交流 | 已决议不启用（D-22） |
-| 邮件列表 | 公告 | 暂不 |
-| X / Mastodon / LinkedIn | 发布公告 | 是（低频） |
+| GitHub Issues | Bugs, feature requests | Yes |
+| GitHub Discussions | Q&A, use cases, RFC discussion | Yes |
+| GitHub Security Advisories | Vulnerabilities | Yes |
+| Discord / Slack | Real-time chat | Resolved not enabled (D-22) |
+| Mailing list | Announcements | Not for now |
+| X / Mastodon / LinkedIn | Release announcements | Yes (low frequency) |
 
-原则：**渠道越少越好**，避免支持碎片化。所有问答尽量回流到 Discussions 以便搜索。
-
----
-
-## 8. Issue 与 PR 运营
-
-### 8.1 Issue 分级
-
-| 标签 | 响应目标 |
-| --- | --- |
-| `bug` + `P0` | 48 小时 |
-| `bug` + `P1` | 7 天 |
-| `enhancement` | 14 天 |
-| `question` | 尽力 |
-
-### 8.2 PR 审查
-
-- 首次贡献：48 小时内给首次反馈。
-- 审查意见具体、可执行。
-- 使用 `good first issue` 引导。
-- 不要求贡献者做无关重构。
-- 合并后致谢。
-
-### 8.3 发布公告
-
-| 渠道 | 内容 |
-| --- | --- |
-| GitHub Releases | 变更、迁移、贡献者 |
-| Discussions | 讨论帖 |
-| 博客 | 技术深度 |
-| 社交 | 短公告 + 链接 |
+Principle: **the fewer channels, the better**, to avoid support fragmentation. Route all Q&A back to Discussions where possible for searchability.
 
 ---
 
-## 9. 内容营销
+## 8. Issue and PR operations
 
-| 内容 | 目标 | 频率 |
+### 8.1 Issue triage
+
+| Label | Response target |
+| --- | --- |
+| `bug` + `P0` | 48 hours |
+| `bug` + `P1` | 7 days |
+| `enhancement` | 14 days |
+| `question` | Best effort |
+
+### 8.2 PR review
+
+- First contribution: provide initial feedback within 48 hours.
+- Review comments are specific and actionable.
+- Use `good first issue` to guide.
+- Do not require contributors to do unrelated refactoring.
+- Thank contributors after merge.
+
+### 8.3 Release announcements
+
+| Channel | Content |
+| --- | --- |
+| GitHub Releases | Changes, migration, contributors |
+| Discussions | Discussion thread |
+| Blog | Technical depth |
+| Social | Short announcement + link |
+
+---
+
+## 9. Content marketing
+
+| Content | Goal | Frequency |
 | --- | --- | --- |
-| 技术文章："一次 RAG 请求的 8 秒去哪了" | 传播核心价值 | M2 起 |
-| Demo 视频（3 分钟） | 降低理解成本 | M2 |
-| 基准报告 | 建立可信度 | 每个里程碑 |
-| 与 Langfuse/Phoenix 互操作指南 | 借势 | M3 |
-| 会议演讲 | 社区 | M3–M4 |
-| Awesome .NET / AI 列表 | 曝光 | M2 |
+| Technical article: "Where the 8 seconds of a RAG request went" | Communicate core value | From M2 |
+| Demo video (3 minutes) | Reduce comprehension cost | M2 |
+| Benchmark report | Build credibility | Every milestone |
+| Interoperability guides with Langfuse/Phoenix | Leverage | M3 |
+| Conference talks | Community | M3–M4 |
+| Awesome .NET / AI lists | Exposure | M2 |
 
-原则：**先给结论与数据，再讲产品**。不做标题党。
+Principle: **give conclusions and data first, then talk about the product**. No clickbait.
 
 ---
 
-## 10. 支持策略
+## 10. Support policy
 
-| 类型 | 承诺 |
+| Type | Commitment |
 | --- | --- |
-| 社区支持 | 尽力，无 SLA |
-| 安全漏洞 | 48 小时响应 |
-| 商业支持 | 暂不提供 |
-| 旧版本 | 仅安全修复，LTS + 最新 STS |
-| 数据迁移 | 提供工具与文档 |
+| Community support | Best effort, no SLA |
+| Security vulnerabilities | 48-hour response |
+| Commercial support | Not provided for now |
+| Old versions | Security fixes only, LTS + latest STS |
+| Data migration | Provide tools and documentation |
 
 ---
 
-## 11. 贡献者体验
+## 11. Contributor experience
 
-### 11.1 本地构建
+### 11.1 Local build
 
-目标：一条命令。
+Goal: a single command.
 
     git clone https://github.com/<owner>/runesvaner-dotnet.git
     cd runesvaner-dotnet
     dotnet build
     dotnet test
 
-要求：
+Requirements:
 
-- `global.json` 固定 SDK。
-- `Directory.Build.props` 统一分析器。
-- 不需要 Docker（可选）。
-- 不需要真实 API Key（mock provider）。
-- devcontainer 可选。
+- `global.json` pins the SDK.
+- `Directory.Build.props` unifies analyzers.
+- Docker not required (optional).
+- Real API key not required (mock provider).
+- devcontainer optional.
 
-### 11.2 第一个 PR
+### 11.2 First PR
 
-- `good first issue` 列表。
-- 每个 issue 有文件定位、验收标准、mentor。
-- PR 模板包含检查清单。
-- CI 快速反馈（≤ 10 分钟）。
+- `good first issue` list.
+- Every issue has file locations, acceptance criteria, and a mentor.
+- PR template includes a checklist.
+- Fast CI feedback (≤ 10 minutes).
 
-### 11.3 贡献者认可
+### 11.3 Contributor recognition
 
-- `CONTRIBUTORS.md` 或 Release 致谢。
-- 重大贡献邀请为 Reviewer。
-- 不设"贡献者等级"游戏化。
+- `CONTRIBUTORS.md` or Release acknowledgments.
+- Invite major contributors as Reviewers.
+- No gamified "contributor levels".
 
 ---
 
-## 12. 文档与代码同步
+## 12. Documentation and code synchronization
 
-| 机制 | 说明 |
+| Mechanism | Description |
 | --- | --- |
-| 同 PR 更新 | 行为/API 变更必须更新文档 |
-| 链接检查 | CI 检查内部链接 |
-| 代码片段编译 | 从 Markdown 提取并构建 |
-| 版本标注 | 每页顶部标注适用版本 |
-| 季度审查 | 过时内容归档 |
-| 单一事实来源 | 数据模型以 `06` 为准，API 以 XML 为准 |
+| Update in the same PR | Behavior/API changes must update documentation |
+| Link checking | CI checks internal links |
+| Code snippet compilation | Extract from Markdown and build |
+| Version marking | Mark applicable version at the top of each page |
+| Quarterly review | Archive outdated content |
+| Single source of truth | Data model follows `06`, API follows XML |
 
 ---
 
-## 13. 反模式
+## 13. Anti-patterns
 
-- 文档与代码不同步。
-- 快速开始需要 10 个步骤。
-- 截图过期。
-- 过度承诺性能。
-- 用 AI 生成大段空话。
-- 把设计文档当用户文档。
-- 社区渠道过多，无人维护。
-- 对 Issue 不回应。
-- 发布无变更日志。
+- Documentation and code out of sync.
+- Quickstart requires 10 steps.
+- Outdated screenshots.
+- Overpromising performance.
+- Using AI to generate large blocks of empty talk.
+- Treating design documents as user documentation.
+- Too many community channels, none maintained.
+- Not responding to issues.
+- Releasing without a changelog.
 
 ---
 
-## 14. 里程碑对应
+## 14. Milestone mapping
 
-| 里程碑 | 文档交付 |
+| Milestone | Documentation deliverables |
 | --- | --- |
-| M0 | 设计文档、治理文件、README |
-| M1 | 快速开始、MEAI 指南、CLI 参考；L1 三语言；GitHub Pages |
-| M2 | 成本、隐私、Studio、故障排查 |
-| M3 | 文档站、SK/VectorData、AOT、迁移 |
-| M4 | API 参考、升级指南、安全白皮书 |
+| M0 | Design documents, governance files, README |
+| M1 | Quickstart, MEAI guide, CLI reference; L1 three languages; GitHub Pages |
+| M2 | Cost, privacy, Studio, troubleshooting |
+| M3 | Documentation site, SK/VectorData, AOT, migration |
+| M4 | API reference, upgrade guide, security whitepaper |
 
 ---
 
-## 15. 决议状态
+## 15. Resolution status
 
-D-16、D-21、D-22、D-10、D-23 已决议：
+D-16, D-21, D-22, D-10, and D-23 are resolved:
 
-- D-16：英文完整；中文/德语按 `18-localization-scope.md` 分级；UI 三语言完整。
-- D-21：Astro Starlight。
-- D-22：GitHub Issues + Discussions。
-- D-23：GitHub Pages；M1 不买域名。
-- D-10：暂不提供商业支持。
+- D-16: English full; Chinese/German tiered per `18-localization-scope.md`; UI complete in three languages.
+- D-21: Astro Starlight.
+- D-22: GitHub Issues + Discussions.
+- D-23: GitHub Pages; M1 does not buy a domain.
+- D-10: Commercial support not provided for now.

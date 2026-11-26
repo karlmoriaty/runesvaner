@@ -1,139 +1,167 @@
-# Runesvaner 设计文档索引
+# Runesvaner Design Documentation
 
-> 当前阶段：**M1 Walking Skeleton**。设计文档与最小可运行骨架并存。
-> 仓库：https://github.com/karlmoriaty/runesvaner
-> 项目名 `Runesvaner`、Apache-2.0、ICLA+CCLA 已于 2026-11-25 决议；D-01–D-25 全部决议，见 `15-decision-log.md`。
-
----
-
-## 1. 阅读路径
-
-### 1.1 发起人（约 30 分钟）
-
-1. `00-project-charter.md`：为什么做、做什么、不做什么。
-2. `01-market-research.md`：两个切口的证据与推荐。
-3. `15-decision-log.md`：**D-01–D-25 决议记录**。
-4. `11-roadmap.md`：里程碑与退出标准。
-
-### 1.2 工程（约 2 小时）
-
-1. `05-technical-design.md`：架构、线程、开销。
-2. `06-observability-model.md`：数据模型与公式。
-3. `07-api-design.md`：公共 API。
-4. `08-native-aot-strategy.md`：AOT 约束。
-5. `12-testing-and-benchmarks.md`：测试与基准。
-6. `14-hidden-requirements.md`：容易漏的细节。
-
-### 1.3 设计（约 1 小时）
-
-1. `04-ux-and-visual-design.md`：设计语言、色彩、布局。
-2. `02-problem-and-personas.md`：用户与场景。
-3. `16-brand-naming.md`：命名与品牌。
-4. `18-localization-scope.md`：英文全量、中文/德语核心简版的范围。
-5. `19-open-implementation-decisions.md`：D-23–D-25 实施级决议记录。
-
-### 1.4 贡献者（约 30 分钟）
-
-1. `10-open-source-governance.md`：许可证、CLA、治理。
-2. `17-docs-and-community.md`：构建、Issue、PR。
-3. `11-roadmap.md`：当前里程碑与可参与任务。
+> Current stage: **M1 Walking Skeleton**. Design documentation and a minimal runnable skeleton coexist.
+> Repository: https://github.com/karlmoriaty/runesvaner
+> English is the source of truth. Chinese legacy full translation: [`zh-Hans/README.md`](zh-Hans/README.md).
 
 ---
 
-## 2. 文档地图
+## 1. Reading paths
 
-| 文档 | 内容 | 状态 |
+### 1.1 Project owner (about 30 minutes)
+
+1. `00-project-charter.md`: why, what, and what not.
+2. `01-market-research.md`: evidence and recommendation for the two slices.
+3. `15-decision-log.md`: D-01–D-25 decision records.
+4. `11-roadmap.md`: milestones and exit criteria.
+
+### 1.2 Engineering (about 2 hours)
+
+1. `05-technical-design.md`: architecture, threading, overhead.
+2. `06-observability-model.md`: data model and formulas.
+3. `07-api-design.md`: public API.
+4. `08-native-aot-strategy.md`: AOT constraints.
+5. `12-testing-and-benchmarks.md`: tests and benchmarks.
+6. `14-hidden-requirements.md`: details that are easy to miss.
+
+### 1.3 Design (about 1 hour)
+
+1. `04-ux-and-visual-design.md`: design language, color, layout.
+2. `02-problem-and-personas.md`: users and scenarios.
+3. `16-brand-naming.md`: naming and brand.
+4. `18-localization-scope.md`: English complete; Chinese/German core summaries.
+
+### 1.4 Contributors (about 30 minutes)
+
+1. `10-open-source-governance.md`: license, CLA, governance.
+2. `17-docs-and-community.md`: build, issues, PRs.
+3. `11-roadmap.md`: current milestone and available work.
+4. `19-open-implementation-decisions.md`: implementation decisions.
+
+---
+
+## 2. Document map
+
+| Document | Content | Status |
 | --- | --- | --- |
-| `00-project-charter.md` | 愿景、范围、成功指标、终止条件 | Draft |
-| `01-market-research.md` | 市场、竞品、两个切口评分、来源 | Draft |
-| `02-problem-and-personas.md` | 痛点、画像、JTBD、旅程、异议 | Draft |
-| `03-prd.md` | 功能需求、验收标准、NFR | Draft |
-| `04-ux-and-visual-design.md` | 设计语言、色彩、布局、组件、Logo | Draft |
-| `05-technical-design.md` | 架构、模块、线程、开销、成本引擎 | Draft |
-| `06-observability-model.md` | Span、分段、指标、成本、Schema | Draft |
-| `07-api-design.md` | 公共 API、DI、选项、扩展点 | Draft / API 未冻结 |
-| `08-native-aot-strategy.md` | AOT 约束、矩阵、CI、体积 | Draft |
-| `09-security-privacy.md` | 威胁模型、隐私、Studio 安全 | Draft |
-| `10-open-source-governance.md` | License、CLA、治理、发布 | Draft / 待法律审阅 |
-| `11-roadmap.md` | M0–M4 与 v2 | Draft |
-| `12-testing-and-benchmarks.md` | 测试金字塔、基准门槛 | Draft |
-| `13-risk-register.md` | 24 项风险与缓解 | Draft |
-| `14-hidden-requirements.md` | 60 条隐形需求 | Draft |
-| `15-decision-log.md` | **D-01–D-25 决议记录** | **Accepted** |
-| `16-brand-naming.md` | Runesvaner 命名、NuGet 初筛、商标待办 | Accepted |
-| `17-docs-and-community.md` | 文档站、社区、发布、贡献者体验 | Draft |
-| `18-localization-scope.md` | 本地化分级、术语表、翻译维护 | Accepted |
-| `19-open-implementation-decisions.md` | D-23–D-25 决议记录 | **Accepted** |
+| `00-project-charter.md` | Vision, scope, success metrics, kill criteria | Accepted |
+| `01-market-research.md` | Market, competitors, two-slice scoring, sources | Draft |
+| `02-problem-and-personas.md` | Pain points, personas, JTBD, journey, objections | Draft |
+| `03-prd.md` | Functional requirements, acceptance criteria, NFRs | Accepted |
+| `04-ux-and-visual-design.md` | Design language, color, layout, components, logo | Draft |
+| `05-technical-design.md` | Architecture, modules, threading, overhead, cost engine | Draft |
+| `06-observability-model.md` | Spans, segments, metrics, cost, schema | Draft |
+| `07-api-design.md` | Public API, DI, options, extension points | Draft / API not frozen |
+| `08-native-aot-strategy.md` | AOT constraints, matrix, CI, size | Draft |
+| `09-security-privacy.md` | Threat model, privacy, Studio security | Draft |
+| `10-open-source-governance.md` | License, CLA, governance, release | Draft / CLA pending legal review |
+| `11-roadmap.md` | M0–M4 and v2 | Draft |
+| `12-testing-and-benchmarks.md` | Test pyramid, benchmark gates | Draft |
+| `13-risk-register.md` | 24 risks and mitigations | Draft |
+| `14-hidden-requirements.md` | 60 hidden requirements | Draft |
+| `15-decision-log.md` | **D-01–D-25 decision records** | **Accepted** |
+| `16-brand-naming.md` | Runesvaner naming, NuGet check, trademark status | Accepted |
+| `17-docs-and-community.md` | Docs site, community, release, contributor experience | Draft |
+| `18-localization-scope.md` | Localization tiers, glossary, translation maintenance | Accepted |
+| `19-open-implementation-decisions.md` | D-23–D-25 decision records | Accepted |
+| `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
 
 ---
 
-## 3. 文档状态图例
+## 3. Status legend
 
-| 状态 | 含义 |
+| Status | Meaning |
 | --- | --- |
-| Draft | 可讨论，可能变更 |
-| Review | 等待发起人/维护者审阅 |
-| Accepted | 已决议，作为实现依据 |
-| Superseded | 被新文档替代，保留历史 |
-| Blocking | 历史状态；当前无 Blocking 项 |
+| Draft | Open for discussion; may change |
+| Review | Awaiting owner/maintainer review |
+| Accepted | Decided; implementation may rely on it |
+| Superseded | Replaced by a newer document; kept for history |
+| Blocking | Historical state; there are no blocking items now |
+| Legacy | Non-English translation kept for continuity; English governs |
 
 ---
 
-## 4. 单一事实来源
+## 4. Single source of truth
 
-| 主题 | 权威文档 |
+| Topic | Authoritative document |
 | --- | --- |
-| 产品范围与非目标 | `00-project-charter.md` |
-| 功能与验收标准 | `03-prd.md` |
-| 架构与模块 | `05-technical-design.md` |
-| 数据模型与公式 | `06-observability-model.md` |
-| 公共 API | `07-api-design.md` + XML 文档 |
-| AOT 约束 | `08-native-aot-strategy.md` |
-| 隐私与安全 | `09-security-privacy.md` |
-| 治理与 CLA | `10-open-source-governance.md` |
-| 路线图 | `11-roadmap.md` |
-| 决策 | `15-decision-log.md` |
+| Product scope and non-goals | `00-project-charter.md` |
+| Features and acceptance criteria | `03-prd.md` |
+| Architecture and modules | `05-technical-design.md` |
+| Data model and formulas | `06-observability-model.md` |
+| Public API | `07-api-design.md` + XML docs |
+| AOT constraints | `08-native-aot-strategy.md` |
+| Privacy and security | `09-security-privacy.md` |
+| Governance and CLA | `10-open-source-governance.md` |
+| Roadmap | `11-roadmap.md` |
+| Decisions | `15-decision-log.md` / `19-open-implementation-decisions.md` |
 
-出现冲突时，以本表为准，并在冲突文档中标注"以 X 为准"。
-
----
-
-## 5. 维护规则
-
-1. 文档与代码同 PR 更新；纯文档 PR 需 1 名 Reviewer。
-2. 每份文档顶部保留元信息（状态、版本、日期、受众、关联文档）。
-3. 破坏性决策需在 `15-decision-log.md` 记录。
-4. 过时文档标记 `Superseded`，不直接删除。
-5. 每季度检查一次链接与过时内容。
-6. 设计文档使用中文；代码、Issue、PR 以英文为主。
-7. 不在文档中承诺未决议的事项为"已决定"。
+If documents conflict, this table wins; add a "see X" note in the conflicting document.
 
 ---
 
-## 6. 决议状态
+## 5. Maintenance rules
 
-D-01–D-25 已全部决议，见 `15-decision-log.md` 与 `19-open-implementation-decisions.md`。关键结论：
-
-1. D-01 主赛道：AI 负载诊断首发。
-2. D-02 项目名：Runesvaner。
-3. D-03 许可证：Apache-2.0。
-4. D-04 CLA：ICLA + CCLA。
-5. D-05 目标框架：`net10.0`。
-6. D-09 默认内容捕获：`None`。
-7. D-07 存储：库 SQLite 默认；CLI AOT 默认 JSONL；失败回退。
-8. D-23：GitHub Pages；M1 不买域名。
-9. D-24：win-arm64 非目标；linux-arm64 可选。
-10. D-25：商标暂缓；NuGet M0 占位；CLA 首次外部 PR 前审阅。
+1. Update documentation in the same PR as code; a docs-only PR needs one reviewer.
+2. Keep the metadata table at the top of each document (status, version, date, audience, related docs).
+3. Record breaking decisions in `15-decision-log.md`.
+4. Mark obsolete documents `Superseded`; do not delete them.
+5. Check links and stale content quarterly.
+6. English is the source of truth. Chinese/German are core summaries or redirects; safety and legal content must remain complete.
+7. Do not claim undecided items are decided.
 
 ---
 
-## 7. 下一步
+## 6. Decision status
 
-决议已完成。等待发起人明确说"开工"后：
+D-01–D-25 are fully decided. See `15-decision-log.md` and `19-open-implementation-decisions.md`.
 
-1. 建立 `Runesvaner.sln` 与项目骨架。
-2. 添加 `LICENSE`、`CONTRIBUTING.md`、`CODE_OF_CONDUCT.md`、`SECURITY.md`、`CLA.md`。
-3. 建立 CI（build + test + markdown lint）。
-4. 开始 M1 Walking Skeleton。
+Key outcomes:
 
-在发起人明确说"开工"之前，不写业务代码。
+1. D-01: AI workload diagnostics first; AOT is a constraint and v2 research branch.
+2. D-02: product name `Runesvaner`; GitHub repository `runesvaner`.
+3. D-03: Apache-2.0.
+4. D-04: ICLA + CCLA.
+5. D-05: `net10.0`; evaluate `net11.0` at M3.
+6. D-06: React 19 + TypeScript + Vite + Redux Toolkit + RTK Query.
+7. D-07: library SQLite default; CLI AOT JSONL default; fallback on failure.
+8. D-08: built-in price snapshot + user overrides; decimal + ToEven; USD.
+9. D-09: content capture `None` by default.
+10. D-10: no commercialization; unbundled sponsorship only; no hosted service.
+11. D-11: individual ownership; 36-month inactivity succession clause.
+12. D-12: light theme allowed; must avoid "AI aesthetic".
+13. D-13: zero-dependency core; optional OTLP exporter.
+14. D-14: local 100%, production guidance 10%; tail sampling at M3.
+15. D-15: Windows 10/11 + Linux; macOS non-goal.
+16. D-16: English UI default; zh-Hans and de-DE selectable; English docs complete, Chinese/German core summaries.
+17. D-17: xUnit v3; MEAI 10.x/11.x contract tests.
+18. D-18: AOT heap analysis research branch only.
+19. D-19: Roslyn AOT analyzer at v2.
+20. D-20: no mandatory third-party compatibility.
+21. D-21: Astro Starlight.
+22. D-22: GitHub Issues + Discussions.
+23. D-23: GitHub Pages; no custom domain at M1.
+24. D-24: no win-arm64 in v1; win-x64 + linux-x64, linux-arm64 optional.
+25. D-25: trademark suspended; NuGet root package at M0; CLA before first external PR.
+
+---
+
+## 7. Next steps
+
+The project started on 2026-11-26. The first batch of work is complete:
+
+- Public repository `karlmoriaty/runesvaner`.
+- Git initialized on `main`; initial commits pushed.
+- `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
+- `Runesvaner.sln` and M1 skeleton.
+- CI: Windows/Linux build and tests; Windows Native AOT smoke.
+
+Remaining M1 work:
+
+1. English documentation conversion: complete for all design documents; Chinese legacy retained in `zh-Hans/`; German core summary pending.
+2. RAG sample.
+3. Benchmark baseline.
+4. GitHub Pages.
+5. NuGet root package placeholder (requires a NuGet account/API key).
+
+Do not add M2 cost-engine code until M1 exit criteria are met.
