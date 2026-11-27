@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, OpenTelemetry exporter, Studio cost view + request waterfall, 19 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: verified built-in price snapshot, session browser/compare views, GitHub Pages.
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, OpenTelemetry exporter, Studio cost view + request waterfall + session browser, 21 tests, Windows/Linux CI, Windows Native AOT smoke.
+> Next: verified built-in price snapshot, compare view, GitHub Pages.
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -55,6 +55,7 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | OpenTelemetry exporter | Optional package: spans/metrics + OTLP SDK; tested with listeners |
 | Studio cost view | Read-only API + React 19/RTK Query page; loopback + token |
 | Studio request detail | Latency waterfall, cost breakdown, stream metrics, tags |
+| Session browser + query store | SQLite/JSONL query contract, session summaries, request filtering |
 | DI extensions, Studio, OTLP | Not implemented |
 
 ## What it is not
@@ -182,7 +183,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | --- | --- | --- |
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
 | M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 13 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
-| M2 | MVP | In progress: cost engine + price loader + `costs` + streaming stats + OTel exporter + Studio cost/waterfall views done; session/compare views, performance gates |
+| M2 | MVP | In progress: cost engine + price loader + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session views done; compare view, performance gates |
 | M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
 | M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
 

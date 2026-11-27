@@ -157,7 +157,7 @@ M1 evidence:
 - Public repository `karlmoriaty/runesvaner`.
 - `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
 - `Runesvaner.sln`, 10+ projects, console/RAG/AOT samples.
-- 19 tests: unit, JSONL/SQLite integration, chat, streaming stats, cancellation, error, failure injection, cost, price table loader, OTel exporter, Studio API/detail.
+- 21 tests: unit, JSONL/SQLite integration, chat, streaming stats, cancellation, error, failure injection, cost, price table loader, OTel exporter, Studio API/detail, session aggregation, query stores.
 - Benchmark baseline: 324.9 ns mean, 3.70 us P95.
 - CI: Windows/Linux build and tests; Windows Native AOT smoke with non-streaming, streaming, and error paths.
 
@@ -167,6 +167,7 @@ M2 in progress:
 2. Price table loader: JSON schema, aliases, validation, `pricing validate`, and `costs` aggregation.
 3. Streaming stats: chunk count, TTFT, ITL P50/P95, TPS when usage is available, finish reason, cancellation/interruption.
 4. OpenTelemetry exporter: optional OTLP package, span/metric mapping, failure-isolated store decorator.
-5. Studio: read-only cost ledger API + React 19/RTK Query cost page + request detail waterfall.
-6. Next: verified built-in snapshot, session browser/compare views, GitHub Pages.
+5. Studio: read-only cost ledger API + React 19/RTK Query cost page + request detail waterfall + session browser.
+6. Query stores: shared JSONL/SQLite query contract and session summaries.
+7. Next: verified built-in snapshot, compare view, GitHub Pages.
 3. GitHub Pages and NuGet root package placeholder remain external tasks.

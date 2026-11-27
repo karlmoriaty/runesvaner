@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Runesvaner.Storage.Sqlite;
 
-public sealed class SqliteRunesvanerStore : IRunesvanerStore, IDisposable
+public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQueryStore, IDisposable
 {
     private readonly SqliteConnection _connection;
     private readonly object _gate = new();
@@ -68,6 +68,80 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IDisposable
 
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
+
+    public ValueTask<IReadOnlyList<RunesvanerRequestRecord>> ReadRequestsAsync(
+        string? sessionId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var records = ReadAllRecords();
+
+        if (!string.IsNullOrEmpty(sessionId))
+        {
+            records = records
+                .Where(record => string.Equals(record.SessionId, sessionId, StringComparison.Ordinal))
+                .ToList();
+        }
+
+        return new ValueTask<IReadOnlyList<RunesvanerRequestRecord>>(
+            records
+                .OrderByDescending(record => record.StartedAtUtc)
+                .Take(Math.Max(1, limit))
+                .ToArray());
+    }
+
+    public ValueTask<RunesvanerRequestRecord?> GetRequestAsync(
+        string requestId,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var record = ReadAllRecords().FirstOrDefault(candidate =>
+            string.Equals(candidate.RequestId, requestId, StringComparison.Ordinal));
+
+        return new ValueTask<RunesvanerRequestRecord?>(record);
+    }
+
+    public ValueTask<IReadOnlyList<RunesvanerSessionSummary>> ReadSessionsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<IReadOnlyList<RunesvanerSessionSummary>>(
+            RunesvanerSessionAggregator.Aggregate(ReadAllRecords()));
+    }
+
+    private List<RunesvanerRequestRecord> ReadAllRecords()
+    {
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT payload FROM requests ORDER BY started_at DESC;";
+            using var reader = command.ExecuteReader();
+            var records = new List<RunesvanerRequestRecord>();
+
+            while (reader.Read())
+            {
+                var payload = reader.GetString(0);
+                try
+                {
+                    var record = JsonSerializer.Deserialize(
+                        payload,
+                        RunesvanerJsonContext.Default.RunesvanerRequestRecord);
+
+                    if (record is not null)
+                    {
+                        records.Add(record);
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Ignore a payload that cannot be read; keep the rest queryable.
+                }
+            }
+
+            return records;
+        }
+    }
 
     public void Dispose()
         => _connection.Dispose();

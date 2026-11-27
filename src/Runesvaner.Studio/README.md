@@ -27,7 +27,7 @@ Resolution order:
 3. Nearest `.runesvaner` directory, walking up from the current directory.
 4. `./.runesvaner` (created lazily by the recording side).
 
-The Studio reads JSONL sessions only at this stage.
+If `<dataPath>/runesvaner.db` exists, Studio uses the SQLite query store. Otherwise it reads JSONL sessions.
 
 ## API
 
@@ -37,7 +37,8 @@ All API calls require `Authorization: Bearer <token>`.
 | --- | --- |
 | `GET /api/health` | Status, version, resolved data path |
 | `GET /api/costs` | Cost aggregation by provider/model |
-| `GET /api/requests?limit=20` | Newest request summaries |
+| `GET /api/sessions` | Session summaries with request counts and cost |
+| `GET /api/requests?limit=20&session=<id>` | Newest request summaries, optionally filtered by session |
 | `GET /api/requests/{id}` | Full request record with segments, usage, cost, stream, tags |
 
 Security boundaries:
@@ -50,4 +51,4 @@ Security boundaries:
 
 ## Scope
 
-M2.1 implements the cost ledger and recent requests view. M2.2 adds request detail, latency waterfall, cost breakdown, stream metrics, and tags. Session browser and compare view remain.
+M2.1 implements the cost ledger and recent requests view. M2.2 adds request detail, latency waterfall, cost breakdown, stream metrics, tags, session browser, and SQLite/JSONL query stores. Compare view remains.

@@ -67,6 +67,23 @@ public sealed class StudioApiTests
                 TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
 
+            var sessionsResponse = await client.GetAsync(
+                "/api/sessions",
+                TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, sessionsResponse.StatusCode);
+            var sessionsJson = await sessionsResponse.Content.ReadAsStringAsync(
+                TestContext.Current.CancellationToken);
+            Assert.Contains("studio-session", sessionsJson);
+            Assert.Contains("\"totalCost\":0.000009", sessionsJson);
+
+            var filtered = await client.GetAsync(
+                "/api/requests?session=studio-session",
+                TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, filtered.StatusCode);
+            var filteredJson = await filtered.Content.ReadAsStringAsync(
+                TestContext.Current.CancellationToken);
+            Assert.Contains("\"sessionId\":\"studio-session\"", filteredJson);
+
             using var badHostRequest = new HttpRequestMessage(HttpMethod.Get, "/");
             badHostRequest.Headers.Host = "evil.example";
             var badHost = await anonymous.SendAsync(
@@ -122,5 +139,6 @@ public sealed class StudioApiTests
                 new RunesvanerSegment(SegmentKind.Generation, 600, 400, false, SegmentMeasurement.Stopwatch)
             },
             new Dictionary<string, string> { ["feature"] = "rag.sample" },
-            new CostBreakdown("USD", 0.0000032m, 0.00000096m, 0.0000048m, 0m, 0.000009m, CostStatus.Known, "test-1"));
+            new CostBreakdown("USD", 0.0000032m, 0.00000096m, 0.0000048m, 0m, 0.000009m, CostStatus.Known, "test-1"),
+            SessionId: "studio-session");
 }

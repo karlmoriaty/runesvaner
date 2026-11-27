@@ -476,3 +476,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+.sessionModels {
+  max-width: 280px;
+  overflow: hidden;
+  color: #9aa6b2;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7785;
+  font-size: 11px;
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #c8963e;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json.Serialization;
 using Runesvaner;
 using Runesvaner.Storage.Jsonl;
+using Runesvaner.Storage.Sqlite;
 
 var webRoot = Path.Combine(AppContext.BaseDirectory, "wwwroot");
 Directory.CreateDirectory(webRoot);
@@ -27,6 +28,25 @@ var token = builder.Configuration["Studio:Token"]
 var dataPath = builder.Configuration["Studio:DataPath"]
     ?? Environment.GetEnvironmentVariable("RUNESVANER_DATA_PATH")
     ?? FindDataDirectory();
+
+var databasePath = Path.Combine(dataPath, "runesvaner.db");
+IRunesvanerQueryStore queryStore;
+
+if (File.Exists(databasePath))
+{
+    try
+    {
+        queryStore = new SqliteRunesvanerStore(databasePath);
+    }
+    catch (Exception)
+    {
+        queryStore = new JsonlRunesvanerQueryStore(dataPath);
+    }
+}
+else
+{
+    queryStore = new JsonlRunesvanerQueryStore(dataPath);
+}
 
 app.Use(async (context, next) =>
 {
@@ -56,43 +76,45 @@ app.MapGet("/api/health", () => Results.Ok(new
 {
     status = "ok",
     version = "0.1.0",
-    dataPath = Path.GetFullPath(dataPath)
+    dataPath = Path.GetFullPath(dataPath),
+    storage = queryStore.GetType().Name
 }));
 
-app.MapGet("/api/costs", () =>
+app.MapGet("/api/costs", async (CancellationToken cancellationToken) =>
 {
-    var records = JsonlRunesvanerStore.ReadAll(dataPath);
+    var records = await queryStore.ReadRequestsAsync(null, int.MaxValue, cancellationToken);
     return Results.Ok(RunesvanerCostAggregator.Aggregate(records));
 });
 
-app.MapGet("/api/requests", (int? limit) =>
+app.MapGet("/api/sessions", async (CancellationToken cancellationToken) =>
+    Results.Ok(await queryStore.ReadSessionsAsync(cancellationToken)));
+
+app.MapGet("/api/requests", async (int? limit, string? session, CancellationToken cancellationToken) =>
 {
     var take = Math.Clamp(limit ?? 100, 1, 500);
-    var records = JsonlRunesvanerStore.ReadAll(dataPath)
-        .OrderByDescending(record => record.StartedAtUtc)
-        .Take(take)
-        .Select(record => new
-        {
-            record.RequestId,
-            record.Operation,
-            record.Provider,
-            Model = record.RequestModel ?? record.ResponseModel ?? "-",
-            record.StartedAtUtc,
-            record.DurationUs,
-            record.TtftUs,
-            record.Status,
-            Cost = record.Cost?.Total,
-            CostStatus = record.Cost?.Status.ToString() ?? "None"
-        });
+    var records = await queryStore.ReadRequestsAsync(session, take, cancellationToken);
 
-    return Results.Ok(records);
+    var summaries = records.Select(record => new
+    {
+        record.RequestId,
+        record.SessionId,
+        record.Operation,
+        record.Provider,
+        Model = record.RequestModel ?? record.ResponseModel ?? "-",
+        record.StartedAtUtc,
+        record.DurationUs,
+        record.TtftUs,
+        record.Status,
+        Cost = record.Cost?.Total,
+        CostStatus = record.Cost?.Status.ToString() ?? "None"
+    });
+
+    return Results.Ok(summaries);
 });
 
-app.MapGet("/api/requests/{requestId}", (string requestId) =>
+app.MapGet("/api/requests/{requestId}", async (string requestId, CancellationToken cancellationToken) =>
 {
-    var record = JsonlRunesvanerStore.ReadAll(dataPath)
-        .FirstOrDefault(candidate => string.Equals(candidate.RequestId, requestId, StringComparison.Ordinal));
-
+    var record = await queryStore.GetRequestAsync(requestId, cancellationToken);
     return record is null ? Results.NotFound() : Results.Ok(record);
 });
 

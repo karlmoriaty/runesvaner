@@ -18,6 +18,7 @@ export type CostRow = {
 
 export type RequestRow = {
   requestId: string;
+  sessionId: string | null;
   operation: string;
   provider: string | null;
   model: string;
@@ -27,6 +28,24 @@ export type RequestRow = {
   status: string;
   cost: number | null;
   costStatus: string;
+};
+
+export type SessionRow = {
+  sessionId: string;
+  startedAtUtc: string;
+  endedAtUtc: string;
+  requests: number;
+  priced: number;
+  partial: number;
+  unknown: number;
+  totalCost: number;
+  models: string[];
+  providers: string[];
+};
+
+export type RequestQuery = {
+  limit?: number;
+  session?: string | null;
 };
 
 export type Usage = {
@@ -107,8 +126,16 @@ export const studioApi = createApi({
     getCosts: builder.query<CostRow[], void>({
       query: () => 'api/costs'
     }),
-    getRequests: builder.query<RequestRow[], number | void>({
-      query: (limit = 20) => `api/requests?limit=${limit}`
+    getRequests: builder.query<RequestRow[], RequestQuery | void>({
+      query: (args) => {
+        const limit = args?.limit ?? 20;
+        const session = args?.session;
+        const suffix = session ? `&session=${encodeURIComponent(session)}` : '';
+        return `api/requests?limit=${limit}${suffix}`;
+      }
+    }),
+    getSessions: builder.query<SessionRow[], void>({
+      query: () => 'api/sessions'
     }),
     getRequest: builder.query<RequestDetail, string>({
       query: (requestId) => `api/requests/${encodeURIComponent(requestId)}`
@@ -116,4 +143,4 @@ export const studioApi = createApi({
   })
 });
 
-export const { useGetHealthQuery, useGetCostsQuery, useGetRequestsQuery, useGetRequestQuery } = studioApi;
+export const { useGetHealthQuery, useGetCostsQuery, useGetRequestsQuery, useGetRequestQuery, useGetSessionsQuery } = studioApi;

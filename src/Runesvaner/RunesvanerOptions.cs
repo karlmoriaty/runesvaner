@@ -17,6 +17,8 @@ public sealed class RunesvanerOptions
 
     public string Provider { get; set; } = "";
 
+    public string? SessionId { get; set; }
+
     public PriceTable? PricingTable { get; set; }
 
     public StorageMode StorageMode { get; set; } = StorageMode.Sqlite;

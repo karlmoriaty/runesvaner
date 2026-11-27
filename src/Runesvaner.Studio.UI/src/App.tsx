@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import type { CostRow, RequestDetail, RequestRow, Segment } from './api';
+import type { CostRow, RequestDetail, RequestRow, Segment, SessionRow } from './api';
 import {
   useGetCostsQuery,
   useGetHealthQuery,
   useGetRequestQuery,
-  useGetRequestsQuery
+  useGetRequestsQuery,
+  useGetSessionsQuery
 } from './api';
 import styles from './App.module.css';
 
@@ -127,6 +128,60 @@ function CostsTable({ rows }: { rows: CostRow[] }) {
               <td className={styles.numeric}>{integer.format(row.partial)}</td>
               <td className={styles.numeric}>{integer.format(row.unknown)}</td>
               <td className={`${styles.numeric} ${styles.cost}`}>{formatMoney(row.total)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SessionsTable({
+  rows,
+  selectedSession,
+  onSelect
+}: {
+  rows: SessionRow[];
+  selectedSession: string | null;
+  onSelect: (sessionId: string) => void;
+}) {
+  if (rows.length === 0) {
+    return <div className={styles.empty}>No diagnostic sessions captured yet.</div>;
+  }
+
+  return (
+    <div className={styles.tableScroll}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>Started (UTC)</th>
+            <th>Session</th>
+            <th className={styles.numeric}>Requests</th>
+            <th>Models</th>
+            <th className={styles.numeric}>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              key={row.sessionId}
+              className={row.sessionId === selectedSession ? styles.selectedRow : undefined}
+              onClick={() => onSelect(row.sessionId)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  onSelect(row.sessionId);
+                }
+              }}
+              tabIndex={0}
+              title="Filter requests by session"
+            >
+              <td className={styles.mono}>{row.startedAtUtc.replace('T', ' ').slice(0, 19)}</td>
+              <td className={styles.mono} title={row.sessionId}>{row.sessionId.slice(0, 12)}</td>
+              <td className={styles.numeric}>{integer.format(row.requests)}</td>
+              <td className={styles.sessionModels} title={row.models.join(', ')}>
+                {row.models.length === 0 ? '-' : row.models.join(', ')}
+              </td>
+              <td className={`${styles.numeric} ${styles.cost}`}>{formatMoney(row.totalCost)}</td>
             </tr>
           ))}
         </tbody>
@@ -370,16 +425,21 @@ export function App() {
   const hasToken = Boolean(sessionStorage.getItem('runesvaner-token'));
   const health = useGetHealthQuery(undefined, { skip: !hasToken });
   const costs = useGetCostsQuery(undefined, { skip: !hasToken });
-  const requests = useGetRequestsQuery(20, { skip: !hasToken });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const sessions = useGetSessionsQuery(undefined, { skip: !hasToken });
+  const requests = useGetRequestsQuery(
+    { limit: 20, session: selectedSession },
+    { skip: !hasToken }
+  );
 
   const rows = costs.data ?? [];
   const total = rows.reduce((sum, row) => sum + row.total, 0);
   const priced = rows.reduce((sum, row) => sum + row.priced, 0);
   const unknown = rows.reduce((sum, row) => sum + row.unknown + row.partial, 0);
   const models = rows.length;
-  const isLoading = health.isLoading || costs.isLoading || requests.isLoading;
-  const hasError = health.isError || costs.isError || requests.isError;
+  const isLoading = health.isLoading || costs.isLoading || requests.isLoading || sessions.isLoading;
+  const hasError = health.isError || costs.isError || requests.isError || sessions.isError;
 
   return (
     <div className={styles.shell}>
@@ -433,6 +493,26 @@ export function App() {
         <section className={styles.panel}>
           <div className={styles.panelHeader}>
             <div>
+              <div className={styles.kicker}>Sessions</div>
+              <h2 className={styles.panelTitle}>Diagnostic sessions</h2>
+            </div>
+            <span className={styles.panelMeta}>
+              {selectedSession ? 'Filtered' : `${sessions.data?.length ?? 0} sessions`}
+            </span>
+          </div>
+          <SessionsTable
+            rows={sessions.data ?? []}
+            selectedSession={selectedSession}
+            onSelect={(sessionId) => {
+              setSelectedSession((current) => (current === sessionId ? null : sessionId));
+              setSelectedId(null);
+            }}
+          />
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <div>
               <div className={styles.kicker}>Attribution</div>
               <h2 className={styles.panelTitle}>Cost by provider and model</h2>
             </div>
@@ -447,7 +527,19 @@ export function App() {
               <div className={styles.kicker}>Recent activity</div>
               <h2 className={styles.panelTitle}>Latest requests</h2>
             </div>
-            <span className={styles.panelMeta}>Click a row for the waterfall</span>
+            <div className={styles.panelActions}>
+              {selectedSession ? (
+                <button
+                  type="button"
+                  className={styles.linkButton}
+                  onClick={() => setSelectedSession(null)}
+                >
+                  Clear session filter
+                </button>
+              ) : (
+                <span>Click a row for the waterfall</span>
+              )}
+            </div>
           </div>
           <RequestsTable rows={requests.data ?? []} selectedId={selectedId} onSelect={setSelectedId} />
         </section>

@@ -7,6 +7,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
     private readonly IRunesvanerStore _store;
     private readonly RunesvanerOptions _options;
     private readonly TimeProvider _timeProvider;
+    private readonly string _sessionId;
 
     public RunesvanerRecorder(
         IRunesvanerStore store,
@@ -16,12 +17,15 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         _store = store;
         _options = options ?? new RunesvanerOptions();
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _sessionId = _options.SessionId ?? Guid.NewGuid().ToString("N");
     }
+
+    public string SessionId => _sessionId;
 
     public bool IsEnabled => _options.Enabled;
 
     public IRunesvanerRequest StartRequest(RunesvanerRequestInfo info)
-        => new RunesvanerRequestScope(RequestId(), info, _store, _options, _timeProvider);
+        => new RunesvanerRequestScope(RequestId(), _sessionId, info, _store, _options, _timeProvider);
 
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => _store.FlushAsync(cancellationToken);
@@ -33,6 +37,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         private readonly RunesvanerRequestInfo _info;
         private readonly IRunesvanerStore _store;
         private readonly RunesvanerOptions _options;
+        private readonly string _sessionId;
         private readonly DateTimeOffset _startedAtUtc;
         private readonly long _startTimestamp;
         private readonly List<RunesvanerSegment> _segments = new(16);
@@ -41,12 +46,14 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
 
         public RunesvanerRequestScope(
             string requestId,
+            string sessionId,
             RunesvanerRequestInfo info,
             IRunesvanerStore store,
             RunesvanerOptions options,
             TimeProvider timeProvider)
         {
             RequestId = requestId;
+            _sessionId = sessionId;
             _info = info;
             _store = store;
             _options = options;
@@ -98,7 +105,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 _segments.ToArray(),
                 _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags),
                 cost,
-                result.Stream);
+                result.Stream,
+                _sessionId);
 
             try
             {

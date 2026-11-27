@@ -17,7 +17,8 @@ public sealed record RunesvanerRequestRecord(
     RunesvanerSegment[] Segments,
     Dictionary<string, string>? Tags,
     CostBreakdown? Cost = null,
-    RunesvanerStreamStats? Stream = null);
+    RunesvanerStreamStats? Stream = null,
+    string? SessionId = null);
 
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(RunesvanerRequestRecord))]

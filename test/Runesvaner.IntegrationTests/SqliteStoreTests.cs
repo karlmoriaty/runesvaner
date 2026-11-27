@@ -30,11 +30,22 @@ public sealed class SqliteStoreTests
                 "Ok",
                 null,
                 Array.Empty<RunesvanerSegment>(),
-                null);
+                null,
+                SessionId: "sqlite-session");
 
             using (var store = new SqliteRunesvanerStore(databasePath))
             {
                 await store.WriteAsync(record, TestContext.Current.CancellationToken);
+
+                var queried = await store.ReadRequestsAsync(
+                    "sqlite-session",
+                    10,
+                    TestContext.Current.CancellationToken);
+                Assert.Single(queried);
+
+                var sessions = await store.ReadSessionsAsync(TestContext.Current.CancellationToken);
+                Assert.Single(sessions);
+                Assert.Equal("sqlite-session", sessions[0].SessionId);
             }
 
             using var connection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
