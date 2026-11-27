@@ -118,6 +118,20 @@ Rationale for ULID: time-sortable, string-safe, and requires no database sequenc
 | `unaccounted` | Residual | — | residual |
 | `overlap` | Parallel overlap | — | residual |
 
+### 5.2.1 Measured sources (M2, 2026-11-27)
+
+| Segment | Producer | Measurement |
+| --- | --- | --- |
+| `queue` | `RunesvanerHttpHandler` entry offset | stopwatch |
+| `connect` | `SocketsHttpHandler.ConnectCallback` (DNS + TCP) | stopwatch |
+| `tls` | none | **not produced**: .NET exposes no TLS-complete hook; no estimate is fabricated |
+| `upload` | Request content serialization wrapper | stopwatch |
+| `provider_queue` | Response-header wait | stopwatch (measured, not estimated) |
+| `ttft` | MEAI decorator, first non-empty delta | stopwatch |
+| `generation` | Response-stream EOF wrapper | stopwatch |
+
+`RunesvanerRequestContext` (AsyncLocal) correlates HTTP callbacks with the active recorder request. TLS time remains inside connection establishment and is therefore not attributed to a separate segment.
+
 ### 5.3 Formulas
 
 - `ttfb = first_byte_ts - request_start_ts`

@@ -89,6 +89,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         private readonly string _sessionId;
         private readonly DateTimeOffset _startedAtUtc;
         private readonly long _startTimestamp;
+        private readonly object _segmentGate = new();
         private readonly List<RunesvanerSegment> _segments = new(16);
         private RunesvanerUsage? _usage;
         private RunesvanerContentCapture? _content;
@@ -115,38 +116,57 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
 
         public void RecordSegment(RunesvanerSegment segment)
         {
-            if (!_completed)
+            lock (_segmentGate)
             {
-                _segments.Add(segment);
+                if (!_completed)
+                {
+                    _segments.Add(segment);
+                }
             }
         }
 
         public void RecordUsage(RunesvanerUsage usage)
         {
-            if (!_completed)
+            lock (_segmentGate)
             {
-                _usage = usage;
+                if (!_completed)
+                {
+                    _usage = usage;
+                }
             }
         }
 
         public void RecordContent(RunesvanerContentCapture content)
         {
-            if (!_completed)
+            lock (_segmentGate)
             {
-                _content = content;
+                if (!_completed)
+                {
+                    _content = content;
+                }
             }
         }
 
         public void Complete(RunesvanerRequestResult result)
         {
-            if (_completed)
+            RunesvanerUsage? usage;
+            RunesvanerContentCapture? content;
+            RunesvanerSegment[] segments;
+
+            lock (_segmentGate)
             {
-                return;
+                if (_completed)
+                {
+                    return;
+                }
+
+                _completed = true;
+                usage = _usage;
+                content = _content;
+                segments = _segments.ToArray();
             }
 
-            _completed = true;
-
-            var cost = CalculateCost(result.ResponseModel);
+            var cost = CalculateCost(result.ResponseModel, usage);
 
             var record = new RunesvanerRequestRecord(
                 "runesvaner.request.v1",
@@ -159,13 +179,13 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 result.DurationUs,
                 result.TtftUs,
                 result.Status.ToString(),
-                _usage,
-                _segments.ToArray(),
+                usage,
+                segments,
                 _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags),
                 cost,
                 result.Stream,
                 _sessionId,
-                _content,
+                content,
                 result.Attempt,
                 result.Attempt > 1);
 
@@ -179,9 +199,11 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             }
         }
 
-        private CostBreakdown? CalculateCost(string? responseModel)
+        private CostBreakdown? CalculateCost(
+            string? responseModel,
+            RunesvanerUsage? usage)
         {
-            if (_usage is not { } usage || _options.PricingTable is not { } table)
+            if (usage is not { } currentUsage || _options.PricingTable is not { } table)
             {
                 return null;
             }
@@ -197,21 +219,18 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 entry = found;
             }
 
-            return RunesvanerCostEngine.Calculate(usage, entry, table.Version, table.Currency);
+            return RunesvanerCostEngine.Calculate(
+                currentUsage,
+                entry,
+                table.Version,
+                table.Currency);
         }
 
         public void Dispose()
-        {
-            if (_completed)
-            {
-                return;
-            }
-
-            Complete(new RunesvanerRequestResult(
+            => Complete(new RunesvanerRequestResult(
                 RequestStatus.Unknown,
                 Microseconds(Stopwatch.GetElapsedTime(_startTimestamp)),
                 null));
-        }
 
         private static long Microseconds(TimeSpan elapsed) => elapsed.Ticks / 10;
     }

@@ -41,6 +41,7 @@ public sealed class RunesvanerChatClient : IChatClient
             null,
             options?.ModelId,
             null));
+        using var context = RunesvanerRequestContext.Begin(request);
 
         var started = Stopwatch.GetTimestamp();
 
@@ -127,6 +128,7 @@ public sealed class RunesvanerChatClient : IChatClient
             null,
             options?.ModelId,
             null));
+        using var context = RunesvanerRequestContext.Begin(request);
 
         var started = Stopwatch.GetTimestamp();
         long? ttftUs = null;

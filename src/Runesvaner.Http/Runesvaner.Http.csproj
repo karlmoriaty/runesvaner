@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Runesvaner\Runesvaner.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsPackable>true</IsPackable>
+    <PackageId>Runesvaner.Http</PackageId>
+    <Description>HTTP segment diagnostics for Runesvaner (connect, upload, provider wait, generation).</Description>
+    <Authors>karlmoriaty</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/karlmoriaty/runesvaner</RepositoryUrl>
+    <PackageTags>dotnet;ai;diagnostics;observability;http;aot</PackageTags>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

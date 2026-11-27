@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Runesvaner\Runesvaner.csproj" />
+    <ProjectReference Include="..\..\src\Runesvaner.Http\Runesvaner.Http.csproj" />
     <ProjectReference Include="..\..\src\Runesvaner.MicrosoftExtensionsAI\Runesvaner.MicrosoftExtensionsAI.csproj" />
     <ProjectReference Include="..\..\src\Runesvaner.Storage.Jsonl\Runesvaner.Storage.Jsonl.csproj" />
     <ProjectReference Include="..\..\src\Runesvaner.Storage.Sqlite\Runesvaner.Storage.Sqlite.csproj" />

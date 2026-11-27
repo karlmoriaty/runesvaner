@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 MVP hardening in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, DI integration (`AddRunesvaner`/`UseRunesvaner`), bounded background writer + self-monitoring, content capture modes + header denylist + Unix 0600, retention policies, CLI `report`/`doctor`/`costs`/`pricing`/`run`/`export`/`open`, RAG sample, benchmark baseline, cost engine core, price table loader, built-in verified price snapshot, OpenTelemetry exporter, Embedding decorator, head sampling, Studio cost view + waterfall + session browser + compare view + status/model/time filters + JSON export, SQLite query pushdown, Partial cost aggregation, OpenAI protocol verification, GitHub Pages docs site, CI performance gate, Linux AOT CI, versioned NuGet packaging with READMEs, Studio 10k-request baseline, 71 tests, Windows/Linux CI, Windows/Linux Native AOT smoke.
-> Next: M2 remaining items (HTTP segment waterfall, billing reconciliation, TTFT accuracy, OTLP collector golden test, XML documentation).
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, DI integration (`AddRunesvaner`/`UseRunesvaner`), bounded background writer + self-monitoring, content capture modes + header denylist + Unix 0600, retention policies, CLI `report`/`doctor`/`costs`/`pricing`/`run`/`export`/`open`, RAG sample, benchmark baseline, cost engine core, price table loader, built-in verified price snapshot, OpenTelemetry exporter, Embedding decorator, head sampling, Studio cost view + waterfall + session browser + compare view + status/model/time filters + JSON export, SQLite query pushdown, Partial cost aggregation, OpenAI protocol verification, HTTP segments (Queue / Connect / Upload / ProviderQueue / Generation), GitHub Pages docs site, CI performance gate, Linux AOT CI, versioned NuGet packaging with READMEs, Studio 10k-request baseline, 73 tests, Windows/Linux CI, Windows/Linux Native AOT smoke.
+> Next: M2 remaining items (TLS segment measurement is not exposed by the .NET public API and is documented as a gap, billing reconciliation, TTFT accuracy, OTLP collector golden test, XML documentation).
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -64,6 +64,7 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | Retention | Age and size thresholds enforced by JSONL and SQLite stores |
 | CLI `run` / `export` / `open` | Implemented |
 | NuGet packaging | `0.2.0-alpha.1`, README in every package, samples excluded |
+| HTTP segments | `Runesvaner.Http`: Queue, Connect (DNS+TCP), Upload, ProviderQueue, Generation; TLS is not separately observable |
 
 ## What it is not
 
