@@ -116,7 +116,9 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 cost,
                 result.Stream,
                 _sessionId,
-                _content);
+                _content,
+                result.Attempt,
+                result.Attempt > 1);
 
             try
             {

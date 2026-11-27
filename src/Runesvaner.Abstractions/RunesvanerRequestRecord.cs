@@ -20,10 +20,13 @@ public sealed record RunesvanerRequestRecord(
     RunesvanerStreamStats? Stream = null,
     string? SessionId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    RunesvanerContentCapture? Content = null);
+    RunesvanerContentCapture? Content = null,
+    int Attempt = 1,
+    bool PossibleDuplicateBilling = false);
 
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(RunesvanerRequestRecord))]
+[JsonSerializable(typeof(RunesvanerRequestRecord[]))]
 [JsonSerializable(typeof(CostBreakdown))]
 [JsonSerializable(typeof(RunesvanerStreamStats))]
 public partial class RunesvanerJsonContext : JsonSerializerContext

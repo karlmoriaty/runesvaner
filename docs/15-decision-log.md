@@ -186,6 +186,8 @@
 - `13-risk-register.md`: R-06 update.
 - `14-hidden-requirements.md`: H-36 update.
 
+**Implementation (2026-11-27)**: `AddRunesvaner()` selects the store from `StorageMode` (SQLite at `StoragePath/runesvaner.db`, JSONL under `StoragePath`, or in-memory). Automatic SQLite-to-JSONL fallback on initialization failure is **not implemented**; `StorageMode.Jsonl` is the documented path for AOT and environments without a native SQLite library. All writes pass through a bounded background writer by default (`EnableBackgroundWriter`, capacity 4096) with oldest-drop, a 30-second degradation window after 5 consecutive failures, and `RunesvanerSelfMonitor` counters. Retention (`RetentionDays`, `MaxStorageBytes`) is enforced by both stores, and Unix directory/file permissions are restricted to the owner.
+
 ---
 
 

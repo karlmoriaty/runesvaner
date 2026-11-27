@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
-> **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, built-in verified price snapshot, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, GitHub Pages docs site, performance gate in CI, 27 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: NuGet placeholder.
+> **Status: M1 complete — M2 MVP hardening in progress.**
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, DI integration (`AddRunesvaner`/`UseRunesvaner`), bounded background writer + self-monitoring, content capture modes + header denylist + Unix 0600, retention policies, CLI `report`/`doctor`/`costs`/`pricing`/`run`/`export`/`open`, RAG sample, benchmark baseline, cost engine core, price table loader, built-in verified price snapshot, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, GitHub Pages docs site, CI performance gate, Linux AOT CI, versioned NuGet packaging with READMEs, 60 tests, Windows/Linux CI, Windows/Linux Native AOT smoke.
+> Next: M2 remaining items (billing reconciliation, TTFT accuracy, Studio 10k-request performance, OTLP collector golden test, field validation).
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -58,7 +58,12 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | Studio request detail | Latency waterfall, cost breakdown, stream metrics, tags |
 | Session browser + query store | SQLite/JSONL query contract, session summaries, request filtering |
 | Studio compare | Side-by-side waterfalls and duration/cost/token/ITL/TPS deltas |
-| DI extensions, Studio, OTLP | Not implemented |
+| DI integration | `AddRunesvaner()` + `UseRunesvaner()`; default store selected from `StorageMode` |
+| Reliability | Bounded background writer, oldest-drop, failure threshold, self-monitor counters |
+| Privacy | `ContentCapture` None/Metadata/Full, sensitive-header denylist, 0600 on Unix |
+| Retention | Age and size thresholds enforced by JSONL and SQLite stores |
+| CLI `run` / `export` / `open` | Implemented |
+| NuGet packaging | `0.2.0-alpha.1`, README in every package, samples excluded |
 
 ## What it is not
 

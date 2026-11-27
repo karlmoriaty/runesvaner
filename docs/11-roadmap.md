@@ -117,7 +117,7 @@ Prove that the architecture is feasible with the minimal end-to-end path: one ME
 
 ## 4. M2: MVP
 
-**Status:** in progress (2026-11-26); cost engine, price loader, `costs`, streaming stats, OTel exporter, Studio cost/waterfall/session/compare views, query stores, and GitHub Pages docs implemented.
+**Status:** in progress (2026-11-27); cost engine, price loader and verified built-in snapshot, `costs`, streaming stats, OTel exporter, Studio cost/waterfall/session/compare views, query stores, DI integration, bounded background writer, content capture, retention, CLI `run`/`export`/`open`, Linux/Windows AOT smoke, and NuGet packaging are implemented. Remaining exit criteria: billing reconciliation, TTFT accuracy, Studio 10k-request performance, OTLP collector end-to-end test, and field validation.
 
 ### 4.1 Goal
 

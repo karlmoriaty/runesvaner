@@ -90,6 +90,67 @@ jobs:
       - name: Report AOT capture
         run: dotnet run --project src/Runesvaner.Cli -c Release -- report
 
+  aot-smoke-linux:
+    name: aot-smoke (linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install AOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish Native AOT sample
+        run: dotnet publish samples/Runesvaner.Sample.Aot/Runesvaner.Sample.Aot.csproj -c Release -r linux-x64 --self-contained true
+
+      - name: Run Native AOT sample
+        run: ./samples/Runesvaner.Sample.Aot/bin/Release/net10.0/linux-x64/publish/Runesvaner.Sample.Aot
+
+      - name: Report AOT capture
+        run: dotnet run --project src/Runesvaner.Cli -c Release -- report
+
+  pack:
+    name: pack (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build Runesvaner.sln -c Release
+
+      - name: Pack
+        run: dotnet pack Runesvaner.sln -c Release --no-build -o artifacts/packages
+
+      - name: Verify package set
+        run: |
+          if ls artifacts/packages/Runesvaner.Sample.* >/dev/null 2>&1; then
+            echo "Sample projects must not be packed." >&2
+            exit 1
+          fi
+
+          for id in Runesvaner.Abstractions Runesvaner.Extensions.DependencyInjection Runesvaner.Exporters.OpenTelemetry Runesvaner.MicrosoftExtensionsAI Runesvaner.Storage.Jsonl Runesvaner.Storage.Sqlite Runesvaner; do
+            test -f "artifacts/packages/$id.0.2.0-alpha.1.nupkg" || { echo "Missing package $id" >&2; exit 1; }
+          done
+
+      - name: Verify package readme
+        run: |
+          for package in artifacts/packages/*.nupkg; do
+            unzip -l "$package" | grep -q "README.md" || { echo "Missing README in $package" >&2; exit 1; }
+          done
+
   studio-ui:
     name: studio-ui
     runs-on: ubuntu-latest

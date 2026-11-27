@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
+using System.Text.Json;
 using Runesvaner;
 using Runesvaner.Storage.Jsonl;
 
@@ -10,7 +12,9 @@ return command switch
     "doctor" => Doctor(ParsePath(args)),
     "costs" => Costs(ParsePath(args)),
     "pricing" => Pricing(args),
-    "run" => RunNotImplemented(),
+    "run" => Run(args),
+    "export" => Export(args),
+    "open" => Open(args),
     "--help" or "-h" or "help" => Help(),
     _ => Unknown(command)
 };
@@ -209,11 +213,136 @@ static int Doctor(string path)
     return 0;
 }
 
-static int RunNotImplemented()
+static int Run(string[] args)
 {
-    Console.Error.WriteLine("The 'run' command is not implemented in the M1 skeleton yet.");
-    Console.Error.WriteLine("Use RunesvanerChatClient in your application, then run 'runesvaner report'.");
-    return 3;
+    var separator = Array.IndexOf(args, "--");
+
+    if (separator < 0 || separator == args.Length - 1)
+    {
+        Console.Error.WriteLine("Usage: runesvaner run [--path <directory>] -- <command> [args...]");
+        return 2;
+    }
+
+    var dataPath = Path.GetFullPath(ParsePath(args));
+    var executable = args[separator + 1];
+
+    var startInfo = new ProcessStartInfo(executable)
+    {
+        UseShellExecute = false
+    };
+
+    for (var i = separator + 2; i < args.Length; i++)
+    {
+        startInfo.ArgumentList.Add(args[i]);
+    }
+
+    startInfo.Environment["RUNESVANER_DATA_PATH"] = dataPath;
+
+    try
+    {
+        using var process = Process.Start(startInfo);
+
+        if (process is null)
+        {
+            Console.Error.WriteLine($"Failed to start '{executable}'.");
+            return 3;
+        }
+
+        process.WaitForExit();
+        return process.ExitCode;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Failed to start '{executable}': {ex.Message}");
+        return 3;
+    }
+}
+
+static int Export(string[] args)
+{
+    var dataPath = ParsePath(args);
+    var format = ParseOption(args, "--format") ?? "json";
+    var output = Path.GetFullPath(ParseOption(args, "--output") ?? "runesvaner-export.json");
+
+    var records = JsonlRunesvanerStore.ReadAll(dataPath).ToArray();
+
+    if (records.Length == 0)
+    {
+        Console.Error.WriteLine($"No records found in {Path.GetFullPath(dataPath)}.");
+        return 3;
+    }
+
+    var directory = Path.GetDirectoryName(output);
+    if (!string.IsNullOrEmpty(directory))
+    {
+        Directory.CreateDirectory(directory);
+    }
+
+    if (string.Equals(format, "json", StringComparison.OrdinalIgnoreCase))
+    {
+        File.WriteAllText(
+            output,
+            JsonSerializer.Serialize(records, RunesvanerJsonContext.Default.RunesvanerRequestRecordArray));
+    }
+    else if (string.Equals(format, "jsonl", StringComparison.OrdinalIgnoreCase))
+    {
+        using var writer = new StreamWriter(output);
+
+        foreach (var record in records)
+        {
+            writer.WriteLine(JsonSerializer.Serialize(
+                record,
+                RunesvanerJsonContext.Default.RunesvanerRequestRecord));
+        }
+    }
+    else
+    {
+        Console.Error.WriteLine($"Unsupported format '{format}'. Use json or jsonl.");
+        return 2;
+    }
+
+    Console.WriteLine($"Exported {records.Length} request(s) to {output} ({format}).");
+    return 0;
+}
+
+static int Open(string[] args)
+{
+    var dataPath = Path.GetFullPath(ParsePath(args));
+    var studioAssembly = Path.Combine(AppContext.BaseDirectory, "Runesvaner.Studio.dll");
+
+    if (!File.Exists(studioAssembly))
+    {
+        Console.Error.WriteLine("Runesvaner.Studio.dll was not found next to the CLI.");
+        Console.Error.WriteLine("Run it from source instead: dotnet run --project src/Runesvaner.Studio -c Release");
+        return 3;
+    }
+
+    var startInfo = new ProcessStartInfo("dotnet")
+    {
+        UseShellExecute = false
+    };
+
+    startInfo.ArgumentList.Add(studioAssembly);
+    startInfo.ArgumentList.Add($"--Studio:DataPath={dataPath}");
+
+    try
+    {
+        using var process = Process.Start(startInfo);
+
+        if (process is null)
+        {
+            Console.Error.WriteLine("Failed to start Runesvaner Studio.");
+            return 3;
+        }
+
+        Console.WriteLine($"Started Runesvaner Studio for {dataPath}.");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Failed to start Runesvaner Studio: {ex.Message}");
+        return 3;
+    }
 }
 
 static int Help()
@@ -225,7 +354,9 @@ static int Help()
     Console.WriteLine("  doctor   Check the local data directory and record count.");
     Console.WriteLine("  costs    Aggregate captured cost by provider and model.");
     Console.WriteLine("  pricing  Validate a price table. Usage: pricing validate [--path <file> | --builtin].");
-    Console.WriteLine("  run      Reserved for launching an application.");
+    Console.WriteLine("  run      Run a command with RUNESVANER_DATA_PATH configured.");
+    Console.WriteLine("  export   Export captured requests (--format json|jsonl, --output <file>).");
+    Console.WriteLine("  open     Start the local Studio.");
     Console.WriteLine();
     Console.WriteLine("Options:");
     Console.WriteLine("  --path <directory>   Data directory. Default: .runesvaner");
