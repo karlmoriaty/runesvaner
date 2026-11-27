@@ -30,6 +30,19 @@ fs.rmSync(outputDirectory, { recursive: true, force: true });
 fs.mkdirSync(path.join(outputDirectory, 'assets'), { recursive: true });
 fs.copyFileSync(path.join(assetsDirectory, 'site.css'), path.join(outputDirectory, 'assets', 'site.css'));
 fs.copyFileSync(path.join(assetsDirectory, 'logo.svg'), path.join(outputDirectory, 'assets', 'logo.svg'));
+fs.copyFileSync(path.join(assetsDirectory, 'search.js'), path.join(outputDirectory, 'assets', 'search.js'));
+
+const searchIndex = pages.map((page) => ({
+  slug: page.slug,
+  title: page.title,
+  text: toPlainText(page.body)
+}));
+
+fs.writeFileSync(
+  path.join(outputDirectory, 'search-index.json'),
+  JSON.stringify(searchIndex),
+  'utf8'
+);
 
 for (const page of pages) {
   const html = await marked.parse(page.body, { gfm: true });
@@ -94,6 +107,7 @@ function renderPage(page, html) {
     <title>${title} · Runesvaner</title>
     <link rel="icon" href="./assets/logo.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./assets/site.css" />
+    <script src="./assets/search.js" defer></script>
   </head>
   <body>
     <header class="topbar">
@@ -108,7 +122,13 @@ function renderPage(page, html) {
       </div>
     </header>
     <div class="layout">
-      <aside class="sidebar">${nav}</aside>
+      <aside class="sidebar">
+        <div class="search">
+          <input id="search-input" type="search" placeholder="Search docs" autocomplete="off" aria-label="Search documentation" />
+          <div id="search-results" class="search-results" hidden></div>
+        </div>
+        ${nav}
+      </aside>
       <main class="content">
         <header class="page-header">
           <div class="kicker">Design documentation</div>
@@ -125,11 +145,18 @@ function renderPage(page, html) {
 }
 
 function renderSidebar(activeSlug) {
-  const design = pages.filter((page) => page.slug !== 'index' && page.slug !== 'benchmarks-baseline');
+  const isExample = (slug) => /^2[0-4]-/.test(slug);
+  const isReference = (slug) => slug === 'benchmarks-baseline' || slug.startsWith('25-');
+  const examples = pages.filter((page) => isExample(page.slug));
+  const reference = pages.filter((page) => isReference(page.slug));
+  const design = pages.filter(
+    (page) => page.slug !== 'index' && !isExample(page.slug) && !isReference(page.slug)
+  );
   const groups = [
     { label: 'Overview', pages: pages.filter((page) => page.slug === 'index') },
+    { label: 'Examples', pages: examples },
     { label: 'Design', pages: design },
-    { label: 'Reference', pages: pages.filter((page) => page.slug === 'benchmarks-baseline') }
+    { label: 'Reference', pages: reference }
   ];
 
   const groupsHtml = groups
@@ -152,6 +179,19 @@ function renderSidebar(activeSlug) {
     中文 legacy <span class="ext">↗</span>
   </a>
 </div>`;
+}
+
+function toPlainText(markdown) {
+  return markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]*`/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/[*_>|-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 4000);
 }
 
 function escapeHtml(value) {

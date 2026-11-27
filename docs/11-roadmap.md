@@ -203,7 +203,7 @@ Expand ecosystem coverage, build the community and documentation, and prepare fo
 8. The compatibility matrix is all green (TFM × OS × AOT).
 9. At least 1 technical article/talk published.
 
-**Status (2026-11-27)**: code scope implemented — (1) SK and MEAI nested recording are de-duplicated in both directions; (2) VectorData search records collection, top_k, and duration; (3) tail sampling always keeps error/slow/over-budget requests and aggregates weighted costs; (4) budget events fire for request/session/feature overruns without blocking. Exit criteria 5–9 (docs search and examples, NuGet preview publication, community, compatibility matrix, article) remain open. Packages are versioned `0.3.0-alpha.1` (10 packages).
+**Status (2026-11-27)**: code scope implemented — (1) SK and MEAI nested recording are de-duplicated in both directions; (2) VectorData search records collection, top_k, and duration; (3) tail sampling always keeps error/slow/over-budget requests and aggregates weighted costs; (4) budget events fire for request/session/feature overruns without blocking; (5) documentation-site search, five end-to-end examples, and the compatibility matrix are complete; (8) the compatibility matrix is documented as a tested subset, not a certification. Remaining: (6) NuGet preview publication, (7) external contributors, (9) article/talk. Packages are versioned `0.3.0-alpha.1` (10 packages).
 
 ### 5.4 Risks
 

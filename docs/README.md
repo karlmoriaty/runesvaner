@@ -1,6 +1,6 @@
 # Runesvaner Design Documentation
 
-> Current stage: **M1 complete; M2 cost engine in progress.** Design documentation and a runnable skeleton coexist.
+> Current stage: **M1/M2 complete; M3 code scope implemented.** Ten NuGet packages at `0.3.0-alpha.1`, 100 tests, docs search, five end-to-end examples, and a compatibility matrix.
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`zh-Hans/README.md`](zh-Hans/README.md).
 
@@ -64,6 +64,12 @@
 | `17-docs-and-community.md` | Docs site, community, release, contributor experience | Draft |
 | `18-localization-scope.md` | Localization tiers, glossary, translation maintenance | Accepted |
 | `19-open-implementation-decisions.md` | D-23–D-25 decision records | Accepted |
+| `20-example-console.md` | Example: minimal console recording | Accepted |
+| `21-example-rag-pipeline.md` | Example: RAG embedding/search/generation | Accepted |
+| `22-example-streaming.md` | Example: streaming TTFT/ITL | Accepted |
+| `23-example-openai-protocol.md` | Example: OpenAI protocol without credentials | Accepted |
+| `24-example-ecosystem.md` | Example: Semantic Kernel + VectorData | Accepted |
+| `25-compatibility-matrix.md` | TFM/OS/AOT compatibility and CI evidence | Accepted |
 | `benchmarks-baseline.md` | Recorder benchmark baseline | Draft |
 | `../pricing/README.md` | Price table schema and illustrative sample | Draft |
 | `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
@@ -148,27 +154,18 @@ Key outcomes:
 
 ---
 
-## 7. Next steps
+## 7. Current status
 
-M1 is complete with one documented caveat: SQLite AOT remains blocked by `dotnet/efcore#36068`; the supported AOT path is JSONL, and library SQLite falls back on failure.
+M1, M2, and the M3 code scope are implemented. The repository has 10 NuGet packages at
+`0.3.0-alpha.1`, 100 tests, Windows/Linux CI, and Windows/Linux Native AOT smoke.
 
-M1 evidence:
+M3 code scope:
 
-- Public repository `karlmoriaty/runesvaner`.
-- `LICENSE`, `NOTICE`, `.gitignore`, `Directory.Build.props`, `global.json`.
-- `Runesvaner.sln`, 10+ projects, console/RAG/AOT samples.
-- 21 tests: unit, JSONL/SQLite integration, chat, streaming stats, cancellation, error, failure injection, cost, price table loader, OTel exporter, Studio API/detail, session aggregation, query stores.
-- Benchmark baseline: 324.9 ns mean, 3.70 us P95.
-- CI: Windows/Linux build and tests; Windows Native AOT smoke with non-streaming, streaming, and error paths.
+1. Semantic Kernel adapter with bidirectional SK/MEAI de-duplication.
+2. VectorData `IVectorSearchable<TRecord>` adapter with collection/top_k/duration.
+3. Tail sampling that always keeps error/slow/over-budget requests and weights cost aggregates.
+4. Budget thresholds and alerts for request/session/feature scopes.
+5. Documentation-site search, five end-to-end examples, and the compatibility matrix.
 
-M2 in progress:
-
-1. Cost engine core: `PriceTable`, `PriceEntry`, `CostBreakdown`, tier/cached/reasoning/batch discount, unknown-model handling, recorder integration.
-2. Price table loader: JSON schema, aliases, validation, `pricing validate`, and `costs` aggregation.
-3. Streaming stats: chunk count, TTFT, ITL P50/P95, TPS when usage is available, finish reason, cancellation/interruption.
-4. OpenTelemetry exporter: optional OTLP package, span/metric mapping, failure-isolated store decorator.
-5. Studio: read-only cost ledger API + React 19/RTK Query cost page + request detail waterfall + session browser + compare view.
-6. Query stores: shared JSONL/SQLite query contract and session summaries.
-7. Documentation site: GitHub Pages static build from English Markdown.
-8. Next: verified built-in snapshot, performance gates, NuGet placeholder.
-3. GitHub Pages and NuGet root package placeholder remain external tasks.
+Remaining M3 exit criteria: NuGet preview publication, external contributors, and a published
+article/talk. See `11-roadmap.md` and `25-compatibility-matrix.md`.
