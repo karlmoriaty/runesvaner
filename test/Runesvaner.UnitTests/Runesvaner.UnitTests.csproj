@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,6 +26,8 @@
     <ProjectReference Include="..\..\src\Runesvaner\Runesvaner.csproj" />
     <ProjectReference Include="..\..\src\Runesvaner.Abstractions\Runesvaner.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Runesvaner.Exporters.OpenTelemetry\Runesvaner.Exporters.OpenTelemetry.csproj" />
+    <ProjectReference Include="..\..\src\Runesvaner.Extensions.DependencyInjection\Runesvaner.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Runesvaner.MicrosoftExtensionsAI\Runesvaner.MicrosoftExtensionsAI.csproj" />
   </ItemGroup>
 
 </Project>

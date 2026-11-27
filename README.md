@@ -96,9 +96,25 @@ Studio:
 
 `report` reads `.runesvaner/sessions/*.jsonl` and prints request count, model, duration, TTFT, and status.
 
-The library/app default store is SQLite. The sample and AOT CLI use JSONL to reduce native dependencies. On SQLite initialization failure the target behavior is an automatic JSONL fallback (M1 follow-up).
+The library/app default `StorageMode` is SQLite; the AOT CLI and samples use JSONL to reduce native dependencies. Automatic fallback to JSONL on SQLite initialization failure is not implemented yet: choose `StorageMode.Jsonl` in AOT or environments without a native SQLite library.
 
-Current integration shape:
+Recommended integration with dependency injection:
+
+    builder.Services.AddRunesvaner(options =>
+    {
+        options.ApplicationName = "support-api";
+        options.Provider = "openai";
+        options.StorageMode = StorageMode.Sqlite;
+        options.StoragePath = ".runesvaner";
+    });
+
+    var client = new ChatClientBuilder(innerChatClient)
+        .UseRunesvaner()
+        .Build(serviceProvider);
+
+`AddRunesvaner` registers options, a storage instance chosen from `StorageMode`, the recorder, and a query store. `StorageMode.Memory` is available for tests and short-lived processes.
+
+Manual integration (no DI):
 
     var store = new JsonlRunesvanerStore(".runesvaner");
     var recorder = new RunesvanerRecorder(store, new RunesvanerOptions
@@ -109,7 +125,7 @@ Current integration shape:
 
     var client = new RunesvanerChatClient(innerChatClient, recorder);
 
-> M1 does not yet expose DI extensions or full `UseRunesvaner()` configuration overloads. The target API is documented in `docs/07-api-design.md`.
+> `StorageMode` and `StoragePath` are consumed by `AddRunesvaner`. When constructing a recorder manually, pass the store explicitly; the recorder does not create one.
 
 Native AOT:
 
