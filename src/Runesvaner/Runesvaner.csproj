@@ -18,4 +18,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\pricing\builtin-prices.json" LogicalName="Runesvaner.Pricing.builtin-prices.json" />
+  </ItemGroup>
 </Project>

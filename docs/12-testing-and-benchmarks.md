@@ -208,6 +208,8 @@ See `08-native-aot-strategy.md`. Additional:
 - Noise handling: at least 3 runs, take the median; use relative values for CI runner differences.
 - Archive benchmark results and generate trend charts (M3).
 
+**Status (2026-11-27)**: the B02 gate runs on every push and pull request as the `perf-gate` CI job — 2,000 warmup + 20,000 measured iterations, P95 budget 500 µs, allocation budget 2 KB/request, exit code 1 on failure. `RUNESVANER_PERF_P95_US` and `RUNESVANER_PERF_ALLOC_BYTES` override the budgets for local calibration.
+
 ### 7.5 Benchmark Ethics
 
 - Do not hide overhead: report P50/P95/P99, allocations, and GC together.

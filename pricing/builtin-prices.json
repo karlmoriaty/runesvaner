@@ -1,0 +1,62 @@
+{
+  "version": "2026-11-27",
+  "currency": "USD",
+  "source": "Anthropic pricing https://www.anthropic.com/pricing; Azure Retail Prices API https://prices.azure.com/api/retail/prices?$filter=productName%20eq%20'Azure%20OpenAI%20GPT5'",
+  "retrievedAt": "2026-11-27T00:00:00Z",
+  "entries": [
+    {
+      "provider": "anthropic",
+      "model": "claude-fable-5.2",
+      "inputPerMillion": 8.0,
+      "cachedInputPerMillion": 0.20,
+      "outputPerMillion": 40.0,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-opus-5.5",
+      "inputPerMillion": 4.0,
+      "cachedInputPerMillion": 0.20,
+      "outputPerMillion": 20.0,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-sonnet-5.5",
+      "inputPerMillion": 2.0,
+      "cachedInputPerMillion": 0.10,
+      "outputPerMillion": 10.0,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    },
+    {
+      "provider": "azure-openai",
+      "model": "gpt-5",
+      "inputPerMillion": 1.25,
+      "cachedInputPerMillion": 0.125,
+      "outputPerMillion": 10.0,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    },
+    {
+      "provider": "azure-openai",
+      "model": "gpt-5-mini",
+      "inputPerMillion": 0.25,
+      "cachedInputPerMillion": 0.025,
+      "outputPerMillion": 2.0,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    },
+    {
+      "provider": "azure-openai",
+      "model": "gpt-5-nano",
+      "inputPerMillion": 0.05,
+      "cachedInputPerMillion": 0.005,
+      "outputPerMillion": 0.4,
+      "reasoningIncludedInOutput": true,
+      "batchDiscount": 0
+    }
+  ]
+}

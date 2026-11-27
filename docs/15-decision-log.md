@@ -203,6 +203,8 @@
 
 **Follow-up**: M2 price table schema and CI validation; the community maintenance process for the price table is in `14-hidden-requirements.md` H-59.
 
+**Implementation (2026-11-27)**: `pricing/builtin-prices.json` embeds 6 verified entries (Anthropic Fable 5.2 / Opus 5.5 / Sonnet 5.5; Azure OpenAI GPT-5 / mini / nano) with source URLs and `retrievedAt`. `pricing/builtin-prices.sha256` is asserted against the embedded resource by `BuiltInPriceTableTests`. `RunesvanerOptions.PricingTable` defaults to the snapshot and can be overridden per instance. The CLI exposes `pricing validate --builtin`. OpenAI first-party prices remain absent because the public pricing pages returned HTTP 403 during retrieval; those models resolve to `CostStatus.Unknown` rather than a guessed value.
+
 ---
 
 ### D-09 Content capture

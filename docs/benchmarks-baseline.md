@@ -47,9 +47,24 @@ It does not measure provider network time, MEAI middleware overhead, JSONL seria
 
 ## Interpretation
 
-- The recorder-only path is well below the M1 P95 target of 1 ms (M2 target 0.5 ms).
-- The 1.27 KB allocation per request comes mostly from request IDs, record objects, segment arrays, and the usage dictionary/tags path.
-- This is a baseline, not a regression gate yet. CI will add a benchmark gate after the benchmark suite covers storage and the MEAI decorator.
+- The recorder-only path is four to five orders of magnitude below the M1 P95 target.
+- The 1.27-1.52 KB allocation per request comes mostly from request IDs, record objects, segment arrays, and the usage dictionary/tags path.
+- This page records the baseline; CI enforces the regression gate described below.
+
+## CI gate
+
+    dotnet test/Runesvaner.Benchmarks/bin/Release/net10.0/Runesvaner.Benchmarks.dll --gate
+
+The `perf-gate` job runs on every push and pull request (ubuntu-latest, Release). It uses 2,000 warmup iterations and 20,000 measured iterations, then compares:
+
+| Metric | Budget |
+| --- | ---: |
+| P95 | 500 us (M1 target for B02) |
+| Allocated | 2 KB per request |
+
+Latest local gate run: P50 1.00 us, P95 2.80-2.90 us, P99 4.10-5.20 us, 1.52 KB/op — PASS. A run that exceeds either budget prints `Result: FAIL` and exits with code 1, failing the job.
+
+Budgets can be overridden per environment for calibration (`RUNESVANER_PERF_P95_US`, `RUNESVANER_PERF_ALLOC_BYTES`); CI uses the defaults, so changing a threshold requires a reviewed code change.
 
 ## Next benchmarks
 

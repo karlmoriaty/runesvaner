@@ -4,6 +4,8 @@ namespace Runesvaner;
 
 public static class RunesvanerPriceTableLoader
 {
+    private static readonly Lazy<PriceTable> BuiltIn = new(LoadBuiltInCore);
+
     public static PriceTable Load(string path)
     {
         var fullPath = Path.GetFullPath(path);
@@ -25,6 +27,22 @@ public static class RunesvanerPriceTableLoader
             ?? throw new InvalidDataException("Price table JSON is empty.");
 
         return Create(document, null);
+    }
+
+    public static PriceTable LoadBuiltIn() => BuiltIn.Value;
+
+    private static PriceTable LoadBuiltInCore()
+    {
+        using var stream = typeof(RunesvanerPriceTableLoader).Assembly
+            .GetManifestResourceStream("Runesvaner.Pricing.builtin-prices.json")
+            ?? throw new InvalidOperationException("Built-in price table resource is missing.");
+
+        var document = JsonSerializer.Deserialize(
+            stream,
+            RunesvanerPricingJsonContext.Default.PriceTableDocument)
+            ?? throw new InvalidDataException("Built-in price table is empty.");
+
+        return Create(document, "builtin");
     }
 
     private static PriceTable Create(PriceTableDocument document, string? path)

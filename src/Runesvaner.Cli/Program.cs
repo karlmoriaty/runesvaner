@@ -121,16 +121,29 @@ static int Pricing(string[] args)
 {
     if (args.Length < 2 || !string.Equals(args[1], "validate", StringComparison.Ordinal))
     {
-        Console.Error.WriteLine("Usage: runesvaner pricing validate --path <file>");
+        Console.Error.WriteLine("Usage: runesvaner pricing validate [--path <file> | --builtin]");
         return 2;
     }
 
-    var path = ParseOption(args, "--path") ?? "pricing/example-prices.json";
+    var builtIn = Array.Exists(args, arg => string.Equals(arg, "--builtin", StringComparison.Ordinal));
+    var path = ParseOption(args, "--path");
+
+    if (builtIn && path is not null)
+    {
+        Console.Error.WriteLine("Use either --path or --builtin, not both.");
+        return 2;
+    }
+
+    var location = builtIn
+        ? "builtin"
+        : Path.GetFullPath(path ?? "pricing/example-prices.json");
 
     try
     {
-        var table = RunesvanerPriceTableLoader.Load(path);
-        Console.WriteLine($"Price table: {Path.GetFullPath(path)}");
+        var table = builtIn
+            ? RunesvanerPriceTableLoader.LoadBuiltIn()
+            : RunesvanerPriceTableLoader.Load(location);
+        Console.WriteLine($"Price table: {location}");
         Console.WriteLine($"Version: {table.Version}");
         Console.WriteLine($"Currency: {table.Currency}");
         Console.WriteLine($"Entries: {table.Entries.Count}");
@@ -211,7 +224,7 @@ static int Help()
     Console.WriteLine("  report   Print a summary of captured requests (default).");
     Console.WriteLine("  doctor   Check the local data directory and record count.");
     Console.WriteLine("  costs    Aggregate captured cost by provider and model.");
-    Console.WriteLine("  pricing  Validate a price table. Usage: pricing validate --path <file>.");
+    Console.WriteLine("  pricing  Validate a price table. Usage: pricing validate [--path <file> | --builtin].");
     Console.WriteLine("  run      Reserved for launching an application.");
     Console.WriteLine();
     Console.WriteLine("Options:");

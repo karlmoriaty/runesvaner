@@ -19,7 +19,7 @@ public sealed class RunesvanerOptions
 
     public string? SessionId { get; set; }
 
-    public PriceTable? PricingTable { get; set; }
+    public PriceTable? PricingTable { get; set; } = RunesvanerPriceTableLoader.LoadBuiltIn();
 
     public StorageMode StorageMode { get; set; } = StorageMode.Sqlite;
 

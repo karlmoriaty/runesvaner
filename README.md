@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, GitHub Pages docs site, 21 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: verified built-in price snapshot, performance gates, NuGet placeholder.
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, built-in verified price snapshot, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, GitHub Pages docs site, performance gate in CI, 27 tests, Windows/Linux CI, Windows Native AOT smoke.
+> Next: NuGet placeholder.
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -49,9 +49,10 @@ General APM says "this span is slow." Runesvaner answers "which segment, which c
 | SQLite storage | Basic writes implemented |
 | CLI `report` / `doctor` | Implemented |
 | RAG sample | Implemented |
-| Benchmark baseline | Recorded (mean 324.9 ns, P95 3.70 us) |
+| Benchmark baseline | Recorded (mean 324.9 ns, P95 3.70 us); CI gate at P95 500 us / 2 KB per request |
 | Cost engine core | Implemented (price table, cached/reasoning/batch/unknown) |
 | Price table loader + `costs` | Implemented (JSON schema, aliases, validation, aggregation) |
+| Built-in price snapshot | Implemented: 6 verified entries embedded, checksum-asserted, default for `RunesvanerOptions` |
 | OpenTelemetry exporter | Optional package: spans/metrics + OTLP SDK; tested with listeners |
 | Studio cost view | Read-only API + React 19/RTK Query page; loopback + token |
 | Studio request detail | Latency waterfall, cost breakdown, stream metrics, tags |
@@ -79,8 +80,13 @@ Run the minimal sample (local mock chat client, no real provider):
     dotnet run --project samples/Runesvaner.Sample.Console -c Release
     dotnet run --project samples/Runesvaner.Sample.Rag -c Release
     dotnet run --project src/Runesvaner.Cli -c Release -- report
+    dotnet run --project src/Runesvaner.Cli -c Release -- pricing validate --builtin
     dotnet run --project src/Runesvaner.Cli -c Release -- pricing validate --path pricing/example-prices.json
     dotnet run --project src/Runesvaner.Cli -c Release -- costs
+
+Run the performance gate locally:
+
+    dotnet run --project test/Runesvaner.Benchmarks -c Release -- --gate
 
 Studio:
 
@@ -166,8 +172,8 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | [Open-source governance](docs/10-open-source-governance.md) | License, CLA, governance, release |
 | [Roadmap](docs/11-roadmap.md) | M0–M4 and v2 |
 | [Testing and benchmarks](docs/12-testing-and-benchmarks.md) | Test pyramid, performance gates |
-| [Benchmark baseline](docs/benchmarks-baseline.md) | Recorder mean/P95, environment, caveats |
-| [Pricing data](pricing/README.md) | Price table schema, validation, illustrative sample |
+| [Benchmark baseline](docs/benchmarks-baseline.md) | Recorder mean/P95, CI gate, environment, caveats |
+| [Pricing data](pricing/README.md) | Built-in verified snapshot, schema, validation, sample |
 | [OTel exporter](src/Runesvaner.Exporters.OpenTelemetry/README.md) | Optional OTLP signal exporter and usage |
 | [Studio](src/Runesvaner.Studio/README.md) | Local cost ledger UI, API, security model |
 | [Documentation site](https://karlmoriaty.github.io/runesvaner/) | Published English design docs (GitHub Pages) |
@@ -184,8 +190,8 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | Milestone | Theme | Exit criteria |
 | --- | --- | --- |
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
-| M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 13 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
-| M2 | MVP | In progress: cost engine + price loader + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session/compare views + Pages docs done; performance gates |
+| M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 27 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
+| M2 | MVP | In progress: cost engine + price loader + verified built-in snapshot + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session/compare views + Pages docs + CI performance gate done; remaining: NuGet placeholder and M2 API polish |
 | M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
 | M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
 

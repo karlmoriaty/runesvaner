@@ -43,8 +43,30 @@ jobs:
       - name: Validate example price table
         run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll pricing validate --path pricing/example-prices.json
 
+      - name: Validate built-in price table
+        run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll pricing validate --builtin
+
       - name: Report cost ledger
         run: dotnet src/Runesvaner.Cli/bin/Release/net10.0/Runesvaner.Cli.dll costs
+
+  perf-gate:
+    name: perf-gate (ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build benchmarks
+        run: dotnet build test/Runesvaner.Benchmarks/Runesvaner.Benchmarks.csproj -c Release
+
+      - name: Run performance gate
+        run: dotnet test/Runesvaner.Benchmarks/bin/Release/net10.0/Runesvaner.Benchmarks.dll --gate
 
   aot-smoke:
     name: aot-smoke (windows)
