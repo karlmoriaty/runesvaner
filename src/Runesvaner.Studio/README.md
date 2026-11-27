@@ -38,6 +38,7 @@ All API calls require `Authorization: Bearer <token>`.
 | `GET /api/health` | Status, version, resolved data path |
 | `GET /api/costs` | Cost aggregation by provider/model |
 | `GET /api/requests?limit=20` | Newest request summaries |
+| `GET /api/requests/{id}` | Full request record with segments, usage, cost, stream, tags |
 
 Security boundaries:
 
@@ -49,4 +50,4 @@ Security boundaries:
 
 ## Scope
 
-M2.1 implements the cost ledger and recent requests view. The latency waterfall, session browser, and compare view remain for M2.2.
+M2.1 implements the cost ledger and recent requests view. M2.2 adds request detail, latency waterfall, cost breakdown, stream metrics, and tags. Session browser and compare view remain.

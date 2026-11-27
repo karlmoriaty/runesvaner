@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 using Runesvaner;
 using Runesvaner.Storage.Jsonl;
 
@@ -12,6 +13,10 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 });
 
 builder.WebHost.UseUrls("http://127.0.0.1:0");
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 
@@ -81,6 +86,14 @@ app.MapGet("/api/requests", (int? limit) =>
         });
 
     return Results.Ok(records);
+});
+
+app.MapGet("/api/requests/{requestId}", (string requestId) =>
+{
+    var record = JsonlRunesvanerStore.ReadAll(dataPath)
+        .FirstOrDefault(candidate => string.Equals(candidate.RequestId, requestId, StringComparison.Ordinal));
+
+    return record is null ? Results.NotFound() : Results.Ok(record);
 });
 
 app.UseDefaultFiles();

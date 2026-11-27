@@ -51,6 +51,22 @@ public sealed class StudioApiTests
             Assert.Equal(1, row.Priced);
             Assert.Equal(0.000009m, row.Total);
 
+            var detailResponse = await client.GetAsync(
+                "/api/requests/studio-1",
+                TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.OK, detailResponse.StatusCode);
+
+            var detailJson = await detailResponse.Content.ReadAsStringAsync(
+                TestContext.Current.CancellationToken);
+            Assert.Contains("\"requestId\":\"studio-1\"", detailJson);
+            Assert.Contains("\"segments\":", detailJson);
+            Assert.Contains("\"Embedding\"", detailJson);
+
+            var missing = await client.GetAsync(
+                "/api/requests/not-found",
+                TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+
             using var badHostRequest = new HttpRequestMessage(HttpMethod.Get, "/");
             badHostRequest.Headers.Host = "evil.example";
             var badHost = await anonymous.SendAsync(

@@ -29,6 +29,65 @@ export type RequestRow = {
   costStatus: string;
 };
 
+export type Usage = {
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cachedInputTokens: number | null;
+  reasoningTokens: number | null;
+  source: string;
+};
+
+export type Segment = {
+  kind: string;
+  startOffsetUs: number;
+  durationUs: number;
+  estimated: boolean;
+  measurement: string;
+  lane: number;
+};
+
+export type CostBreakdown = {
+  currency: string;
+  input: number | null;
+  cachedInput: number | null;
+  output: number | null;
+  reasoning: number | null;
+  total: number | null;
+  status: string;
+  priceTableVersion: string;
+  priceEntryId: string | null;
+};
+
+export type StreamStats = {
+  ttftUs: number | null;
+  ttfbUs: number | null;
+  chunkCount: number;
+  itlP50Us: number | null;
+  itlP95Us: number | null;
+  itlEstimated: boolean;
+  tokensPerSecond: number | null;
+  cancelled: boolean;
+  interrupted: boolean;
+  finishReason: string | null;
+};
+
+export type RequestDetail = {
+  requestId: string;
+  operation: string;
+  provider: string | null;
+  requestModel: string | null;
+  responseModel: string | null;
+  startedAtUtc: string;
+  durationUs: number;
+  ttftUs: number | null;
+  status: string;
+  usage: Usage | null;
+  segments: Segment[];
+  tags: Record<string, string> | null;
+  cost: CostBreakdown | null;
+  stream: StreamStats | null;
+};
+
 export const studioApi = createApi({
   reducerPath: 'studioApi',
   baseQuery: fetchBaseQuery({
@@ -50,8 +109,11 @@ export const studioApi = createApi({
     }),
     getRequests: builder.query<RequestRow[], number | void>({
       query: (limit = 20) => `api/requests?limit=${limit}`
+    }),
+    getRequest: builder.query<RequestDetail, string>({
+      query: (requestId) => `api/requests/${encodeURIComponent(requestId)}`
     })
   })
 });
 
-export const { useGetHealthQuery, useGetCostsQuery, useGetRequestsQuery } = studioApi;
+export const { useGetHealthQuery, useGetCostsQuery, useGetRequestsQuery, useGetRequestQuery } = studioApi;
