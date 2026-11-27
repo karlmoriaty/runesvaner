@@ -17,10 +17,16 @@ public static class RunesvanerChatClientBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
 
         return builder.Use((inner, services) =>
-            new RunesvanerChatClient(
-                inner,
-                services.GetService(typeof(IRunesvanerRecorder)) as IRunesvanerRecorder
+        {
+            var recorder = services.GetService(typeof(IRunesvanerRecorder)) as IRunesvanerRecorder
                 ?? throw new InvalidOperationException(
-                    "IRunesvanerRecorder is not registered. Call AddRunesvaner() before building the chat client.")));
+                    "IRunesvanerRecorder is not registered. Call AddRunesvaner() before building the chat client.");
+
+            var contentCapture =
+                (services.GetService(typeof(RunesvanerOptions)) as RunesvanerOptions)?.ContentCapture
+                ?? ContentCaptureMode.None;
+
+            return new RunesvanerChatClient(inner, recorder, contentCapture);
+        });
     }
 }

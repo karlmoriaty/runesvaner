@@ -19,11 +19,21 @@ public static class RunesvanerServiceCollectionExtensions
         Validate(options);
 
         services.AddSingleton(options);
-        services.AddSingleton<IRunesvanerStore>(_ => CreateStore(options));
+        services.AddSingleton(provider => new RunesvanerStoreHolder(CreateStore(options)));
+        services.AddSingleton<RunesvanerSelfMonitor>();
+        services.AddSingleton<IRunesvanerStore>(provider =>
+        {
+            var raw = provider.GetRequiredService<RunesvanerStoreHolder>().Store;
+
+            return options.EnableBackgroundWriter
+                ? new RunesvanerBackgroundStore(
+                    raw,
+                    options,
+                    provider.GetRequiredService<RunesvanerSelfMonitor>())
+                : raw;
+        });
         services.AddSingleton<IRunesvanerRecorder>(provider =>
-            new RunesvanerRecorder(
-                provider.GetRequiredService<IRunesvanerStore>(),
-                options));
+            new RunesvanerRecorder(provider.GetRequiredService<IRunesvanerStore>(), options));
 
         if (options.StorageMode == StorageMode.Jsonl)
         {
@@ -33,7 +43,7 @@ public static class RunesvanerServiceCollectionExtensions
         else
         {
             services.AddSingleton<IRunesvanerQueryStore>(provider =>
-                provider.GetRequiredService<IRunesvanerStore>() as IRunesvanerQueryStore
+                provider.GetRequiredService<RunesvanerStoreHolder>().Store as IRunesvanerQueryStore
                 ?? throw new InvalidOperationException(
                     $"Storage mode '{options.StorageMode}' does not provide a query store."));
         }
@@ -44,9 +54,10 @@ public static class RunesvanerServiceCollectionExtensions
     private static IRunesvanerStore CreateStore(RunesvanerOptions options)
         => options.StorageMode switch
         {
-            StorageMode.Jsonl => new JsonlRunesvanerStore(options.StoragePath),
+            StorageMode.Jsonl => new JsonlRunesvanerStore(options.StoragePath, null, options),
             StorageMode.Sqlite => new SqliteRunesvanerStore(
-                Path.Combine(options.StoragePath, SqliteFileName)),
+                Path.Combine(options.StoragePath, SqliteFileName),
+                options),
             StorageMode.Memory => new InMemoryRunesvanerStore(),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(options),
@@ -62,5 +73,18 @@ public static class RunesvanerServiceCollectionExtensions
             throw new InvalidOperationException(
                 "RunesvanerOptions.StoragePath is required unless StorageMode is Memory.");
         }
+
+        if (options.BackgroundQueueCapacity < 1)
+        {
+            throw new InvalidOperationException(
+                "RunesvanerOptions.BackgroundQueueCapacity must be at least 1.");
+        }
     }
+}
+
+internal sealed class RunesvanerStoreHolder(IRunesvanerStore store) : IDisposable
+{
+    public IRunesvanerStore Store { get; } = store;
+
+    public void Dispose() => (Store as IDisposable)?.Dispose();
 }

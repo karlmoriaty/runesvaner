@@ -18,7 +18,9 @@ public sealed record RunesvanerRequestRecord(
     Dictionary<string, string>? Tags,
     CostBreakdown? Cost = null,
     RunesvanerStreamStats? Stream = null,
-    string? SessionId = null);
+    string? SessionId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    RunesvanerContentCapture? Content = null);
 
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(RunesvanerRequestRecord))]

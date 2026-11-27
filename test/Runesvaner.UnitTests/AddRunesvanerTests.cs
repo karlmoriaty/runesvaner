@@ -10,7 +10,7 @@ namespace Runesvaner.UnitTests;
 public sealed class AddRunesvanerTests
 {
     [Fact]
-    public void AddRunesvaner_Jsonl_RegistersStoreRecorderAndQueryStore()
+    public void AddRunesvaner_Jsonl_RegistersBackgroundStoreRecorderAndQueryStore()
     {
         var directory = CreateDirectory();
 
@@ -24,7 +24,7 @@ public sealed class AddRunesvanerTests
                 })
                 .BuildServiceProvider();
 
-            Assert.IsType<JsonlRunesvanerStore>(provider.GetRequiredService<IRunesvanerStore>());
+            Assert.IsType<RunesvanerBackgroundStore>(provider.GetRequiredService<IRunesvanerStore>());
             Assert.IsType<JsonlRunesvanerQueryStore>(provider.GetRequiredService<IRunesvanerQueryStore>());
             Assert.Same(
                 provider.GetRequiredService<IRunesvanerRecorder>(),
@@ -37,7 +37,31 @@ public sealed class AddRunesvanerTests
     }
 
     [Fact]
-    public void AddRunesvaner_Sqlite_UsesSharedQueryStore()
+    public void AddRunesvaner_CanDisableBackgroundWriter()
+    {
+        var directory = CreateDirectory();
+
+        try
+        {
+            using var provider = new ServiceCollection()
+                .AddRunesvaner(options =>
+                {
+                    options.EnableBackgroundWriter = false;
+                    options.StorageMode = StorageMode.Jsonl;
+                    options.StoragePath = directory;
+                })
+                .BuildServiceProvider();
+
+            Assert.IsType<JsonlRunesvanerStore>(provider.GetRequiredService<IRunesvanerStore>());
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AddRunesvaner_Sqlite_KeepsQueryStoreOnRawConnection()
     {
         var directory = CreateDirectory();
         var provider = new ServiceCollection()
@@ -50,9 +74,8 @@ public sealed class AddRunesvanerTests
 
         try
         {
-            var store = provider.GetRequiredService<IRunesvanerStore>();
-            Assert.IsType<SqliteRunesvanerStore>(store);
-            Assert.Same(store, provider.GetRequiredService<IRunesvanerQueryStore>());
+            Assert.IsType<RunesvanerBackgroundStore>(provider.GetRequiredService<IRunesvanerStore>());
+            Assert.IsType<SqliteRunesvanerStore>(provider.GetRequiredService<IRunesvanerQueryStore>());
             Assert.True(File.Exists(Path.Combine(directory, RunesvanerServiceCollectionExtensions.SqliteFileName)));
         }
         finally
@@ -79,6 +102,8 @@ public sealed class AddRunesvanerTests
         {
             request.Complete(new RunesvanerRequestResult(RequestStatus.Ok, 100, null));
         }
+
+        await recorder.FlushAsync(TestContext.Current.CancellationToken);
 
         var records = await provider
             .GetRequiredService<IRunesvanerQueryStore>()

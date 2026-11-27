@@ -42,6 +42,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         private readonly long _startTimestamp;
         private readonly List<RunesvanerSegment> _segments = new(16);
         private RunesvanerUsage? _usage;
+        private RunesvanerContentCapture? _content;
         private bool _completed;
 
         public RunesvanerRequestScope(
@@ -79,6 +80,14 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             }
         }
 
+        public void RecordContent(RunesvanerContentCapture content)
+        {
+            if (!_completed)
+            {
+                _content = content;
+            }
+        }
+
         public void Complete(RunesvanerRequestResult result)
         {
             if (_completed)
@@ -106,7 +115,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 _info.Tags is null ? null : new Dictionary<string, string>(_info.Tags),
                 cost,
                 result.Stream,
-                _sessionId);
+                _sessionId,
+                _content);
 
             try
             {

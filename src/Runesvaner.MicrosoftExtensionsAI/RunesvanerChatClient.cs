@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.AI;
 
 namespace Runesvaner.MicrosoftExtensionsAI;
@@ -8,11 +10,16 @@ public sealed class RunesvanerChatClient : IChatClient
 {
     private readonly IChatClient _inner;
     private readonly IRunesvanerRecorder _recorder;
+    private readonly ContentCaptureMode _contentCapture;
 
-    public RunesvanerChatClient(IChatClient inner, IRunesvanerRecorder recorder)
+    public RunesvanerChatClient(
+        IChatClient inner,
+        IRunesvanerRecorder recorder,
+        ContentCaptureMode contentCapture = ContentCaptureMode.None)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _recorder = recorder ?? throw new ArgumentNullException(nameof(recorder));
+        _contentCapture = contentCapture;
     }
 
     public async Task<ChatResponse> GetResponseAsync(
@@ -25,6 +32,10 @@ public sealed class RunesvanerChatClient : IChatClient
             return await _inner.GetResponseAsync(messages, options, cancellationToken).ConfigureAwait(false);
         }
 
+        var capture = _contentCapture != ContentCaptureMode.None;
+        var requestMessages = capture ? Materialize(messages) : messages;
+        var prompt = capture ? PromptText(requestMessages) : null;
+
         using var request = _recorder.StartRequest(new RunesvanerRequestInfo(
             RunesvanerOperation.Chat,
             null,
@@ -35,8 +46,13 @@ public sealed class RunesvanerChatClient : IChatClient
 
         try
         {
-            var response = await _inner.GetResponseAsync(messages, options, cancellationToken).ConfigureAwait(false);
+            var response = await _inner.GetResponseAsync(requestMessages, options, cancellationToken).ConfigureAwait(false);
             var elapsed = Stopwatch.GetElapsedTime(started);
+
+            if (prompt is not null)
+            {
+                request.RecordContent(BuildContent(prompt, response.Text ?? "", _contentCapture));
+            }
 
             if (response.Usage is { } usage)
             {
@@ -60,6 +76,11 @@ public sealed class RunesvanerChatClient : IChatClient
         }
         catch (OperationCanceledException)
         {
+            if (prompt is not null)
+            {
+                request.RecordContent(BuildContent(prompt, "", _contentCapture));
+            }
+
             request.Complete(new RunesvanerRequestResult(
                 RequestStatus.Cancelled,
                 Microseconds(Stopwatch.GetElapsedTime(started)),
@@ -68,6 +89,11 @@ public sealed class RunesvanerChatClient : IChatClient
         }
         catch (Exception)
         {
+            if (prompt is not null)
+            {
+                request.RecordContent(BuildContent(prompt, "", _contentCapture));
+            }
+
             request.Complete(new RunesvanerRequestResult(
                 RequestStatus.Error,
                 Microseconds(Stopwatch.GetElapsedTime(started)),
@@ -91,6 +117,11 @@ public sealed class RunesvanerChatClient : IChatClient
             yield break;
         }
 
+        var capture = _contentCapture != ContentCaptureMode.None;
+        var requestMessages = capture ? Materialize(messages) : messages;
+        var prompt = capture ? PromptText(requestMessages) : null;
+        var responseBuilder = capture ? new StringBuilder() : null;
+
         using var request = _recorder.StartRequest(new RunesvanerRequestInfo(
             RunesvanerOperation.Chat,
             null,
@@ -105,7 +136,7 @@ public sealed class RunesvanerChatClient : IChatClient
         string? finishReason = null;
 
         await using var enumerator = _inner
-            .GetStreamingResponseAsync(messages, options, cancellationToken)
+            .GetStreamingResponseAsync(requestMessages, options, cancellationToken)
             .GetAsyncEnumerator(cancellationToken);
 
         while (true)
@@ -124,6 +155,7 @@ public sealed class RunesvanerChatClient : IChatClient
             catch (OperationCanceledException)
             {
                 RecordUsage(request, usage);
+                RecordCapture(request, prompt, responseBuilder, _contentCapture);
                 request.Complete(new RunesvanerRequestResult(
                     RequestStatus.Cancelled,
                     Microseconds(Stopwatch.GetElapsedTime(started)),
@@ -141,6 +173,7 @@ public sealed class RunesvanerChatClient : IChatClient
             catch (Exception)
             {
                 RecordUsage(request, usage);
+                RecordCapture(request, prompt, responseBuilder, _contentCapture);
                 request.Complete(new RunesvanerRequestResult(
                     RequestStatus.Error,
                     Microseconds(Stopwatch.GetElapsedTime(started)),
@@ -160,6 +193,8 @@ public sealed class RunesvanerChatClient : IChatClient
 
             if (!string.IsNullOrEmpty(update.Text))
             {
+                responseBuilder?.Append(update.Text);
+
                 var nowUs = Microseconds(Stopwatch.GetElapsedTime(started));
                 if (ttftUs is null)
                 {
@@ -192,6 +227,7 @@ public sealed class RunesvanerChatClient : IChatClient
         }
 
         RecordUsage(request, usage);
+        RecordCapture(request, prompt, responseBuilder, _contentCapture);
         request.Complete(new RunesvanerRequestResult(
             RequestStatus.Ok,
             Microseconds(Stopwatch.GetElapsedTime(started)),
@@ -212,6 +248,41 @@ public sealed class RunesvanerChatClient : IChatClient
 
     public void Dispose()
         => _inner.Dispose();
+
+    private static IReadOnlyList<ChatMessage> Materialize(IEnumerable<ChatMessage> messages)
+        => messages as IReadOnlyList<ChatMessage> ?? messages.ToList();
+
+    private static string PromptText(IEnumerable<ChatMessage> messages)
+        => string.Join("\n", messages.Select(message => message.Text ?? string.Empty));
+
+    private static RunesvanerContentCapture BuildContent(
+        string prompt,
+        string response,
+        ContentCaptureMode mode)
+        => new(
+            prompt.Length,
+            Hash(prompt),
+            mode == ContentCaptureMode.Full ? prompt : null,
+            response.Length,
+            Hash(response),
+            mode == ContentCaptureMode.Full ? response : null);
+
+    private static string Hash(string text)
+        => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(text)))[..16];
+
+    private static void RecordCapture(
+        IRunesvanerRequest request,
+        string? prompt,
+        StringBuilder? response,
+        ContentCaptureMode mode)
+    {
+        if (mode == ContentCaptureMode.None || prompt is null)
+        {
+            return;
+        }
+
+        request.RecordContent(BuildContent(prompt, response?.ToString() ?? "", mode));
+    }
 
     private static void RecordUsage(IRunesvanerRequest request, UsageDetails? usage)
     {

@@ -17,6 +17,8 @@ public interface IRunesvanerRequest : IDisposable
 
     void RecordUsage(RunesvanerUsage usage);
 
+    void RecordContent(RunesvanerContentCapture content);
+
     void Complete(RunesvanerRequestResult result);
 }
 

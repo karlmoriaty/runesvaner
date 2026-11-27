@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 
 namespace Runesvaner.Storage.Jsonl;
@@ -5,16 +6,29 @@ namespace Runesvaner.Storage.Jsonl;
 public sealed class JsonlRunesvanerStore : IRunesvanerStore
 {
     private readonly string _directory;
+    private readonly string _sessionsDirectory;
     private readonly TimeProvider _timeProvider;
     private readonly object _gate = new();
+    private readonly HashSet<string> _restricted = new(StringComparer.Ordinal);
+    private readonly int _retentionDays;
+    private readonly long _maxStorageBytes;
     private string? _currentPath;
     private DateOnly _currentDate;
 
-    public JsonlRunesvanerStore(string directory, TimeProvider? timeProvider = null)
+    public JsonlRunesvanerStore(
+        string directory,
+        TimeProvider? timeProvider = null,
+        RunesvanerOptions? options = null)
     {
         _directory = Path.GetFullPath(directory);
+        _sessionsDirectory = Path.Combine(_directory, "sessions");
         _timeProvider = timeProvider ?? TimeProvider.System;
-        Directory.CreateDirectory(Path.Combine(_directory, "sessions"));
+        _retentionDays = options?.RetentionDays ?? 0;
+        _maxStorageBytes = options?.MaxStorageBytes ?? 0;
+
+        Directory.CreateDirectory(_sessionsDirectory);
+        RunesvanerFileSecurity.RestrictDirectory(_directory);
+        RunesvanerFileSecurity.RestrictDirectory(_sessionsDirectory);
     }
 
     public ValueTask WriteAsync(RunesvanerRequestRecord record, CancellationToken cancellationToken = default)
@@ -24,7 +38,9 @@ public sealed class JsonlRunesvanerStore : IRunesvanerStore
 
         lock (_gate)
         {
-            File.AppendAllText(GetCurrentPath(), line + Environment.NewLine);
+            var path = GetCurrentPath();
+            File.AppendAllText(path, line + Environment.NewLine);
+            RestrictOnce(path);
         }
 
         return ValueTask.CompletedTask;
@@ -76,9 +92,108 @@ public sealed class JsonlRunesvanerStore : IRunesvanerStore
         if (_currentPath is null || _currentDate != date)
         {
             _currentDate = date;
-            _currentPath = Path.Combine(_directory, "sessions", $"{date:yyyyMMdd}.jsonl");
+            _currentPath = Path.Combine(_sessionsDirectory, $"{date:yyyyMMdd}.jsonl");
+            Prune(_currentPath);
         }
 
         return _currentPath;
+    }
+
+    private void Prune(string currentPath)
+    {
+        if (_retentionDays <= 0 && _maxStorageBytes <= 0)
+        {
+            return;
+        }
+
+        if (_retentionDays > 0)
+        {
+            var cutoff = _currentDate.AddDays(-_retentionDays);
+
+            foreach (var file in EnumerateSessionFiles())
+            {
+                if (TryParseDate(file, out var date) && date < cutoff)
+                {
+                    TryDelete(file);
+                }
+            }
+        }
+
+        if (_maxStorageBytes <= 0)
+        {
+            return;
+        }
+
+        var files = EnumerateSessionFiles()
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToArray();
+        var total = files.Sum(Length);
+
+        foreach (var file in files)
+        {
+            if (total <= _maxStorageBytes)
+            {
+                break;
+            }
+
+            if (string.Equals(file, currentPath, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var length = Length(file);
+            if (TryDelete(file))
+            {
+                total -= length;
+            }
+        }
+    }
+
+    private void RestrictOnce(string path)
+    {
+        if (_restricted.Add(path))
+        {
+            RunesvanerFileSecurity.RestrictFile(path);
+        }
+    }
+
+    private string[] EnumerateSessionFiles()
+        => Directory.EnumerateFiles(_sessionsDirectory, "*.jsonl").ToArray();
+
+    private static bool TryParseDate(string path, out DateOnly date)
+        => DateOnly.TryParseExact(
+            Path.GetFileNameWithoutExtension(path),
+            "yyyyMMdd",
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out date);
+
+    private static long Length(string path)
+    {
+        try
+        {
+            return new FileInfo(path).Length;
+        }
+        catch (IOException)
+        {
+            return 0;
+        }
+    }
+
+    private static bool TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+            return true;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
 
@@ -5,18 +6,28 @@ namespace Runesvaner.Storage.Sqlite;
 
 public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQueryStore, IDisposable
 {
+    private const int PruneInterval = 64;
+
     private readonly SqliteConnection _connection;
     private readonly object _gate = new();
+    private readonly string _databasePath;
+    private readonly int _retentionDays;
+    private readonly long _maxStorageBytes;
+    private int _writes;
 
-    public SqliteRunesvanerStore(string databasePath)
+    public SqliteRunesvanerStore(string databasePath, RunesvanerOptions? options = null)
     {
         var fullPath = Path.GetFullPath(databasePath);
         var directory = Path.GetDirectoryName(fullPath);
         if (!string.IsNullOrEmpty(directory))
         {
             Directory.CreateDirectory(directory);
+            RunesvanerFileSecurity.RestrictDirectory(directory);
         }
 
+        _databasePath = fullPath;
+        _retentionDays = options?.RetentionDays ?? 0;
+        _maxStorageBytes = options?.MaxStorageBytes ?? 0;
         _connection = new SqliteConnection($"Data Source={fullPath};Pooling=False");
         _connection.Open();
 
@@ -36,6 +47,8 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             );
             """;
         command.ExecuteNonQuery();
+
+        RunesvanerFileSecurity.RestrictFile(fullPath);
     }
 
     public ValueTask WriteAsync(RunesvanerRequestRecord record, CancellationToken cancellationToken = default)
@@ -61,6 +74,11 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             command.Parameters.AddWithValue("$ttft_us", record.TtftUs is null ? DBNull.Value : record.TtftUs.Value);
             command.Parameters.AddWithValue("$payload", payload);
             command.ExecuteNonQuery();
+
+            if (++_writes % PruneInterval == 0)
+            {
+                PruneLocked();
+            }
         }
 
         return ValueTask.CompletedTask;
@@ -68,6 +86,18 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
 
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
+
+    public ValueTask PruneAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        lock (_gate)
+        {
+            PruneLocked();
+        }
+
+        return ValueTask.CompletedTask;
+    }
 
     public ValueTask<IReadOnlyList<RunesvanerRequestRecord>> ReadRequestsAsync(
         string? sessionId,
@@ -110,6 +140,55 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             RunesvanerSessionAggregator.Aggregate(ReadAllRecords()));
     }
 
+    public void Dispose()
+        => _connection.Dispose();
+
+    private void PruneLocked()
+    {
+        if (_retentionDays > 0)
+        {
+            var cutoff = DateTimeOffset.UtcNow
+                .AddDays(-_retentionDays)
+                .ToString("O", CultureInfo.InvariantCulture);
+
+            using var command = _connection.CreateCommand();
+            command.CommandText = "DELETE FROM requests WHERE started_at < $cutoff;";
+            command.Parameters.AddWithValue("$cutoff", cutoff);
+            command.ExecuteNonQuery();
+        }
+
+        if (_maxStorageBytes <= 0)
+        {
+            return;
+        }
+
+        try
+        {
+            if (new FileInfo(_databasePath).Length <= _maxStorageBytes)
+            {
+                return;
+            }
+        }
+        catch (IOException)
+        {
+            return;
+        }
+
+        using var countCommand = _connection.CreateCommand();
+        countCommand.CommandText = "SELECT COUNT(*) FROM requests;";
+        var total = Convert.ToInt64(countCommand.ExecuteScalar(), CultureInfo.InvariantCulture);
+        var trim = Math.Max(1, total / 10);
+
+        using var deleteCommand = _connection.CreateCommand();
+        deleteCommand.CommandText =
+            """
+            DELETE FROM requests
+            WHERE id IN (SELECT id FROM requests ORDER BY started_at ASC LIMIT $count);
+            """;
+        deleteCommand.Parameters.AddWithValue("$count", trim);
+        deleteCommand.ExecuteNonQuery();
+    }
+
     private List<RunesvanerRequestRecord> ReadAllRecords()
     {
         lock (_gate)
@@ -142,7 +221,4 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             return records;
         }
     }
-
-    public void Dispose()
-        => _connection.Dispose();
 }
