@@ -96,35 +96,14 @@ static int Costs(string path)
     Console.WriteLine();
     Console.WriteLine("Provider          Model            Requests  Priced  Partial  Unknown  Total");
 
-    var groups = records
-        .GroupBy(record => new
-        {
-            Provider = record.Provider ?? "-",
-            Model = record.RequestModel ?? record.ResponseModel ?? "-"
-        })
-        .Select(group => new
-        {
-            group.Key.Provider,
-            group.Key.Model,
-            Requests = group.Count(),
-            Priced = group.Count(record => record.Cost?.Status == CostStatus.Known),
-            Partial = group.Count(record => record.Cost?.Status == CostStatus.Partial),
-            Unknown = group.Count(record => record.Cost?.Status == CostStatus.Unknown),
-            Total = group.Sum(record => record.Cost?.Status == CostStatus.Known ? record.Cost.Total ?? 0m : 0m)
-        })
-        .OrderByDescending(item => item.Total)
-        .ThenBy(item => item.Provider, StringComparer.OrdinalIgnoreCase)
-        .ThenBy(item => item.Model, StringComparer.OrdinalIgnoreCase);
+    var summaries = RunesvanerCostAggregator.Aggregate(records);
+    var grandTotal = summaries.Sum(summary => summary.Total);
+    var pricedCount = summaries.Sum(summary => summary.Priced);
 
-    var grandTotal = 0m;
-    var pricedCount = 0;
-
-    foreach (var item in groups)
+    foreach (var item in summaries)
     {
         Console.WriteLine(
             $"{item.Provider,-16}  {item.Model,-15}  {item.Requests,8}  {item.Priced,6}  {item.Partial,7}  {item.Unknown,7}  {item.Total.ToString("F6", CultureInfo.InvariantCulture),12}");
-        grandTotal += item.Total;
-        pricedCount += item.Priced;
     }
 
     Console.WriteLine();

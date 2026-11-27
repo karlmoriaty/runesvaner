@@ -1,0 +1,31 @@
+:root {
+  color-scheme: dark;
+  background: #0a0c0f;
+  color: #e8ecf1;
+  font-family: Inter, "Segoe UI", "Noto Sans", sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 1024px;
+  background: #0a0c0f;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: #3a2e1c;
+  color: #f2e6cf;
+}

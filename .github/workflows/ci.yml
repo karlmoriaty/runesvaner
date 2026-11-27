@@ -67,3 +67,31 @@ jobs:
 
       - name: Report AOT capture
         run: dotnet run --project src/Runesvaner.Cli -c Release -- report
+
+  studio-ui:
+    name: studio-ui
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/Runesvaner.Studio.UI/package-lock.json
+
+      - name: Install UI dependencies
+        run: npm ci --prefix src/Runesvaner.Studio.UI
+
+      - name: Build UI
+        run: npm run build --prefix src/Runesvaner.Studio.UI
+
+      - name: Build Studio
+        run: dotnet build src/Runesvaner.Studio/Runesvaner.Studio.csproj -c Release

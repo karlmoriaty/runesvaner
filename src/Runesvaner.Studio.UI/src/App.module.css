@@ -1,0 +1,251 @@
+.shell {
+  min-height: 100vh;
+  background: #0a0c0f;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 24px;
+  border-bottom: 1px solid #222a33;
+  background: #0a0c0f;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.brandMuted {
+  color: #9aa6b2;
+  font-weight: 400;
+}
+
+.mark {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: #c8963e;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6b7785;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metaDivider {
+  width: 1px;
+  height: 12px;
+  background: #222a33;
+}
+
+.path {
+  max-width: 360px;
+  overflow: hidden;
+  color: #9aa6b2;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.kicker {
+  color: #c8963e;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 6px 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 32px;
+}
+
+.refresh {
+  color: #6b7785;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+}
+
+.notice {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid #33404d;
+  border-left: 2px solid #c8963e;
+  background: #161b22;
+  color: #e8ecf1;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid #222a33;
+  background: #222a33;
+}
+
+.card {
+  min-height: 104px;
+  padding: 16px;
+  background: #101419;
+}
+
+.cardLabel {
+  color: #9aa6b2;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cardValue {
+  margin-top: 8px;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  line-height: 32px;
+}
+
+.cardHint {
+  margin-top: 4px;
+  color: #6b7785;
+  font-size: 11px;
+}
+
+.panel {
+  margin-top: 24px;
+  border: 1px solid #222a33;
+  background: #101419;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #222a33;
+}
+
+.panelTitle {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.panelMeta {
+  color: #6b7785;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  padding: 8px 16px;
+  border-bottom: 1px solid #222a33;
+  color: #6b7785;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table td {
+  height: 32px;
+  padding: 0 16px;
+  border-bottom: 1px solid #1b222b;
+  color: #e8ecf1;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover {
+  background: #161b22;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.numeric {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.mono {
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.cost {
+  color: #d9a94f;
+}
+
+.statusOk {
+  color: #9aa6b2;
+}
+
+.statusBad {
+  color: #c05b55;
+}
+
+.muted {
+  color: #6b7785;
+}
+
+.empty {
+  padding: 32px 16px;
+  color: #9aa6b2;
+}
+
+.footer {
+  margin-top: 24px;
+  color: #6b7785;
+  font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

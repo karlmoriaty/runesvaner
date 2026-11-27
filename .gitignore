@@ -489,3 +489,7 @@ $RECYCLE.BIN/
 
 # BenchmarkDotNet
 BenchmarkDotNet.Artifacts/
+# Studio UI
+src/Runesvaner.Studio.UI/node_modules/
+src/Runesvaner.Studio.UI/dist/
+*.tsbuildinfo
