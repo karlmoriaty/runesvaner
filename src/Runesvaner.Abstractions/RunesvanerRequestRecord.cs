@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Runesvaner;
 
+/// <summary>Persisted record for one logical AI request.</summary>
 public sealed record RunesvanerRequestRecord(
     string Schema,
     string RequestId,
@@ -24,6 +25,7 @@ public sealed record RunesvanerRequestRecord(
     int Attempt = 1,
     bool PossibleDuplicateBilling = false);
 
+/// <summary>Source-generated JSON context for request records and cost breakdowns.</summary>
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
 [JsonSerializable(typeof(RunesvanerRequestRecord))]
 [JsonSerializable(typeof(RunesvanerRequestRecord[]))]

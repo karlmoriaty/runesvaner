@@ -1,5 +1,6 @@
 namespace Runesvaner;
 
+/// <summary>Streaming behavior metrics for one request.</summary>
 public sealed record RunesvanerStreamStats(
     long? TtftUs,
     long? TtfbUs,

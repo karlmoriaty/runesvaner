@@ -12,6 +12,7 @@ return command switch
     "doctor" => Doctor(ParsePath(args)),
     "costs" => Costs(ParsePath(args)),
     "pricing" => Pricing(args),
+    "reconcile" => Reconcile(args),
     "run" => Run(args),
     "export" => Export(args),
     "open" => Open(args),
@@ -345,6 +346,74 @@ static int Open(string[] args)
     }
 }
 
+static int Reconcile(string[] args)
+{
+    var billingPath = ParseOption(args, "--billing");
+
+    if (billingPath is null)
+    {
+        Console.Error.WriteLine(
+            "Usage: runesvaner reconcile --billing <csv> [--path <directory>] [--threshold 5]");
+        return 2;
+    }
+
+    var dataPath = ParsePath(args);
+    var threshold = 5.0;
+    var thresholdText = ParseOption(args, "--threshold");
+
+    if (thresholdText is not null &&
+        (!double.TryParse(
+            thresholdText,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out threshold) ||
+         threshold < 0))
+    {
+        Console.Error.WriteLine($"Invalid threshold: {thresholdText}");
+        return 2;
+    }
+
+    var records = JsonlRunesvanerStore.ReadAll(dataPath).ToArray();
+
+    if (records.Length == 0)
+    {
+        Console.Error.WriteLine($"No records found in {Path.GetFullPath(dataPath)}.");
+        return 3;
+    }
+
+    try
+    {
+        var lines = RunesvanerBillingCsv.Parse(billingPath);
+        var report = RunesvanerBillingReconciler.Reconcile(records, lines);
+
+        Console.WriteLine($"Billing reconciliation: {report.Rows.Count} provider/model pair(s)");
+        Console.WriteLine($"Threshold: {threshold.ToString("F1", CultureInfo.InvariantCulture)}%");
+        Console.WriteLine();
+        Console.WriteLine("Provider          Model                 Recorded      Billed   Difference    Diff %");
+
+        foreach (var row in report.Rows)
+        {
+            Console.WriteLine(
+                $"{row.Provider,-16}  {row.Model,-20}  {row.Recorded.ToString("F6", CultureInfo.InvariantCulture),10}  {row.Billed.ToString("F6", CultureInfo.InvariantCulture),10}  {row.Difference.ToString("F6", CultureInfo.InvariantCulture),10}  {row.DifferencePercent.ToString("F2", CultureInfo.InvariantCulture),7}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(
+            $"Recorded: {report.RecordedTotal.ToString("F6", CultureInfo.InvariantCulture)} USD; " +
+            $"Billed: {report.BilledTotal.ToString("F6", CultureInfo.InvariantCulture)} USD; " +
+            $"Difference: {report.DifferenceTotal.ToString("F6", CultureInfo.InvariantCulture)} USD");
+
+        var withinTolerance = report.WithinTolerance(threshold);
+        Console.WriteLine(withinTolerance ? "Result: within tolerance" : "Result: exceeds tolerance");
+        return withinTolerance ? 0 : 1;
+    }
+    catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+    {
+        Console.Error.WriteLine($"Failed to reconcile: {ex.Message}");
+        return 3;
+    }
+}
+
 static int Help()
 {
     Console.WriteLine("runesvaner <command> [options]");
@@ -357,6 +426,7 @@ static int Help()
     Console.WriteLine("  run      Run a command with RUNESVANER_DATA_PATH configured.");
     Console.WriteLine("  export   Export captured requests (--format json|jsonl, --output <file>).");
     Console.WriteLine("  open     Start the local Studio.");
+    Console.WriteLine("  reconcile Compare recorded cost with a provider billing CSV (--billing <csv>, --threshold 5).");
     Console.WriteLine();
     Console.WriteLine("Options:");
     Console.WriteLine("  --path <directory>   Data directory. Default: .runesvaner");
