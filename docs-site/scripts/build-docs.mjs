@@ -146,15 +146,22 @@ function renderPage(page, html) {
 
 function renderSidebar(activeSlug) {
   const isExample = (slug) => /^2[0-4]-/.test(slug);
+  const isGuide = (slug) => /^2[6-9]-/.test(slug);
   const isReference = (slug) => slug === 'benchmarks-baseline' || slug.startsWith('25-');
   const examples = pages.filter((page) => isExample(page.slug));
+  const guides = pages.filter((page) => isGuide(page.slug));
   const reference = pages.filter((page) => isReference(page.slug));
   const design = pages.filter(
-    (page) => page.slug !== 'index' && !isExample(page.slug) && !isReference(page.slug)
+    (page) =>
+      page.slug !== 'index' &&
+      !isExample(page.slug) &&
+      !isGuide(page.slug) &&
+      !isReference(page.slug)
   );
   const groups = [
     { label: 'Overview', pages: pages.filter((page) => page.slug === 'index') },
     { label: 'Examples', pages: examples },
+    { label: 'Guides', pages: guides },
     { label: 'Design', pages: design },
     { label: 'Reference', pages: reference }
   ];

@@ -70,6 +70,8 @@
 | `23-example-openai-protocol.md` | Example: OpenAI protocol without credentials | Accepted |
 | `24-example-ecosystem.md` | Example: Semantic Kernel + VectorData | Accepted |
 | `25-compatibility-matrix.md` | TFM/OS/AOT compatibility and CI evidence | Accepted |
+| `26-preview-release.md` | NuGet preview publication runbook | Accepted |
+| `27-community-playbook.md` | Community, launch, and contributor playbook | Accepted |
 | `benchmarks-baseline.md` | Recorder benchmark baseline | Draft |
 | `../pricing/README.md` | Price table schema and illustrative sample | Draft |
 | `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
