@@ -30,13 +30,22 @@ active request started by the MEAI decorator.
 `Ttft` is produced by the MEAI decorator (first non-empty text delta) and is combined with these
 segments in the same request record.
 
-## TLS
+## TLS (opt-in probe)
 
-The .NET public API has no TLS-handshake-complete hook (`ConnectCallback` returns a plain stream
-and `SocketsHttpHandler` performs TLS internally). Runesvaner does **not** fabricate a TLS segment.
-TLS time remains inside connection establishment and is therefore not attributed to a separate
-segment. Capturing it would require changing certificate validation callbacks or replacing the
-HTTP stack, which is out of scope for the default path.
+The .NET public API has no TLS-handshake-complete hook. An optional probe approximates it:
+
+    var sockets = RunesvanerHttpHandler.CreateSocketsHandler(
+        enableTlsProbe: true,
+        validateCertificate: (_, _, _, errors) => errors == SslPolicyErrors.None);
+
+    var httpClient = new HttpClient(new RunesvanerHttpHandler(sockets));
+
+- The probe records a `Tls` segment from TCP completion to the certificate-validation callback.
+- The segment is marked `Estimated=true` and `Measurement=Derived`; it is not a precise TLS duration.
+- The probe is **off by default**. When enabled it installs a certificate-validation callback. If
+  you pass `validateCertificate`, that callback is invoked and its result decides whether the
+  connection succeeds; without it, the probe accepts only `SslPolicyErrors.None`.
+- Connection reuse produces no TLS segment, which is correct: no new handshake occurred.
 
 ## Behavior
 

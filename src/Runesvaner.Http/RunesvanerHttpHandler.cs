@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 
 namespace Runesvaner.Http;
@@ -20,11 +21,34 @@ public sealed class RunesvanerHttpHandler : DelegatingHandler
     }
 
     /// <summary>Creates a SocketsHttpHandler whose connect callback records DNS and TCP time.</summary>
-    public static SocketsHttpHandler CreateSocketsHandler()
-        => new()
+    /// <param name="enableTlsProbe">Enables an estimated TLS segment from certificate validation.</param>
+    /// <param name="validateCertificate">Optional certificate validation callback preserved by the probe.</param>
+    public static SocketsHttpHandler CreateSocketsHandler(
+        bool enableTlsProbe = false,
+        RemoteCertificateValidationCallback? validateCertificate = null)
+    {
+        var handler = new SocketsHttpHandler
         {
             ConnectCallback = ConnectAsync
         };
+
+        if (enableTlsProbe)
+        {
+            handler.SslOptions = new SslClientAuthenticationOptions
+            {
+                RemoteCertificateValidationCallback = (sender, certificate, chain, errors) =>
+                {
+                    RecordTlsSegment();
+
+                    return validateCertificate is null
+                        ? errors == SslPolicyErrors.None
+                        : validateCertificate(sender, certificate, chain, errors);
+                }
+            };
+        }
+
+        return handler;
+    }
 
     private static async ValueTask<Stream> ConnectAsync(
         SocketsHttpConnectionContext context,
@@ -46,9 +70,12 @@ public sealed class RunesvanerHttpHandler : DelegatingHandler
             throw;
         }
 
+        var tcpCompleted = Stopwatch.GetTimestamp();
+        RunesvanerRequestContext.SetTcpCompleted(tcpCompleted);
+
         if (recorderRequest is not null)
         {
-            var endUs = RunesvanerRequestContext.ElapsedMicroseconds(Stopwatch.GetTimestamp());
+            var endUs = RunesvanerRequestContext.ElapsedMicroseconds(tcpCompleted);
             recorderRequest.RecordSegment(new RunesvanerSegment(
                 SegmentKind.Connect,
                 offsetUs,
@@ -58,6 +85,30 @@ public sealed class RunesvanerHttpHandler : DelegatingHandler
         }
 
         return new NetworkStream(socket, ownsSocket: true);
+    }
+
+    private static void RecordTlsSegment()
+    {
+        var recorderRequest = RunesvanerRequestContext.Request;
+
+        if (recorderRequest is null ||
+            !RunesvanerRequestContext.TryGetTcpCompleted(out var tcpCompleted))
+        {
+            return;
+        }
+
+        var now = Stopwatch.GetTimestamp();
+        var offsetUs = RunesvanerRequestContext.ElapsedMicroseconds(tcpCompleted);
+        var durationUs = Math.Max(
+            1,
+            (now - tcpCompleted) * 1_000_000 / Stopwatch.Frequency);
+
+        recorderRequest.RecordSegment(new RunesvanerSegment(
+            SegmentKind.Tls,
+            offsetUs,
+            durationUs,
+            true,
+            SegmentMeasurement.Derived));
     }
 
     /// <summary>Records segments around the inner handler send.</summary>

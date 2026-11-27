@@ -124,13 +124,13 @@ Rationale for ULID: time-sortable, string-safe, and requires no database sequenc
 | --- | --- | --- |
 | `queue` | `RunesvanerHttpHandler` entry offset | stopwatch |
 | `connect` | `SocketsHttpHandler.ConnectCallback` (DNS + TCP) | stopwatch |
-| `tls` | none | **not produced**: .NET exposes no TLS-complete hook; no estimate is fabricated |
+| `tls` | Optional TLS probe (`enableTlsProbe: true`) | estimated/derived from certificate-validation timing; off by default |
 | `upload` | Request content serialization wrapper | stopwatch |
 | `provider_queue` | Response-header wait | stopwatch (measured, not estimated) |
 | `ttft` | MEAI decorator, first non-empty delta | stopwatch |
 | `generation` | Response-stream EOF wrapper | stopwatch |
 
-`RunesvanerRequestContext` (AsyncLocal) correlates HTTP callbacks with the active recorder request. TLS time remains inside connection establishment and is therefore not attributed to a separate segment.
+`RunesvanerRequestContext` (AsyncLocal) correlates HTTP callbacks with the active recorder request. TLS has no public completion hook; the opt-in probe records an estimated/derived TLS segment from TCP completion to the certificate-validation callback and is disabled by default.
 
 ### 5.3 Formulas
 

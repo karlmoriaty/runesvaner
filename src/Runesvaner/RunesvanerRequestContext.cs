@@ -40,7 +40,42 @@ public static class RunesvanerRequestContext
     public static long NowMicroseconds()
         => ElapsedMicroseconds(Stopwatch.GetTimestamp());
 
-    private sealed record Context(IRunesvanerRequest Request, long StartedTimestamp);
+    /// <summary>Records the stopwatch timestamp at which TCP connection establishment completed.</summary>
+    public static void SetTcpCompleted(long timestamp)
+    {
+        if (Current.Value is { } context)
+        {
+            context.TcpCompletedTimestamp = timestamp;
+        }
+    }
+
+    /// <summary>Gets the TCP completion timestamp for the active request, when one was recorded.</summary>
+    public static bool TryGetTcpCompleted(out long timestamp)
+    {
+        if (Current.Value?.TcpCompletedTimestamp is { } value)
+        {
+            timestamp = value;
+            return true;
+        }
+
+        timestamp = 0;
+        return false;
+    }
+
+    private sealed class Context
+    {
+        public Context(IRunesvanerRequest request, long startedTimestamp)
+        {
+            Request = request;
+            StartedTimestamp = startedTimestamp;
+        }
+
+        public IRunesvanerRequest Request { get; }
+
+        public long StartedTimestamp { get; }
+
+        public long? TcpCompletedTimestamp { get; set; }
+    }
 
     private sealed class Scope : IDisposable
     {
