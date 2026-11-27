@@ -1,0 +1,5 @@
+* text=auto
+
+# Price snapshots are checksum-verified byte-for-byte; never convert line endings.
+pricing/*.json -text
+pricing/*.sha256 -text
