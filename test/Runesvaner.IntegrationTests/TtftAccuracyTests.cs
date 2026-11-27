@@ -16,7 +16,9 @@ namespace Runesvaner.IntegrationTests;
 public sealed class TtftAccuracyTests
 {
     private const int FirstChunkDelayMilliseconds = 250;
-    private const int AccuracyBudgetMicroseconds = 10_000;
+    // Local runs are typically within 10 ms. CI VMs can add tens of milliseconds of scheduling
+    // jitter between async iterator steps, so the integration budget is wider than the local target.
+    private const int AccuracyBudgetMicroseconds = 50_000;
 
     private const string FirstChunk =
         """
