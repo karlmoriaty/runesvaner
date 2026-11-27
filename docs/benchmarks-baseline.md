@@ -66,6 +66,18 @@ Latest local gate run: P50 1.00 us, P95 2.80-2.90 us, P99 4.10-5.20 us, 1.52 KB/
 
 Budgets can be overridden per environment for calibration (`RUNESVANER_PERF_P95_US`, `RUNESVANER_PERF_ALLOC_BYTES`); CI uses the defaults, so changing a threshold requires a reviewed code change.
 
+## Studio query baseline (10k JSONL)
+
+| Metric | Result |
+| --- | ---: |
+| Dataset | 10,000 JSONL records (10 MB) |
+| `/api/costs` | 0.44 s cold, 0.19 s / 0.10 s warm |
+| `/api/sessions` | 0.22 s cold, 0.21 s / 0.12 s warm |
+| `/api/requests?limit=20` | 0.18 s cold, 0.19 s / 0.13 s warm |
+| First-screen sum (serial) | ~0.84 s cold, within the 1 s M2 target |
+
+Measured 2026-11-27 against the JSONL query store. SQLite now pushes session filtering and limits into SQL rather than reading every payload.
+
 ## Next benchmarks
 
 - B02: recorder + MEAI decorator, non-streaming.

@@ -315,6 +315,16 @@ function CostLine({ label, value }: { label: string; value: string }) {
   );
 }
 
+function exportRequest(record: RequestDetail) {
+  const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${record.requestId}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 function DetailPanel({ requestId, onClose }: { requestId: string; onClose: () => void }) {
   const detail = useGetRequestQuery(requestId);
 
@@ -347,7 +357,10 @@ function DetailPanel({ requestId, onClose }: { requestId: string; onClose: () =>
           <h2 className={styles.panelTitle}>{record.operation} · {model}</h2>
           <div className={styles.requestId}>{record.requestId}</div>
         </div>
-        <button type="button" className={styles.closeButton} onClick={onClose}>Close</button>
+        <div className={styles.panelActions}>
+          <button type="button" className={styles.linkButton} onClick={() => exportRequest(record)}>Export JSON</button>
+          <button type="button" className={styles.closeButton} onClick={onClose}>Close</button>
+        </div>
       </div>
 
       <div className={styles.detailStats}>
@@ -601,11 +614,37 @@ export function App() {
   const costs = useGetCostsQuery(undefined, { skip: !hasToken });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [modelFilter, setModelFilter] = useState('');
+  const [fromFilter, setFromFilter] = useState('');
+  const [toFilter, setToFilter] = useState('');
   const sessions = useGetSessionsQuery(undefined, { skip: !hasToken });
   const requests = useGetRequestsQuery(
-    { limit: 20, session: selectedSession },
+    {
+      limit: 20,
+      session: selectedSession,
+      status: statusFilter || undefined,
+      model: modelFilter || undefined,
+      from: fromFilter ? new Date(fromFilter).toISOString() : undefined,
+      to: toFilter ? new Date(toFilter).toISOString() : undefined
+    },
     { skip: !hasToken }
   );
+
+  const modelOptions = Array.from(
+    new Set((sessions.data ?? []).flatMap((session) => session.models))
+  ).sort();
+  const hasFilters = Boolean(
+    selectedSession || statusFilter || modelFilter || fromFilter || toFilter
+  );
+  const clearFilters = () => {
+    setSelectedSession(null);
+    setStatusFilter('');
+    setModelFilter('');
+    setFromFilter('');
+    setToFilter('');
+    setSelectedId(null);
+  };
 
   const rows = costs.data ?? [];
   const total = rows.reduce((sum, row) => sum + row.total, 0);
@@ -702,18 +741,60 @@ export function App() {
               <h2 className={styles.panelTitle}>Latest requests</h2>
             </div>
             <div className={styles.panelActions}>
-              {selectedSession ? (
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  onClick={() => setSelectedSession(null)}
-                >
-                  Clear session filter
+              {hasFilters ? (
+                <button type="button" className={styles.linkButton} onClick={clearFilters}>
+                  Clear filters
                 </button>
               ) : (
                 <span>Click a row for the waterfall</span>
               )}
             </div>
+          </div>
+          <div className={styles.filterBar}>
+            <label className={styles.filterField}>
+              <span>Status</span>
+              <select
+                className={styles.select}
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+              >
+                <option value="">All</option>
+                {['Ok', 'Error', 'Cancelled', 'Timeout', 'Unknown'].map((status) => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.filterField}>
+              <span>Model</span>
+              <select
+                className={styles.select}
+                value={modelFilter}
+                onChange={(event) => setModelFilter(event.target.value)}
+              >
+                <option value="">All</option>
+                {modelOptions.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.filterField}>
+              <span>From</span>
+              <input
+                className={styles.filterInput}
+                type="datetime-local"
+                value={fromFilter}
+                onChange={(event) => setFromFilter(event.target.value)}
+              />
+            </label>
+            <label className={styles.filterField}>
+              <span>To</span>
+              <input
+                className={styles.filterInput}
+                type="datetime-local"
+                value={toFilter}
+                onChange={(event) => setToFilter(event.target.value)}
+              />
+            </label>
           </div>
           <RequestsTable rows={requests.data ?? []} selectedId={selectedId} onSelect={setSelectedId} />
         </section>

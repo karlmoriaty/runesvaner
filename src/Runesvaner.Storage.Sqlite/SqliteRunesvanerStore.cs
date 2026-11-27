@@ -31,23 +31,27 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         _connection = new SqliteConnection($"Data Source={fullPath};Pooling=False");
         _connection.Open();
 
-        using var command = _connection.CreateCommand();
-        command.CommandText =
-            """
-            CREATE TABLE IF NOT EXISTS requests (
-                id TEXT PRIMARY KEY,
-                started_at TEXT NOT NULL,
-                operation TEXT NOT NULL,
-                provider TEXT NULL,
-                model TEXT NULL,
-                status TEXT NOT NULL,
-                duration_us INTEGER NOT NULL,
-                ttft_us INTEGER NULL,
-                payload TEXT NOT NULL
-            );
-            """;
-        command.ExecuteNonQuery();
+        using (var command = _connection.CreateCommand())
+        {
+            command.CommandText =
+                """
+                CREATE TABLE IF NOT EXISTS requests (
+                    id TEXT PRIMARY KEY,
+                    started_at TEXT NOT NULL,
+                    session_id TEXT NULL,
+                    operation TEXT NOT NULL,
+                    provider TEXT NULL,
+                    model TEXT NULL,
+                    status TEXT NOT NULL,
+                    duration_us INTEGER NOT NULL,
+                    ttft_us INTEGER NULL,
+                    payload TEXT NOT NULL
+                );
+                """;
+            command.ExecuteNonQuery();
+        }
 
+        MigrateSessionColumn();
         RunesvanerFileSecurity.RestrictFile(fullPath);
     }
 
@@ -61,11 +65,12 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             using var command = _connection.CreateCommand();
             command.CommandText =
                 """
-                INSERT INTO requests (id, started_at, operation, provider, model, status, duration_us, ttft_us, payload)
-                VALUES ($id, $started_at, $operation, $provider, $model, $status, $duration_us, $ttft_us, $payload);
+                INSERT INTO requests (id, started_at, session_id, operation, provider, model, status, duration_us, ttft_us, payload)
+                VALUES ($id, $started_at, $session_id, $operation, $provider, $model, $status, $duration_us, $ttft_us, $payload);
                 """;
             command.Parameters.AddWithValue("$id", record.RequestId);
             command.Parameters.AddWithValue("$started_at", record.StartedAtUtc.ToString("O"));
+            command.Parameters.AddWithValue("$session_id", (object?)record.SessionId ?? DBNull.Value);
             command.Parameters.AddWithValue("$operation", record.Operation);
             command.Parameters.AddWithValue("$provider", (object?)record.Provider ?? DBNull.Value);
             command.Parameters.AddWithValue("$model", (object?)record.RequestModel ?? DBNull.Value);
@@ -105,20 +110,27 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var records = ReadAllRecords();
 
-        if (!string.IsNullOrEmpty(sessionId))
+        lock (_gate)
         {
-            records = records
-                .Where(record => string.Equals(record.SessionId, sessionId, StringComparison.Ordinal))
-                .ToList();
-        }
+            using var command = _connection.CreateCommand();
 
-        return new ValueTask<IReadOnlyList<RunesvanerRequestRecord>>(
-            records
-                .OrderByDescending(record => record.StartedAtUtc)
-                .Take(Math.Max(1, limit))
-                .ToArray());
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                command.CommandText =
+                    "SELECT payload FROM requests ORDER BY started_at DESC LIMIT $limit;";
+            }
+            else
+            {
+                command.CommandText =
+                    "SELECT payload FROM requests WHERE session_id = $session ORDER BY started_at DESC LIMIT $limit;";
+                command.Parameters.AddWithValue("$session", sessionId);
+            }
+
+            command.Parameters.AddWithValue("$limit", Math.Max(1, limit));
+
+            return new ValueTask<IReadOnlyList<RunesvanerRequestRecord>>(ReadPayloads(command));
+        }
     }
 
     public ValueTask<RunesvanerRequestRecord?> GetRequestAsync(
@@ -126,22 +138,93 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var record = ReadAllRecords().FirstOrDefault(candidate =>
-            string.Equals(candidate.RequestId, requestId, StringComparison.Ordinal));
 
-        return new ValueTask<RunesvanerRequestRecord?>(record);
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT payload FROM requests WHERE id = $id LIMIT 1;";
+            command.Parameters.AddWithValue("$id", requestId);
+
+            return new ValueTask<RunesvanerRequestRecord?>(
+                ReadPayloads(command).FirstOrDefault());
+        }
     }
 
     public ValueTask<IReadOnlyList<RunesvanerSessionSummary>> ReadSessionsAsync(
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return new ValueTask<IReadOnlyList<RunesvanerSessionSummary>>(
-            RunesvanerSessionAggregator.Aggregate(ReadAllRecords()));
+
+        lock (_gate)
+        {
+            using var command = _connection.CreateCommand();
+            command.CommandText = "SELECT payload FROM requests ORDER BY started_at DESC;";
+
+            return new ValueTask<IReadOnlyList<RunesvanerSessionSummary>>(
+                RunesvanerSessionAggregator.Aggregate(ReadPayloads(command)));
+        }
     }
 
     public void Dispose()
         => _connection.Dispose();
+
+    private void MigrateSessionColumn()
+    {
+        using var alter = _connection.CreateCommand();
+        alter.CommandText = "ALTER TABLE requests ADD COLUMN session_id TEXT NULL;";
+
+        try
+        {
+            alter.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+        }
+
+        using var backfill = _connection.CreateCommand();
+        backfill.CommandText =
+            """
+            UPDATE requests
+            SET session_id = json_extract(payload, '$.sessionId')
+            WHERE session_id IS NULL;
+            """;
+
+        try
+        {
+            backfill.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+        }
+    }
+
+    private static List<RunesvanerRequestRecord> ReadPayloads(SqliteCommand command)
+    {
+        using var reader = command.ExecuteReader();
+        var records = new List<RunesvanerRequestRecord>();
+
+        while (reader.Read())
+        {
+            var payload = reader.GetString(0);
+            try
+            {
+                var record = JsonSerializer.Deserialize(
+                    payload,
+                    RunesvanerJsonContext.Default.RunesvanerRequestRecord);
+
+                if (record is not null)
+                {
+                    records.Add(record);
+                }
+            }
+            catch (JsonException)
+            {
+                // Ignore a payload that cannot be read; keep the rest queryable.
+            }
+        }
+
+        return records;
+    }
 
     private void PruneLocked()
     {
@@ -187,38 +270,5 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
             """;
         deleteCommand.Parameters.AddWithValue("$count", trim);
         deleteCommand.ExecuteNonQuery();
-    }
-
-    private List<RunesvanerRequestRecord> ReadAllRecords()
-    {
-        lock (_gate)
-        {
-            using var command = _connection.CreateCommand();
-            command.CommandText = "SELECT payload FROM requests ORDER BY started_at DESC;";
-            using var reader = command.ExecuteReader();
-            var records = new List<RunesvanerRequestRecord>();
-
-            while (reader.Read())
-            {
-                var payload = reader.GetString(0);
-                try
-                {
-                    var record = JsonSerializer.Deserialize(
-                        payload,
-                        RunesvanerJsonContext.Default.RunesvanerRequestRecord);
-
-                    if (record is not null)
-                    {
-                        records.Add(record);
-                    }
-                }
-                catch (JsonException)
-                {
-                    // Ignore a payload that cannot be read; keep the rest queryable.
-                }
-            }
-
-            return records;
-        }
     }
 }

@@ -46,6 +46,10 @@ export type SessionRow = {
 export type RequestQuery = {
   limit?: number;
   session?: string | null;
+  status?: string;
+  model?: string;
+  from?: string;
+  to?: string;
 };
 
 export type Usage = {
@@ -128,10 +132,29 @@ export const studioApi = createApi({
     }),
     getRequests: builder.query<RequestRow[], RequestQuery | void>({
       query: (args) => {
-        const limit = args?.limit ?? 20;
-        const session = args?.session;
-        const suffix = session ? `&session=${encodeURIComponent(session)}` : '';
-        return `api/requests?limit=${limit}${suffix}`;
+        const params = new URLSearchParams({ limit: String(args?.limit ?? 20) });
+
+        if (args?.session) {
+          params.set('session', args.session);
+        }
+
+        if (args?.status) {
+          params.set('status', args.status);
+        }
+
+        if (args?.model) {
+          params.set('model', args.model);
+        }
+
+        if (args?.from) {
+          params.set('from', args.from);
+        }
+
+        if (args?.to) {
+          params.set('to', args.to);
+        }
+
+        return `api/requests?${params.toString()}`;
       }
     }),
     getSessions: builder.query<SessionRow[], void>({

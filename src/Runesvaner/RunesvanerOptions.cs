@@ -34,4 +34,6 @@ public sealed class RunesvanerOptions
     public int RetentionDays { get; set; }
 
     public long MaxStorageBytes { get; set; }
+
+    public double SamplingRate { get; set; } = 1;
 }

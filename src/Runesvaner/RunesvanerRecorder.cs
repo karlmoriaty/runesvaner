@@ -18,6 +18,14 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         _options = options ?? new RunesvanerOptions();
         _timeProvider = timeProvider ?? TimeProvider.System;
         _sessionId = _options.SessionId ?? Guid.NewGuid().ToString("N");
+
+        if (_options.SamplingRate is < 0 or > 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                _options.SamplingRate,
+                "SamplingRate must be between 0 and 1.");
+        }
     }
 
     public string SessionId => _sessionId;
@@ -25,12 +33,53 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
     public bool IsEnabled => _options.Enabled;
 
     public IRunesvanerRequest StartRequest(RunesvanerRequestInfo info)
-        => new RunesvanerRequestScope(RequestId(), _sessionId, info, _store, _options, _timeProvider);
+    {
+        if (!_options.Enabled ||
+            (_options.SamplingRate < 1 && Random.Shared.NextDouble() >= _options.SamplingRate))
+        {
+            return NoOpRequest.Instance;
+        }
+
+        return new RunesvanerRequestScope(
+            RequestId(),
+            _sessionId,
+            info,
+            _store,
+            _options,
+            _timeProvider);
+    }
 
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => _store.FlushAsync(cancellationToken);
 
     private static string RequestId() => Guid.NewGuid().ToString("N");
+
+    private sealed class NoOpRequest : IRunesvanerRequest
+    {
+        public static NoOpRequest Instance { get; } = new();
+
+        public string RequestId { get; } = Guid.NewGuid().ToString("N");
+
+        public void RecordSegment(RunesvanerSegment segment)
+        {
+        }
+
+        public void RecordUsage(RunesvanerUsage usage)
+        {
+        }
+
+        public void RecordContent(RunesvanerContentCapture content)
+        {
+        }
+
+        public void Complete(RunesvanerRequestResult result)
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
 
     private sealed class RunesvanerRequestScope : IRunesvanerRequest
     {

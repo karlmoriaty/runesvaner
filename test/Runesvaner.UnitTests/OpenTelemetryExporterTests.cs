@@ -65,6 +65,10 @@ public sealed class OpenTelemetryExporterTests
         Assert.Equal("chat", captured!.GetTagItem("gen_ai.operation.name"));
         Assert.Equal("openai", captured.GetTagItem("gen_ai.provider.name"));
         Assert.Equal("gpt-5", captured.GetTagItem("gen_ai.request.model"));
+        Assert.Equal(10L, captured.GetTagItem("gen_ai.usage.input_tokens"));
+        Assert.Equal(5L, captured.GetTagItem("gen_ai.usage.output_tokens"));
+        Assert.Equal(4L, captured.GetTagItem("runesvaner.usage.cached_input_tokens"));
+        Assert.Equal("provider", captured.GetTagItem("runesvaner.usage.source"));
         Assert.Equal(1, captured.Events.Count(activityEvent => activityEvent.Name == "segment"));
 
         Assert.Contains(metrics, metric =>

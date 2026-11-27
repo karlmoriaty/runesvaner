@@ -175,6 +175,31 @@ public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
             tags.Add("runesvaner.ttft_us", ttftUs);
         }
 
+        if (record.Usage is { } usage)
+        {
+            if (usage.InputTokens is { } inputTokens)
+            {
+                tags.Add("gen_ai.usage.input_tokens", inputTokens);
+            }
+
+            if (usage.OutputTokens is { } outputTokens)
+            {
+                tags.Add("gen_ai.usage.output_tokens", outputTokens);
+            }
+
+            if (usage.CachedInputTokens is { } cachedInputTokens)
+            {
+                tags.Add("runesvaner.usage.cached_input_tokens", cachedInputTokens);
+            }
+
+            if (usage.ReasoningTokens is { } reasoningTokens)
+            {
+                tags.Add("runesvaner.usage.reasoning_tokens", reasoningTokens);
+            }
+
+            tags.Add("runesvaner.usage.source", usage.Source.ToString().ToLowerInvariant());
+        }
+
         if (record.Cost is { } cost)
         {
             tags.Add("runesvaner.cost.status", cost.Status.ToString().ToLowerInvariant());

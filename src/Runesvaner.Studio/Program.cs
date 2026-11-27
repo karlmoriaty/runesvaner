@@ -89,12 +89,46 @@ app.MapGet("/api/costs", async (CancellationToken cancellationToken) =>
 app.MapGet("/api/sessions", async (CancellationToken cancellationToken) =>
     Results.Ok(await queryStore.ReadSessionsAsync(cancellationToken)));
 
-app.MapGet("/api/requests", async (int? limit, string? session, CancellationToken cancellationToken) =>
+app.MapGet("/api/requests", async (
+    int? limit,
+    string? session,
+    string? status,
+    string? model,
+    DateTimeOffset? from,
+    DateTimeOffset? to,
+    CancellationToken cancellationToken) =>
 {
     var take = Math.Clamp(limit ?? 100, 1, 500);
-    var records = await queryStore.ReadRequestsAsync(session, take, cancellationToken);
+    var records = await queryStore.ReadRequestsAsync(session, int.MaxValue, cancellationToken);
 
-    var summaries = records.Select(record => new
+    IEnumerable<RunesvanerRequestRecord> filtered = records;
+
+    if (!string.IsNullOrWhiteSpace(status))
+    {
+        filtered = filtered.Where(record =>
+            string.Equals(record.Status, status, StringComparison.OrdinalIgnoreCase));
+    }
+
+    if (!string.IsNullOrWhiteSpace(model))
+    {
+        filtered = filtered.Where(record =>
+            string.Equals(
+                record.RequestModel ?? record.ResponseModel,
+                model,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    if (from is not null)
+    {
+        filtered = filtered.Where(record => record.StartedAtUtc >= from);
+    }
+
+    if (to is not null)
+    {
+        filtered = filtered.Where(record => record.StartedAtUtc <= to);
+    }
+
+    var summaries = filtered.Take(take).Select(record => new
     {
         record.RequestId,
         record.SessionId,
