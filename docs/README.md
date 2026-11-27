@@ -167,7 +167,7 @@ M2 in progress:
 2. Price table loader: JSON schema, aliases, validation, `pricing validate`, and `costs` aggregation.
 3. Streaming stats: chunk count, TTFT, ITL P50/P95, TPS when usage is available, finish reason, cancellation/interruption.
 4. OpenTelemetry exporter: optional OTLP package, span/metric mapping, failure-isolated store decorator.
-5. Studio: read-only cost ledger API + React 19/RTK Query cost page + request detail waterfall + session browser.
+5. Studio: read-only cost ledger API + React 19/RTK Query cost page + request detail waterfall + session browser + compare view.
 6. Query stores: shared JSONL/SQLite query contract and session summaries.
-7. Next: verified built-in snapshot, compare view, GitHub Pages.
+7. Next: verified built-in snapshot, GitHub Pages, NuGet placeholder.
 3. GitHub Pages and NuGet root package placeholder remain external tasks.

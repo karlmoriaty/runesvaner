@@ -51,4 +51,4 @@ Security boundaries:
 
 ## Scope
 
-M2.1 implements the cost ledger and recent requests view. M2.2 adds request detail, latency waterfall, cost breakdown, stream metrics, tags, session browser, and SQLite/JSONL query stores. Compare view remains.
+M2.1 implements the cost ledger and recent requests view. M2.2 adds request detail, latency waterfall, cost breakdown, stream metrics, tags, session browser, SQLite/JSONL query stores, and compare view.

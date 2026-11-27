@@ -421,6 +421,180 @@ function DetailPanel({ requestId, onClose }: { requestId: string; onClose: () =>
   );
 }
 
+
+function signedDuration(base: number | null, target: number | null): string {
+  if (base === null || target === null) {
+    return '-';
+  }
+
+  const diff = target - base;
+  const percent = base > 0 ? ` (${((diff / base) * 100).toFixed(1)}%)` : '';
+  return `${diff >= 0 ? '+' : '-'}${formatDuration(Math.abs(diff))}${percent}`;
+}
+
+function signedInteger(base: number | null, target: number | null): string {
+  if (base === null || target === null) {
+    return '-';
+  }
+
+  const diff = target - base;
+  const percent = base > 0 ? ` (${((diff / base) * 100).toFixed(1)}%)` : '';
+  return `${diff >= 0 ? '+' : '-'}${integer.format(Math.abs(diff))}${percent}`;
+}
+
+function signedMoney(base: number | null, target: number | null): string {
+  if (base === null || target === null) {
+    return '-';
+  }
+
+  const diff = target - base;
+  const percent = base > 0 ? ` (${((diff / base) * 100).toFixed(1)}%)` : '';
+  return `${diff >= 0 ? '+' : '-'}${formatMoney(Math.abs(diff))}${percent}`;
+}
+
+function signedDecimal(base: number | null, target: number | null): string {
+  if (base === null || target === null) {
+    return '-';
+  }
+
+  const diff = target - base;
+  const percent = base > 0 ? ` (${((diff / base) * 100).toFixed(1)}%)` : '';
+  return `${diff >= 0 ? '+' : '-'}${Math.abs(diff).toFixed(1)}${percent}`;
+}
+
+function ComparePanel({ requests }: { requests: RequestRow[] }) {
+  const [baseId, setBaseId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const base = useGetRequestQuery(baseId, { skip: !baseId });
+  const target = useGetRequestQuery(targetId, { skip: !targetId });
+  const baseData = base.data;
+  const targetData = target.data;
+
+  const options = requests.map((row) => (
+    <option key={row.requestId} value={row.requestId}>
+      {row.startedAtUtc.replace('T', ' ').slice(0, 19)} · {row.operation} · {row.model} · {formatDuration(row.durationUs)}
+    </option>
+  ));
+
+  const rows = baseData && targetData
+    ? [
+        {
+          label: 'Duration',
+          base: formatDuration(baseData.durationUs),
+          target: formatDuration(targetData.durationUs),
+          delta: signedDuration(baseData.durationUs, targetData.durationUs)
+        },
+        {
+          label: 'TTFT',
+          base: formatDuration(baseData.ttftUs),
+          target: formatDuration(targetData.ttftUs),
+          delta: signedDuration(baseData.ttftUs, targetData.ttftUs)
+        },
+        {
+          label: 'Cost',
+          base: formatMoney(baseData.cost?.total ?? null),
+          target: formatMoney(targetData.cost?.total ?? null),
+          delta: signedMoney(baseData.cost?.total ?? null, targetData.cost?.total ?? null)
+        },
+        {
+          label: 'Input tokens',
+          base: integer.format(baseData.usage?.inputTokens ?? 0),
+          target: integer.format(targetData.usage?.inputTokens ?? 0),
+          delta: signedInteger(baseData.usage?.inputTokens ?? null, targetData.usage?.inputTokens ?? null)
+        },
+        {
+          label: 'Output tokens',
+          base: integer.format(baseData.usage?.outputTokens ?? 0),
+          target: integer.format(targetData.usage?.outputTokens ?? 0),
+          delta: signedInteger(baseData.usage?.outputTokens ?? null, targetData.usage?.outputTokens ?? null)
+        },
+        {
+          label: 'ITL P95',
+          base: formatDuration(baseData.stream?.itlP95Us ?? null),
+          target: formatDuration(targetData.stream?.itlP95Us ?? null),
+          delta: signedDuration(baseData.stream?.itlP95Us ?? null, targetData.stream?.itlP95Us ?? null)
+        },
+        {
+          label: 'Tokens/s',
+          base: baseData.stream?.tokensPerSecond?.toFixed(1) ?? '-',
+          target: targetData.stream?.tokensPerSecond?.toFixed(1) ?? '-',
+          delta: signedDecimal(baseData.stream?.tokensPerSecond ?? null, targetData.stream?.tokensPerSecond ?? null)
+        }
+      ]
+    : [];
+
+  return (
+    <section className={styles.panel}>
+      <div className={styles.panelHeader}>
+        <div>
+          <div className={styles.kicker}>Comparison</div>
+          <h2 className={styles.panelTitle}>Compare two requests</h2>
+        </div>
+        <span className={styles.panelMeta}>Latency and cost deltas</span>
+      </div>
+
+      <div className={styles.compareSelectors}>
+        <label>
+          Base
+          <select className={styles.select} value={baseId} onChange={(event) => setBaseId(event.target.value)}>
+            <option value="">Select base request</option>
+            {options}
+          </select>
+        </label>
+        <label>
+          Target
+          <select className={styles.select} value={targetId} onChange={(event) => setTargetId(event.target.value)}>
+            <option value="">Select target request</option>
+            {options}
+          </select>
+        </label>
+      </div>
+
+      {!baseData || !targetData ? (
+        <div className={styles.empty}>
+          {base.isLoading || target.isLoading ? 'Loading requests...' : 'Select two requests to compare.'}
+        </div>
+      ) : (
+        <div className={styles.compareBody}>
+          <div className={styles.compareGrid}>
+            <div className={styles.compareCard}>
+              <div className={styles.kicker}>Base</div>
+              <div className={styles.compareTitle}>{baseData.requestId}</div>
+              <Waterfall segments={baseData.segments} totalUs={baseData.durationUs} />
+            </div>
+            <div className={styles.compareCard}>
+              <div className={styles.kicker}>Target</div>
+              <div className={styles.compareTitle}>{targetData.requestId}</div>
+              <Waterfall segments={targetData.segments} totalUs={targetData.durationUs} />
+            </div>
+          </div>
+
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Base</th>
+                <th>Target</th>
+                <th className={styles.numeric}>Delta</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.label}>
+                  <td>{row.label}</td>
+                  <td className={styles.mono}>{row.base}</td>
+                  <td className={styles.mono}>{row.target}</td>
+                  <td className={`${styles.numeric} ${styles.delta}`}>{row.delta}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function App() {
   const hasToken = Boolean(sessionStorage.getItem('runesvaner-token'));
   const health = useGetHealthQuery(undefined, { skip: !hasToken });
@@ -543,6 +717,8 @@ export function App() {
           </div>
           <RequestsTable rows={requests.data ?? []} selectedId={selectedId} onSelect={setSelectedId} />
         </section>
+
+        <ComparePanel requests={requests.data ?? []} />
 
         {selectedId ? (
           <DetailPanel requestId={selectedId} onClose={() => setSelectedId(null)} />
