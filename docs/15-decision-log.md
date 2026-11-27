@@ -361,6 +361,8 @@
 
 **Follow-up**: M1 sets up the documentation site skeleton; M3 completes navigation and search.
 
+**Implementation note (2026-11-27)**: Astro Starlight installation stalled twice in the local npm dependency graph (no progress after five minutes). GitHub Pages currently builds a dependency-light static site from the same Markdown; Starlight remains the target and should replace the fallback when the npm graph installs reliably.
+
 ---
 
 ### D-22 Community channels

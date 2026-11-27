@@ -3,8 +3,8 @@
 [![CI](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml/badge.svg)](https://github.com/karlmoriaty/runesvaner/actions/workflows/ci.yml)
 
 > **Status: M1 complete — M2 cost engine in progress.**
-> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, 21 tests, Windows/Linux CI, Windows Native AOT smoke.
-> Next: verified built-in price snapshot, GitHub Pages, NuGet placeholder.
+> Completed: Microsoft.Extensions.AI chat decorator, streaming ITL/TPS/chunk stats, cancellation/error tests, JSONL/SQLite storage, CLI `report`/`doctor`/`costs`/`pricing`, RAG sample, benchmark baseline, cost engine core, price table loader, OpenTelemetry exporter, Studio cost view + request waterfall + session browser + compare view, GitHub Pages docs site, 21 tests, Windows/Linux CI, Windows Native AOT smoke.
+> Next: verified built-in price snapshot, performance gates, NuGet placeholder.
 >
 > Repository: https://github.com/karlmoriaty/runesvaner
 > English is the source of truth. Chinese legacy full translation: [`docs/zh-Hans/README.md`](docs/zh-Hans/README.md).
@@ -170,6 +170,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | [Pricing data](pricing/README.md) | Price table schema, validation, illustrative sample |
 | [OTel exporter](src/Runesvaner.Exporters.OpenTelemetry/README.md) | Optional OTLP signal exporter and usage |
 | [Studio](src/Runesvaner.Studio/README.md) | Local cost ledger UI, API, security model |
+| [Documentation site](https://karlmoriaty.github.io/runesvaner/) | Published English design docs (GitHub Pages) |
 | [Risk register](docs/13-risk-register.md) | 24 risks and mitigations |
 | [Hidden requirements](docs/14-hidden-requirements.md) | 60 overlooked product/engineering requirements |
 | [Decision log](docs/15-decision-log.md) | D-01 to D-25 decisions |
@@ -184,7 +185,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | --- | --- | --- |
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
 | M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 13 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
-| M2 | MVP | In progress: cost engine + price loader + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session/compare views done; performance gates |
+| M2 | MVP | In progress: cost engine + price loader + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session/compare views + Pages docs done; performance gates |
 | M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
 | M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
 

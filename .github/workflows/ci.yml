@@ -95,3 +95,23 @@ jobs:
 
       - name: Build Studio
         run: dotnet build src/Runesvaner.Studio/Runesvaner.Studio.csproj -c Release
+
+  docs-site:
+    name: docs-site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs-site/package-lock.json
+
+      - name: Install site dependencies
+        run: npm ci --prefix docs-site
+
+      - name: Build site
+        run: npm run build --prefix docs-site
