@@ -4,10 +4,13 @@ using Runesvaner.Storage.Sqlite;
 
 namespace Runesvaner;
 
+/// <summary>Dependency injection registration for Runesvaner.</summary>
 public static class RunesvanerServiceCollectionExtensions
 {
+    /// <summary>The SQLite database file name under StoragePath.</summary>
     public const string SqliteFileName = "runesvaner.db";
 
+    /// <summary>Registers options, the selected store, a recorder, and a query store.</summary>
     public static IServiceCollection AddRunesvaner(
         this IServiceCollection services,
         Action<RunesvanerOptions>? configure = null)

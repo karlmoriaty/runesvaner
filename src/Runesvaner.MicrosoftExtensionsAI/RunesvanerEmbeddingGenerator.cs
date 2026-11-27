@@ -4,6 +4,7 @@ using Microsoft.Extensions.AI;
 
 namespace Runesvaner.MicrosoftExtensionsAI;
 
+/// <summary>IEmbeddingGenerator decorator that records batch size, dimensions, usage, and latency.</summary>
 public sealed class RunesvanerEmbeddingGenerator
     : IEmbeddingGenerator<string, Embedding<float>>
 {
@@ -11,6 +12,7 @@ public sealed class RunesvanerEmbeddingGenerator
     private readonly IRunesvanerRecorder _recorder;
     private readonly string? _provider;
 
+    /// <summary>Creates a recording decorator around an inner embedding generator.</summary>
     public RunesvanerEmbeddingGenerator(
         IEmbeddingGenerator<string, Embedding<float>> inner,
         IRunesvanerRecorder recorder,
@@ -21,6 +23,7 @@ public sealed class RunesvanerEmbeddingGenerator
         _provider = provider;
     }
 
+    /// <summary>Generates embeddings and records batch metadata and usage.</summary>
     public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
         IEnumerable<string> values,
         EmbeddingGenerationOptions? options = null,
@@ -104,9 +107,11 @@ public sealed class RunesvanerEmbeddingGenerator
         }
     }
 
+    /// <summary>Delegates service resolution to the inner generator.</summary>
     public object? GetService(Type serviceType, object? serviceKey = null)
         => _inner.GetService(serviceType, serviceKey);
 
+    /// <summary>Disposes the inner generator.</summary>
     public void Dispose()
         => _inner.Dispose();
 

@@ -2,8 +2,10 @@ using Microsoft.Extensions.AI;
 
 namespace Runesvaner.MicrosoftExtensionsAI;
 
+/// <summary>ChatClientBuilder extensions for Runesvaner recording.</summary>
 public static class RunesvanerChatClientBuilderExtensions
 {
+    /// <summary>Adds recording with an explicit recorder instance.</summary>
     public static ChatClientBuilder UseRunesvaner(this ChatClientBuilder builder, IRunesvanerRecorder recorder)
     {
         ArgumentNullException.ThrowIfNull(builder);
@@ -12,6 +14,7 @@ public static class RunesvanerChatClientBuilderExtensions
         return builder.Use(inner => new RunesvanerChatClient(inner, recorder));
     }
 
+    /// <summary>Adds recording and resolves the recorder from dependency injection.</summary>
     public static ChatClientBuilder UseRunesvaner(this ChatClientBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

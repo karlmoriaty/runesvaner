@@ -1,7 +1,9 @@
 namespace Runesvaner;
 
+/// <summary>Aggregates request records into diagnostic session summaries.</summary>
 public static class RunesvanerSessionAggregator
 {
+    /// <summary>Groups records by session and computes counts, costs, models, and providers.</summary>
     public static IReadOnlyList<RunesvanerSessionSummary> Aggregate(
         IEnumerable<RunesvanerRequestRecord> records)
     {

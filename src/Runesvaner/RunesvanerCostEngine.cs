@@ -1,9 +1,11 @@
 namespace Runesvaner;
 
+/// <summary>Computes itemized costs from token usage and a price entry.</summary>
 public static class RunesvanerCostEngine
 {
     private const decimal Million = 1_000_000m;
 
+    /// <summary>Calculates a cost breakdown; returns Unknown when no price entry matches.</summary>
     public static CostBreakdown Calculate(
         RunesvanerUsage usage,
         PriceEntry? entry,

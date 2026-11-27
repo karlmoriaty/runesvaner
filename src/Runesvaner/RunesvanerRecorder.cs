@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 namespace Runesvaner;
 
+/// <summary>Creates request scopes, applies sampling, and persists completed records.</summary>
 public sealed class RunesvanerRecorder : IRunesvanerRecorder
 {
     private readonly IRunesvanerStore _store;
@@ -9,6 +10,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
     private readonly TimeProvider _timeProvider;
     private readonly string _sessionId;
 
+    /// <summary>Creates a recorder over the supplied store and options.</summary>
     public RunesvanerRecorder(
         IRunesvanerStore store,
         RunesvanerOptions? options = null,
@@ -28,10 +30,13 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         }
     }
 
+    /// <summary>Gets the session identifier used by this recorder.</summary>
     public string SessionId => _sessionId;
 
+    /// <summary>Gets whether collection is enabled.</summary>
     public bool IsEnabled => _options.Enabled;
 
+    /// <summary>Starts a request scope, or a no-op scope when disabled or sampled out.</summary>
     public IRunesvanerRequest StartRequest(RunesvanerRequestInfo info)
     {
         if (!_options.Enabled ||
@@ -49,6 +54,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             _timeProvider);
     }
 
+    /// <summary>Flushes pending records to the underlying store.</summary>
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => _store.FlushAsync(cancellationToken);
 

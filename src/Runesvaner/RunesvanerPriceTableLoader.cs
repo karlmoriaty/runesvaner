@@ -2,10 +2,12 @@ using System.Text.Json;
 
 namespace Runesvaner;
 
+/// <summary>Loads and validates price tables from files, JSON, or the embedded snapshot.</summary>
 public static class RunesvanerPriceTableLoader
 {
     private static readonly Lazy<PriceTable> BuiltIn = new(LoadBuiltInCore);
 
+    /// <summary>Loads and validates a price table JSON file.</summary>
     public static PriceTable Load(string path)
     {
         var fullPath = Path.GetFullPath(path);
@@ -19,6 +21,7 @@ public static class RunesvanerPriceTableLoader
         return Create(document, fullPath);
     }
 
+    /// <summary>Loads and validates a price table from a JSON string.</summary>
     public static PriceTable LoadFromJson(string json)
     {
         var document = JsonSerializer.Deserialize(
@@ -29,6 +32,7 @@ public static class RunesvanerPriceTableLoader
         return Create(document, null);
     }
 
+    /// <summary>Returns the verified price snapshot embedded in this assembly.</summary>
     public static PriceTable LoadBuiltIn() => BuiltIn.Value;
 
     private static PriceTable LoadBuiltInCore()

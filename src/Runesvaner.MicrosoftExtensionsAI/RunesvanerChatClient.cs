@@ -6,12 +6,14 @@ using Microsoft.Extensions.AI;
 
 namespace Runesvaner.MicrosoftExtensionsAI;
 
+/// <summary>Microsoft.Extensions.AI chat decorator that records latency, usage, and streaming metrics.</summary>
 public sealed class RunesvanerChatClient : IChatClient
 {
     private readonly IChatClient _inner;
     private readonly IRunesvanerRecorder _recorder;
     private readonly ContentCaptureMode _contentCapture;
 
+    /// <summary>Creates a recording decorator around an inner chat client.</summary>
     public RunesvanerChatClient(
         IChatClient inner,
         IRunesvanerRecorder recorder,
@@ -22,6 +24,7 @@ public sealed class RunesvanerChatClient : IChatClient
         _contentCapture = contentCapture;
     }
 
+    /// <summary>Sends a non-streaming chat request and records it.</summary>
     public async Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
@@ -103,6 +106,7 @@ public sealed class RunesvanerChatClient : IChatClient
         }
     }
 
+    /// <summary>Streams a chat response and records TTFT, inter-token latency, and usage.</summary>
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
@@ -245,9 +249,11 @@ public sealed class RunesvanerChatClient : IChatClient
                 interrupted: false)));
     }
 
+    /// <summary>Delegates service resolution to the inner client.</summary>
     public object? GetService(Type serviceType, object? serviceKey = null)
         => _inner.GetService(serviceType, serviceKey);
 
+    /// <summary>Disposes the inner client.</summary>
     public void Dispose()
         => _inner.Dispose();
 

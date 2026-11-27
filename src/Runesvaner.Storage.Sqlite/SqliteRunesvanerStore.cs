@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 
 namespace Runesvaner.Storage.Sqlite;
 
+/// <summary>SQLite store with query pushdown, retention, and owner-only permissions.</summary>
 public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQueryStore, IDisposable
 {
     private const int PruneInterval = 64;
@@ -15,6 +16,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
     private readonly long _maxStorageBytes;
     private int _writes;
 
+    /// <summary>Opens or creates the SQLite store at the supplied database path.</summary>
     public SqliteRunesvanerStore(string databasePath, RunesvanerOptions? options = null)
     {
         var fullPath = Path.GetFullPath(databasePath);
@@ -55,6 +57,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         RunesvanerFileSecurity.RestrictFile(fullPath);
     }
 
+    /// <summary>Inserts one record and periodically prunes old rows.</summary>
     public ValueTask WriteAsync(RunesvanerRequestRecord record, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -89,9 +92,11 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>No-op flush; SQLite writes are synchronous.</summary>
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
+    /// <summary>Applies time and size retention immediately.</summary>
     public ValueTask PruneAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -104,6 +109,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>Reads newest records with a parameterized session filter and limit.</summary>
     public ValueTask<IReadOnlyList<RunesvanerRequestRecord>> ReadRequestsAsync(
         string? sessionId,
         int limit,
@@ -133,6 +139,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         }
     }
 
+    /// <summary>Reads one record by primary key.</summary>
     public ValueTask<RunesvanerRequestRecord?> GetRequestAsync(
         string requestId,
         CancellationToken cancellationToken = default)
@@ -150,6 +157,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         }
     }
 
+    /// <summary>Aggregates all records into session summaries.</summary>
     public ValueTask<IReadOnlyList<RunesvanerSessionSummary>> ReadSessionsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -165,6 +173,7 @@ public sealed class SqliteRunesvanerStore : IRunesvanerStore, IRunesvanerQuerySt
         }
     }
 
+    /// <summary>Disposes the SQLite connection.</summary>
     public void Dispose()
         => _connection.Dispose();
 

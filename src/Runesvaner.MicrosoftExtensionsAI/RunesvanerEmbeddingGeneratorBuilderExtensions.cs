@@ -2,8 +2,10 @@ using Microsoft.Extensions.AI;
 
 namespace Runesvaner.MicrosoftExtensionsAI;
 
+/// <summary>EmbeddingGeneratorBuilder extensions for Runesvaner recording.</summary>
 public static class RunesvanerEmbeddingGeneratorBuilderExtensions
 {
+    /// <summary>Adds recording with an explicit recorder instance.</summary>
     public static EmbeddingGeneratorBuilder<string, Embedding<float>> UseRunesvaner(
         this EmbeddingGeneratorBuilder<string, Embedding<float>> builder,
         IRunesvanerRecorder recorder,
@@ -16,6 +18,7 @@ public static class RunesvanerEmbeddingGeneratorBuilderExtensions
         return builder;
     }
 
+    /// <summary>Adds recording and resolves the recorder from dependency injection.</summary>
     public static EmbeddingGeneratorBuilder<string, Embedding<float>> UseRunesvaner(
         this EmbeddingGeneratorBuilder<string, Embedding<float>> builder)
     {

@@ -4,18 +4,22 @@ using System.Net.Sockets;
 
 namespace Runesvaner.Http;
 
+/// <summary>HTTP handler that records queue, connect, upload, provider wait, and generation segments.</summary>
 public sealed class RunesvanerHttpHandler : DelegatingHandler
 {
+    /// <summary>Creates a handler with a preconfigured SocketsHttpHandler.</summary>
     public RunesvanerHttpHandler()
         : this(CreateSocketsHandler())
     {
     }
 
+    /// <summary>Creates a handler around an existing inner handler.</summary>
     public RunesvanerHttpHandler(HttpMessageHandler innerHandler)
         : base(innerHandler)
     {
     }
 
+    /// <summary>Creates a SocketsHttpHandler whose connect callback records DNS and TCP time.</summary>
     public static SocketsHttpHandler CreateSocketsHandler()
         => new()
         {
@@ -56,6 +60,7 @@ public sealed class RunesvanerHttpHandler : DelegatingHandler
         return new NetworkStream(socket, ownsSocket: true);
     }
 
+    /// <summary>Records segments around the inner handler send.</summary>
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)

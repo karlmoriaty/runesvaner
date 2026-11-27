@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\Runesvaner\Runesvaner.csproj" />
@@ -13,6 +13,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Runesvaner.Exporters.OpenTelemetry</PackageId>
     <Description>Optional OpenTelemetry exporter for Runesvaner records.</Description>
     <Authors>karlmoriaty</Authors>

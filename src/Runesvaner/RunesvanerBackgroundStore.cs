@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Runesvaner;
 
+/// <summary>Bounded background writer that isolates business threads from persistence.</summary>
 public sealed class RunesvanerBackgroundStore : IRunesvanerStore, IDisposable
 {
     private const int FailureThreshold = 5;
@@ -21,6 +22,7 @@ public sealed class RunesvanerBackgroundStore : IRunesvanerStore, IDisposable
     private long _degradedUntil;
     private int _disposed;
 
+    /// <summary>Wraps an inner store with a bounded queue and a background pump.</summary>
     public RunesvanerBackgroundStore(
         IRunesvanerStore inner,
         RunesvanerOptions? options = null,
@@ -34,8 +36,10 @@ public sealed class RunesvanerBackgroundStore : IRunesvanerStore, IDisposable
         _pump = Task.Run(() => PumpAsync(_stop.Token));
     }
 
+    /// <summary>Gets the counters for queueing, persistence, drops, and failures.</summary>
     public RunesvanerSelfMonitor Monitor => _monitor;
 
+    /// <summary>Enqueues a record without blocking on storage I/O.</summary>
     public ValueTask WriteAsync(
         RunesvanerRequestRecord record,
         CancellationToken cancellationToken = default)
@@ -75,6 +79,7 @@ public sealed class RunesvanerBackgroundStore : IRunesvanerStore, IDisposable
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>Waits for the queue to drain and flushes the inner store.</summary>
     public async ValueTask FlushAsync(CancellationToken cancellationToken = default)
     {
         while (true)
@@ -103,6 +108,7 @@ public sealed class RunesvanerBackgroundStore : IRunesvanerStore, IDisposable
         await _inner.FlushAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>Flushes pending work, stops the pump, and releases resources.</summary>
     public void Dispose()
     {
         if (Volatile.Read(ref _disposed) != 0)

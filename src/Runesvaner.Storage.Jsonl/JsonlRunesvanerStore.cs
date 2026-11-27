@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace Runesvaner.Storage.Jsonl;
 
+/// <summary>JSON Lines storage with retention and owner-only permissions.</summary>
 public sealed class JsonlRunesvanerStore : IRunesvanerStore
 {
     private readonly string _directory;
@@ -15,6 +16,7 @@ public sealed class JsonlRunesvanerStore : IRunesvanerStore
     private string? _currentPath;
     private DateOnly _currentDate;
 
+    /// <summary>Creates a JSON Lines store under the supplied directory.</summary>
     public JsonlRunesvanerStore(
         string directory,
         TimeProvider? timeProvider = null,
@@ -31,6 +33,7 @@ public sealed class JsonlRunesvanerStore : IRunesvanerStore
         RunesvanerFileSecurity.RestrictDirectory(_sessionsDirectory);
     }
 
+    /// <summary>Appends one record to the current daily JSONL file.</summary>
     public ValueTask WriteAsync(RunesvanerRequestRecord record, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -46,9 +49,11 @@ public sealed class JsonlRunesvanerStore : IRunesvanerStore
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>No-op flush; JSONL writes are synchronous.</summary>
     public ValueTask FlushAsync(CancellationToken cancellationToken = default)
         => ValueTask.CompletedTask;
 
+    /// <summary>Reads all JSONL records from a data directory.</summary>
     public static IEnumerable<RunesvanerRequestRecord> ReadAll(string directory)
     {
         var sessions = Path.Combine(Path.GetFullPath(directory), "sessions");

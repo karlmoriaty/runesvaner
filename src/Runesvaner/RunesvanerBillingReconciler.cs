@@ -2,12 +2,14 @@ using System.Globalization;
 
 namespace Runesvaner;
 
+/// <summary>One provider billing line loaded from a CSV file.</summary>
 public sealed record RunesvanerBillingLine(
     string Provider,
     string Model,
     decimal Amount,
     string Currency = "USD");
 
+/// <summary>Recorded versus billed cost for one provider/model pair.</summary>
 public sealed record RunesvanerReconciliationRow(
     string Provider,
     string Model,
@@ -16,18 +18,22 @@ public sealed record RunesvanerReconciliationRow(
     decimal Difference,
     double DifferencePercent);
 
+/// <summary>Reconciliation result for all provider/model pairs.</summary>
 public sealed record RunesvanerReconciliationReport(
     IReadOnlyList<RunesvanerReconciliationRow> Rows,
     decimal RecordedTotal,
     decimal BilledTotal,
     decimal DifferenceTotal)
 {
+    /// <summary>Returns whether every row is within the supplied percentage tolerance.</summary>
     public bool WithinTolerance(double thresholdPercent)
         => Rows.All(row => Math.Abs(row.DifferencePercent) <= thresholdPercent);
 }
 
+/// <summary>Compares recorded costs with provider billing lines.</summary>
 public static class RunesvanerBillingReconciler
 {
+    /// <summary>Groups both sides by provider/model and computes absolute and percentage differences.</summary>
     public static RunesvanerReconciliationReport Reconcile(
         IEnumerable<RunesvanerRequestRecord> records,
         IEnumerable<RunesvanerBillingLine> billingLines)
@@ -83,11 +89,14 @@ public static class RunesvanerBillingReconciler
     }
 }
 
+/// <summary>Parses provider billing CSV files with provider, model, amount, and currency columns.</summary>
 public static class RunesvanerBillingCsv
 {
+    /// <summary>Parses a billing CSV file.</summary>
     public static IReadOnlyList<RunesvanerBillingLine> Parse(string path)
         => ParseLines(File.ReadLines(path));
 
+    /// <summary>Parses billing CSV lines, skipping headers, comments, and blank rows.</summary>
     public static IReadOnlyList<RunesvanerBillingLine> ParseLines(IEnumerable<string> lines)
     {
         ArgumentNullException.ThrowIfNull(lines);

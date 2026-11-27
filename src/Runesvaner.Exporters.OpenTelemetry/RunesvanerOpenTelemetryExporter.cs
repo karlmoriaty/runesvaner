@@ -8,8 +8,10 @@ using OpenTelemetry.Trace;
 
 namespace Runesvaner.Exporters.OpenTelemetry;
 
+/// <summary>Exports Runesvaner records as OpenTelemetry spans and metrics.</summary>
 public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
 {
+    /// <summary>The ActivitySource and Meter name used by the exporter.</summary>
     public const string SourceName = "Runesvaner.AI";
 
     private readonly TracerProvider? _tracerProvider;
@@ -22,6 +24,7 @@ public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
     private readonly Counter<double> _cost;
     private readonly Counter<long> _requests;
 
+    /// <summary>Creates an exporter over custom ActivitySource and Meter instances.</summary>
     public RunesvanerOpenTelemetryExporter(ActivitySource? activitySource = null, Meter? meter = null)
     {
         _activitySource = activitySource ?? new ActivitySource(SourceName);
@@ -42,6 +45,7 @@ public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
         _meterProvider = meterProvider;
     }
 
+    /// <summary>Creates an OTLP exporter with the supplied endpoint and protocol.</summary>
     public static RunesvanerOpenTelemetryExporter Create(
         Action<RunesvanerOpenTelemetryOptions>? configure = null)
     {
@@ -75,6 +79,7 @@ public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
         return new RunesvanerOpenTelemetryExporter(tracerProvider, meterProvider);
     }
 
+    /// <summary>Emits spans, segments, metrics, and usage for one record.</summary>
     public void Export(RunesvanerRequestRecord record)
     {
         using (var activity = _activitySource.StartActivity(record.Operation, ActivityKind.Client))
@@ -135,6 +140,7 @@ public sealed class RunesvanerOpenTelemetryExporter : IAsyncDisposable
         }
     }
 
+    /// <summary>Flushes and disposes the tracer and meter providers.</summary>
     public ValueTask DisposeAsync()
     {
         _tracerProvider?.Dispose();

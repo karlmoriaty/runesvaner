@@ -1,5 +1,6 @@
 namespace Runesvaner;
 
+/// <summary>Aggregated cost for one provider/model pair.</summary>
 public sealed record RunesvanerCostSummary(
     string Provider,
     string Model,
@@ -9,8 +10,10 @@ public sealed record RunesvanerCostSummary(
     int Unknown,
     decimal Total);
 
+/// <summary>Aggregates request records into provider/model cost summaries.</summary>
 public static class RunesvanerCostAggregator
 {
+    /// <summary>Groups records by provider/model and sums known and partial costs.</summary>
     public static IReadOnlyList<RunesvanerCostSummary> Aggregate(
         IEnumerable<RunesvanerRequestRecord> records)
     {
