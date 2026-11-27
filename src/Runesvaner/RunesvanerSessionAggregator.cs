@@ -24,8 +24,8 @@ public static class RunesvanerSessionAggregator
                     items.Count(record => record.Cost?.Status == CostStatus.Known),
                     items.Count(record => record.Cost?.Status == CostStatus.Partial),
                     items.Count(record => record.Cost?.Status == CostStatus.Unknown),
-                    items.Sum(record => record.Cost?.Status == CostStatus.Known
-                        ? record.Cost.Total ?? 0m
+                    items.Sum(record => record.Cost is { Status: CostStatus.Known or CostStatus.Partial, Total: { } total }
+                        ? total * (decimal)record.SamplingWeight
                         : 0m),
                     items
                         .Select(record => record.RequestModel ?? record.ResponseModel)

@@ -32,7 +32,7 @@ public static class RunesvanerCostAggregator
                 group.Count(record => record.Cost?.Status == CostStatus.Unknown),
                 group.Sum(record =>
                     record.Cost is { Status: CostStatus.Known or CostStatus.Partial, Total: { } total }
-                        ? total
+                        ? total * (decimal)record.SamplingWeight
                         : 0m)))
             .OrderByDescending(summary => summary.Total)
             .ThenBy(summary => summary.Provider, StringComparer.OrdinalIgnoreCase)

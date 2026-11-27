@@ -12,16 +12,19 @@ public sealed class RunesvanerChatClient : IChatClient
     private readonly IChatClient _inner;
     private readonly IRunesvanerRecorder _recorder;
     private readonly ContentCaptureMode _contentCapture;
+    private readonly bool _recordNested;
 
     /// <summary>Creates a recording decorator around an inner chat client.</summary>
     public RunesvanerChatClient(
         IChatClient inner,
         IRunesvanerRecorder recorder,
-        ContentCaptureMode contentCapture = ContentCaptureMode.None)
+        ContentCaptureMode contentCapture = ContentCaptureMode.None,
+        bool recordNested = false)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _recorder = recorder ?? throw new ArgumentNullException(nameof(recorder));
         _contentCapture = contentCapture;
+        _recordNested = recordNested;
     }
 
     /// <summary>Sends a non-streaming chat request and records it.</summary>
@@ -30,7 +33,7 @@ public sealed class RunesvanerChatClient : IChatClient
         ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (!_recorder.IsEnabled)
+        if (!_recorder.IsEnabled || (!_recordNested && RunesvanerRequestContext.IsActive))
         {
             return await _inner.GetResponseAsync(messages, options, cancellationToken).ConfigureAwait(false);
         }
@@ -112,7 +115,7 @@ public sealed class RunesvanerChatClient : IChatClient
         ChatOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        if (!_recorder.IsEnabled)
+        if (!_recorder.IsEnabled || (!_recordNested && RunesvanerRequestContext.IsActive))
         {
             await foreach (var update in _inner.GetStreamingResponseAsync(messages, options, cancellationToken).ConfigureAwait(false))
             {

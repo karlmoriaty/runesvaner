@@ -57,4 +57,10 @@ public sealed class RunesvanerOptions
 
     /// <summary>Gets or sets the head sampling rate between 0 and 1.</summary>
     public double SamplingRate { get; set; } = 1;
+
+    /// <summary>Gets or sets the tail sampling policy applied after a request completes.</summary>
+    public RunesvanerTailSamplingOptions TailSampling { get; set; } = new();
+
+    /// <summary>Gets or sets the budget thresholds and alert callback.</summary>
+    public RunesvanerBudgetOptions Budget { get; set; } = new();
 }

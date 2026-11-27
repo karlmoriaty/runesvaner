@@ -24,6 +24,7 @@ public static class RunesvanerServiceCollectionExtensions
         services.AddSingleton(options);
         services.AddSingleton(provider => new RunesvanerStoreHolder(CreateStore(options)));
         services.AddSingleton<RunesvanerSelfMonitor>();
+        services.AddSingleton(provider => new RunesvanerBudgetTracker(options.Budget));
         services.AddSingleton<IRunesvanerStore>(provider =>
         {
             var raw = provider.GetRequiredService<RunesvanerStoreHolder>().Store;
@@ -36,7 +37,10 @@ public static class RunesvanerServiceCollectionExtensions
                 : raw;
         });
         services.AddSingleton<IRunesvanerRecorder>(provider =>
-            new RunesvanerRecorder(provider.GetRequiredService<IRunesvanerStore>(), options));
+            new RunesvanerRecorder(
+                provider.GetRequiredService<IRunesvanerStore>(),
+                options,
+                budget: provider.GetRequiredService<RunesvanerBudgetTracker>()));
 
         if (options.StorageMode == StorageMode.Jsonl)
         {

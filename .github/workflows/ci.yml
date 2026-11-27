@@ -141,8 +141,8 @@ jobs:
             exit 1
           fi
 
-          for id in Runesvaner.Abstractions Runesvaner.Extensions.DependencyInjection Runesvaner.Http Runesvaner.Exporters.OpenTelemetry Runesvaner.MicrosoftExtensionsAI Runesvaner.Storage.Jsonl Runesvaner.Storage.Sqlite Runesvaner; do
-            test -f "artifacts/packages/$id.0.2.0-alpha.1.nupkg" || { echo "Missing package $id" >&2; exit 1; }
+          for id in Runesvaner.Abstractions Runesvaner.Extensions.DependencyInjection Runesvaner.Http Runesvaner.Exporters.OpenTelemetry Runesvaner.MicrosoftExtensionsAI Runesvaner.SemanticKernel Runesvaner.VectorData Runesvaner.Storage.Jsonl Runesvaner.Storage.Sqlite Runesvaner; do
+            test -f "artifacts/packages/$id.0.3.0-alpha.1.nupkg" || { echo "Missing package $id" >&2; exit 1; }
           done
 
       - name: Verify package readme

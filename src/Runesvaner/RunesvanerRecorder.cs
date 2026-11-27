@@ -2,23 +2,26 @@ using System.Diagnostics;
 
 namespace Runesvaner;
 
-/// <summary>Creates request scopes, applies sampling, and persists completed records.</summary>
+/// <summary>Creates request scopes, applies sampling, tracks budgets, and persists records.</summary>
 public sealed class RunesvanerRecorder : IRunesvanerRecorder
 {
     private readonly IRunesvanerStore _store;
     private readonly RunesvanerOptions _options;
     private readonly TimeProvider _timeProvider;
+    private readonly RunesvanerBudgetTracker? _budget;
     private readonly string _sessionId;
 
-    /// <summary>Creates a recorder over the supplied store and options.</summary>
+    /// <summary>Creates a recorder over the supplied store, options, clock, and budget tracker.</summary>
     public RunesvanerRecorder(
         IRunesvanerStore store,
         RunesvanerOptions? options = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        RunesvanerBudgetTracker? budget = null)
     {
         _store = store;
         _options = options ?? new RunesvanerOptions();
         _timeProvider = timeProvider ?? TimeProvider.System;
+        _budget = budget;
         _sessionId = _options.SessionId ?? Guid.NewGuid().ToString("N");
 
         if (_options.SamplingRate is < 0 or > 1)
@@ -27,6 +30,22 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 nameof(options),
                 _options.SamplingRate,
                 "SamplingRate must be between 0 and 1.");
+        }
+
+        if (_options.TailSampling.SampleRate is < 0 or > 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                _options.TailSampling.SampleRate,
+                "TailSampling.SampleRate must be between 0 and 1.");
+        }
+
+        if (_options.TailSampling.SlowThresholdUs < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                _options.TailSampling.SlowThresholdUs,
+                "TailSampling.SlowThresholdUs must not be negative.");
         }
     }
 
@@ -51,7 +70,8 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             info,
             _store,
             _options,
-            _timeProvider);
+            _timeProvider,
+            _budget);
     }
 
     /// <summary>Flushes pending records to the underlying store.</summary>
@@ -92,6 +112,7 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
         private readonly RunesvanerRequestInfo _info;
         private readonly IRunesvanerStore _store;
         private readonly RunesvanerOptions _options;
+        private readonly RunesvanerBudgetTracker? _budget;
         private readonly string _sessionId;
         private readonly DateTimeOffset _startedAtUtc;
         private readonly long _startTimestamp;
@@ -107,13 +128,15 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             RunesvanerRequestInfo info,
             IRunesvanerStore store,
             RunesvanerOptions options,
-            TimeProvider timeProvider)
+            TimeProvider timeProvider,
+            RunesvanerBudgetTracker? budget)
         {
             RequestId = requestId;
             _sessionId = sessionId;
             _info = info;
             _store = store;
             _options = options;
+            _budget = budget;
             _startedAtUtc = timeProvider.GetUtcNow();
             _startTimestamp = Stopwatch.GetTimestamp();
         }
@@ -173,6 +196,12 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             }
 
             var cost = CalculateCost(result.ResponseModel, usage);
+            var (keep, weight) = EvaluateTailSampling(result, cost);
+
+            if (!keep)
+            {
+                return;
+            }
 
             var record = new RunesvanerRequestRecord(
                 "runesvaner.request.v1",
@@ -193,7 +222,17 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
                 _sessionId,
                 content,
                 result.Attempt,
-                result.Attempt > 1);
+                result.Attempt > 1,
+                weight);
+
+            try
+            {
+                _budget?.Observe(record);
+            }
+            catch (Exception)
+            {
+                // Budget reporting must never break the business request.
+            }
 
             try
             {
@@ -203,6 +242,49 @@ public sealed class RunesvanerRecorder : IRunesvanerRecorder
             {
                 // Collection must never break the business request.
             }
+        }
+
+        private (bool Keep, double Weight) EvaluateTailSampling(
+            RunesvanerRequestResult result,
+            CostBreakdown? cost)
+        {
+            var tail = _options.TailSampling;
+
+            if (!tail.Enabled)
+            {
+                return (true, 1);
+            }
+
+            if (result.Status != RequestStatus.Ok)
+            {
+                return (true, 1);
+            }
+
+            if (tail.SlowThresholdUs > 0 && result.DurationUs >= tail.SlowThresholdUs)
+            {
+                return (true, 1);
+            }
+
+            if (tail.OverBudgetUsd is { } limit &&
+                cost?.Total is { } total &&
+                total >= limit)
+            {
+                return (true, 1);
+            }
+
+            if (tail.SampleRate >= 1)
+            {
+                return (true, 1);
+            }
+
+            if (tail.SampleRate <= 0)
+            {
+                return (false, 1);
+            }
+
+            return Random.Shared.NextDouble() < tail.SampleRate
+                ? (true, 1 / tail.SampleRate)
+                : (false, 1);
         }
 
         private CostBreakdown? CalculateCost(

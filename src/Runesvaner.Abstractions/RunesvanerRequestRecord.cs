@@ -23,7 +23,8 @@ public sealed record RunesvanerRequestRecord(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     RunesvanerContentCapture? Content = null,
     int Attempt = 1,
-    bool PossibleDuplicateBilling = false);
+    bool PossibleDuplicateBilling = false,
+    double SamplingWeight = 1);
 
 /// <summary>Source-generated JSON context for request records and cost breakdowns.</summary>
 [JsonSourceGenerationOptions(WriteIndented = false, UseStringEnumConverter = true)]
