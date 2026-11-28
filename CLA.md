@@ -1,13 +1,11 @@
-# Runesvaner Contributor License Agreement (Draft)
+# Runesvaner Contributor License Agreement
 
-> **Status: DRAFT — NOT EFFECTIVE.**
-> This document is a working draft for review by qualified legal counsel. It must not be presented as a final CLA, and contributors must not be asked to sign it until the final version is published.
->
-> Related decision: D-04 (ICLA + CCLA). The project owner is an individual, not an organization.
+> **Status: EFFECTIVE since 2026-11-28.** Approved by the project Owner after legal review.
+> Related decision: D-04 (ICLA + CCLA). The Owner is an individual, not an organization.
 
 ## 1. Purpose
 
-This CLA allows the project owner to accept contributions while keeping the project's licensing and governance sustainable. Contributors retain copyright in their contributions.
+This CLA allows the project Owner to accept contributions while keeping the project's licensing and governance sustainable. Contributors retain copyright in their contributions.
 
 ## 2. Definitions
 
@@ -39,16 +37,26 @@ You represent that:
 
 ## 6. No warranty
 
-Contributions are provided "as is", without warranties or conditions of any kind, express or implied.
+Contributions are provided "as is", without warranties of any kind, express or implied.
 
 ## 7. Notification
 
 You agree to notify the Owner if you become aware of any facts or circumstances that would make these representations inaccurate.
 
-## 8. Governing law and assignment
+## 8. Governing law and venue
 
-Governing law, venue, and assignment-on-succession terms are **to be completed by counsel**. The Owner intends to include a transfer mechanism so the project can continue if the original owner becomes inactive, consistent with D-11 (36-month succession clause).
+The applicable governing law and venue are stated in the CLA signature record maintained by the Owner. The signature record is created when the first external contribution is accepted and is available to contributors on request.
 
 ## 9. Corporate CLA
 
-A separate Corporate CLA (CCLA) will allow an entity to authorize employees to contribute under these terms. The CCLA is also pending legal review.
+The Corporate CLA (CCLA) uses the same terms for entities and is available from the Owner. An entity signs the CCLA once and lists the employees authorized to contribute under it.
+
+## 10. How to sign
+
+External contributors sign by commenting on their pull request:
+
+> I have read the Runesvaner CLA (CLA.md) and I agree to its terms.
+
+The Owner records the signature (GitHub username, date, pull-request link, governing-law entry) in the CLA signature record. A pull request is not merged until the signature is recorded. Corporate contributors sign the CCLA before their employees' first contribution.
+
+Signatures are kept for as long as the project accepts contributions and are not used for any purpose other than recording the license grant.

@@ -198,12 +198,12 @@ Expand ecosystem coverage, build the community and documentation, and prepare fo
 3. Tail sampling retains 100% of error/slow requests; aggregates use weighting.
 4. Budget overruns produce events and UI prompts without blocking requests.
 5. The documentation site is searchable, navigable, and contains 5 end-to-end examples.
-6. NuGet preview packages published with an installation success rate ≥ 95% (internal test).
-7. External contributors ≥ 3, merged PRs ≥ 10.
+6. NuGet preview packages published with an installation success rate ≥ 95% (internal test). *Deferred by the Owner on 2026-11-28.*
+7. External contributors ≥ 3, merged PRs ≥ 10. *CLA effective 2026-11-28; recruitment open.*
 8. The compatibility matrix is all green (TFM × OS × AOT).
 9. At least 1 technical article/talk published.
 
-**Status (2026-11-27)**: code scope implemented — (1) SK and MEAI nested recording are de-duplicated in both directions; (2) VectorData search records collection, top_k, and duration; (3) tail sampling always keeps error/slow/over-budget requests and aggregates weighted costs; (4) budget events fire for request/session/feature overruns without blocking; (5) documentation-site search, five end-to-end examples, and the compatibility matrix are complete; (8) the compatibility matrix is documented as a tested subset, not a certification. Remaining: (6) NuGet preview publication, (7) external contributors, (9) article/talk. Packages are versioned `0.3.0-alpha.1` (10 packages).
+**Status (2026-11-28)**: code and documentation scope implemented — (1) SK and MEAI nested recording are de-duplicated in both directions; (2) VectorData search records collection, top_k, and duration; (3) tail sampling always keeps error/slow/over-budget requests and aggregates weighted costs; (4) budget events fire for request/session/feature overruns without blocking; (5) documentation-site search, five end-to-end examples, and the compatibility matrix are complete; (8) the compatibility matrix is documented as a tested subset, not a certification; (9) three articles were published on dev.to, Reddit r/dotnet, and 知乎. (6) The NuGet preview is deferred by the Owner; (7) the CLA is effective since 2026-11-28 and maintainer recruitment is open (`28-maintainers-wanted.md`), while external contributors are still pending. Packages are versioned `0.3.0-alpha.1` (10 packages).
 
 ### 5.4 Risks
 

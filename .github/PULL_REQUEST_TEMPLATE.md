@@ -25,6 +25,7 @@
 - [ ] No new AOT/Trim warnings in touched projects.
 - [ ] No secrets, tokens, or private data in code, logs, fixtures, or screenshots.
 - [ ] Privacy impact considered (content capture, export, retention).
+- [ ] I have read the CLA (`CLA.md`) and I sign it. (External contributors: include the signature statement in a PR comment.)
 
 ## Breaking changes
 

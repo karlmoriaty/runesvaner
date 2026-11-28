@@ -72,6 +72,7 @@
 | `25-compatibility-matrix.md` | TFM/OS/AOT compatibility and CI evidence | Accepted |
 | `26-preview-release.md` | NuGet preview publication runbook | Accepted |
 | `27-community-playbook.md` | Community, launch, and contributor playbook | Accepted |
+| `28-maintainers-wanted.md` | Co-maintainer roles and application process | Accepted |
 | `benchmarks-baseline.md` | Recorder benchmark baseline | Draft |
 | `../pricing/README.md` | Price table schema and illustrative sample | Draft |
 | `zh-Hans/` | Chinese legacy full translation; will be condensed per D-16/D-18 | Legacy |
@@ -169,5 +170,6 @@ M3 code scope:
 4. Budget thresholds and alerts for request/session/feature scopes.
 5. Documentation-site search, five end-to-end examples, and the compatibility matrix.
 
-Remaining M3 exit criteria: NuGet preview publication, external contributors, and a published
-article/talk. See `11-roadmap.md` and `25-compatibility-matrix.md`.
+Remaining M3 items: external contributors (CLA effective, recruitment open). NuGet preview is
+deferred by the Owner. Three articles were published on dev.to, Reddit r/dotnet, and 知乎. See
+`11-roadmap.md`, `28-maintainers-wanted.md`, and `25-compatibility-matrix.md`.

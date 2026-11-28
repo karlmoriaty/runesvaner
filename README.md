@@ -206,6 +206,7 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | [Docs and community](docs/17-docs-and-community.md) | Docs site, contributors, release cadence |
 | [Localization scope](docs/18-localization-scope.md) | English complete; Chinese/German core summaries |
 | [Implementation decisions](docs/19-open-implementation-decisions.md) | D-23–D-25 records |
+| [Maintainers wanted](docs/28-maintainers-wanted.md) | Co-maintainer roles and application process |
 
 ## Roadmap
 
@@ -214,12 +215,19 @@ English is the source of truth. The Chinese legacy full translation lives in [`d
 | M0 | Design freeze | Done: D-01–D-25 decisions, governance files, solution skeleton |
 | M1 | Walking Skeleton | Complete: RAG sample, benchmark baseline, 27 tests, Windows/Linux CI, Windows AOT smoke; SQLite AOT remains documented fallback |
 | M2 | MVP | In progress: cost engine + price loader + verified built-in snapshot + `costs` + streaming stats + OTel exporter + Studio cost/waterfall/session/compare views + Pages docs + CI performance gate done; remaining: NuGet placeholder and M2 API polish |
-| M3 | Beta | Semantic Kernel, VectorData, tail sampling, budgets, docs site |
-| M4 | 1.0 | Stable public API, performance/security audit, CLA workflow effective |
+| M3 | Beta | Code and docs scope done: SK, VectorData, tail sampling, budgets, docs search, 5 examples, compatibility matrix, articles. NuGet preview deferred by owner; external contributors open with an effective CLA. |
+| M4 | 1.0 | Stable public API, performance/security audit, maintainer pipeline |
+
+## Published articles
+
+- dev.to: https://dev.to/karlmoriaty/why-your-net-ai-request-is-slow-a-segment-by-segment-teardown-5f4o
+- Reddit r/dotnet: https://www.reddit.com/r/dotnet/s/pYVZnHmCzu
+- 知乎: https://zhuanlan.zhihu.com/p/2110099755946844614
+- Source drafts: `docs/articles/`
 
 ## Contributing
 
-This is a personal open-source project, not affiliated with any organization. The project uses **Apache-2.0 + ICLA/CCLA** (D-03/D-04). The CLA text is not yet effective, so external pull requests are not accepted; please discuss larger changes in an Issue first.
+This is a personal open-source project, not affiliated with any organization. It uses **Apache-2.0 + ICLA/CCLA** (D-03/D-04). The CLA is **effective since 2026-11-28**; external pull requests are welcome after signing it in the PR. Co-maintainers and reviewers are wanted — see [Maintainers wanted](docs/28-maintainers-wanted.md).
 
 ## License
 

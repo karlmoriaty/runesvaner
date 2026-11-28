@@ -83,13 +83,13 @@ Decided (D-04): **ICLA + CCLA**; CLA Assistant (or an equivalent Action) is the 
 7. **Governing law and jurisdiction**: To be confirmed with counsel.
 8. **Assignability**: The project owner may assign rights to a successor entity (for governance continuity).
 
-### 3.4 CLA automation
+### 3.4 CLA automation and signatures
 
-- Use [CLA Assistant](https://github.com/cla-assistant/cla-assistant) or a GitHub Action.
-- Automatically comment on the first commit of a PR, requesting a signature.
-- Store signature records in the repository's `cla-signatures` branch or an external service.
-- A bot checks for unsigned PRs and blocks merging.
-- Corporate contributors are covered by a CCLA across multiple employees.
+- The CLA is **effective since 2026-11-28**.
+- External contributors sign by commenting the signature statement on their pull request.
+- The Owner records the signature (GitHub username, date, PR link, governing-law entry).
+- CLA Assistant may be added later; it requires a GitHub App/token configured by the Owner.
+- Corporate contributors sign the CCLA before their employees' first contribution.
 
 ### 3.5 CLA anti-patterns
 
@@ -112,6 +112,13 @@ Decided (D-04): **ICLA + CCLA**; CLA Assistant (or an equivalent Action) is the 
 | Reviewer | Code review, labels | Invited by Maintainer |
 | Contributor | Submit PRs/Issues | Anyone |
 | Security Responder | Vulnerability response | Designated by Owner |
+
+### 4.2 Maintainer recruitment
+
+The project is recruiting co-maintainers and reviewers. Roles, time expectations, and the
+application process are documented in `28-maintainers-wanted.md`. Applications use the
+`co-maintainer` issue template. Recruitment does not change the BDFL model: the Owner keeps final
+decisions and release authority.
 
 ### 4.2 Decision process
 

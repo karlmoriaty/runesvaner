@@ -266,7 +266,7 @@ Principle: **give conclusions and data first, then talk about the product**. No 
 
 Goal: a single command.
 
-    git clone https://github.com/<owner>/runesvaner-dotnet.git
+    git clone https://github.com/karlmoriaty/runesvaner.git
     cd runesvaner-dotnet
     dotnet build
     dotnet test
@@ -291,6 +291,21 @@ Requirements:
 - `CONTRIBUTORS.md` or Release acknowledgments.
 - Invite major contributors as Reviewers.
 - No gamified "contributor levels".
+
+### 11.4 Maintainer pipeline
+
+- Recruitment page: `28-maintainers-wanted.md`.
+- Application: the `co-maintainer` issue template.
+- Path: contributor → reviewer → maintainer.
+- Review SLA: 7 days once the CLA is effective.
+- Recognition: release notes and README acknowledgments.
+
+### 11.5 Published articles
+
+- dev.to: https://dev.to/karlmoriaty/why-your-net-ai-request-is-slow-a-segment-by-segment-teardown-5f4o
+- Reddit r/dotnet: https://www.reddit.com/r/dotnet/s/pYVZnHmCzu
+- 知乎: https://zhuanlan.zhihu.com/p/2110099755946844614
+- Source drafts: `docs/articles/`.
 
 ---
 
